@@ -4,6 +4,10 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  json: {
+    // Serialize large JSON as JSON.parse("...") to avoid deep AST / stack overflow
+    stringify: true,
+  },
   resolve: {
     alias: { "@": path.resolve(__dirname, "src") },
   },

@@ -75,7 +75,7 @@ const Roadmap: React.FC = () => {
         const json = await response.json();
         if (cancelled) return;
 
-        if (json.status === 'ok' && Array.isArray(json.data?.stages)) {
+        if (json.success === true && Array.isArray(json.data?.stages)) {
           const mapped: RoadmapStage[] = json.data.stages.map((s: any, idx: number) => ({
             id:               s.id,
             name:             s.name,

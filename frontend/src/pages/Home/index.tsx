@@ -119,7 +119,7 @@ const Home: React.FC = () => (
 
     {/* Promises */}
     <section>
-      <p className="eyebrow">청로드의 3가지 약속</p>
+      <p className="eyebrow">디딤의 3가지 약속</p>
       <h2 className="sec-title">추천을 "행동"으로 바꿉니다</h2>
       <div className="promise-grid">
         {PROMISES.map(p => (

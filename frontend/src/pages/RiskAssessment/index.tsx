@@ -1,182 +1,459 @@
+// Content Hash: SHA256:TBD
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Info, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, AlertTriangle, Phone } from 'lucide-react';
 
-const RISK_STAGES = [
+/* ─────────────────────────────────────────────
+   기획서 F-01 기반 12문항
+   관계망 4 · 활동 2 · 노동경제 2 · 정신건강 3 · 자기관리 1
+   Safety Override: Q11(B12_9) "거의 매일" → 위기 안내
+───────────────────────────────────────────── */
+
+interface Question {
+  id: string;
+  category: string;
+  text: string;
+  options: { label: string; score: number }[];
+  safetyKey?: boolean;
+}
+
+const QUESTIONS: Question[] = [
+  /* ── 관계망 4문항 ── */
   {
-    id: '1', label: '1단계', sublabel: '취업 안정권',
-    desc: '취업 준비가 비교적 안정적으로 진행 중인 상태입니다.',
-    hint: '기사·기술사 등 높은 등급의 자격증도 동등한 후보로 추천됩니다.',
-    barClass: 'bar-green', hintClass: 'hint-green',
+    id: 'A12_1', category: '관계망',
+    text: '중요하거나 어려운 일이 있을 때 조언을 구할 수 있는 사람이 있나요?',
+    options: [
+      { label: '여러 명 있다',               score: 0 },
+      { label: '한두 명 있다',               score: 1 },
+      { label: '있긴 하지만 연락하기 부담스럽다', score: 2 },
+      { label: '거의 없다',                  score: 3 },
+      { label: '전혀 없다',                  score: 4 },
+    ],
   },
   {
-    id: '2', label: '2단계', sublabel: '준비 활성',
-    desc: '취업을 위한 준비 활동이 활발하게 진행되는 상태입니다.',
-    hint: '직무 매칭 기반 추천이 강화됩니다.',
-    barClass: 'bar-sky', hintClass: 'hint-sky',
+    id: 'A12_2', category: '관계망',
+    text: '급한 일이 생겼을 때 도움을 부탁할 수 있는 사람이 있나요?',
+    options: [
+      { label: '여러 명 있다',               score: 0 },
+      { label: '한두 명 있다',               score: 1 },
+      { label: '있긴 하지만 부탁하기 어렵다',  score: 2 },
+      { label: '거의 없다',                  score: 3 },
+      { label: '전혀 없다',                  score: 4 },
+    ],
   },
   {
-    id: '3', label: '3단계', sublabel: '준비 정체',
-    desc: '방향은 있지만 구체적인 행동이 잘 이어지지 않는 상태입니다.',
-    hint: '단계형 로드맵이 강조되어 다음 한 걸음을 명확히 제시합니다.',
-    barClass: 'bar-indigo', hintClass: 'hint-indigo',
+    id: 'A12_4', category: '관계망',
+    text: '낙심하거나 우울할 때 속마음을 털어놓을 수 있는 사람이 있나요?',
+    options: [
+      { label: '여러 명 있다',               score: 0 },
+      { label: '한두 명 있다',               score: 1 },
+      { label: '있긴 하지만 말하기 어렵다',    score: 2 },
+      { label: '거의 없다',                  score: 3 },
+      { label: '전혀 없다',                  score: 4 },
+    ],
   },
   {
-    id: '4', label: '4단계', sublabel: '관계망 약화',
-    desc: '관계망이 줄고 일상 유지에 어려움이 있는 상태입니다.',
-    hint: '낮은 등급의 자격증을 우선 추천하여 단기 성취를 지원합니다.',
-    barClass: 'bar-amber', hintClass: 'hint-amber',
+    id: 'A13_4', category: '관계망',
+    text: '지난 2주 동안 지인(가족 제외)과 직접 만난 날이 있었나요?',
+    options: [
+      { label: '주 3회 이상',   score: 0 },
+      { label: '주 1~2회',      score: 1 },
+      { label: '2주에 1~2회',   score: 2 },
+      { label: '거의 없었다',   score: 3 },
+      { label: '전혀 없었다',   score: 4 },
+    ],
+  },
+  /* ── 활동 2문항 ── */
+  {
+    id: 'A7', category: '활동',
+    text: '평소에 집 밖으로 외출하는 빈도는 어느 정도인가요?',
+    options: [
+      { label: '매일 또는 거의 매일',  score: 0 },
+      { label: '주 3~5회',            score: 1 },
+      { label: '주 1~2회',            score: 2 },
+      { label: '월 1~3회',            score: 3 },
+      { label: '거의 나가지 않는다',   score: 4 },
+    ],
   },
   {
-    id: '5', label: '5단계', sublabel: '고위험군',
-    desc: '취업을 원하지만 현실적 장벽이 가장 높은 상태입니다.',
-    hint: '기능사·국가기술자격 등 단기 달성 가능한 자격증을 우선 추천합니다.',
-    barClass: 'bar-red', hintClass: 'hint-red',
+    id: 'A11', category: '활동',
+    text: '지난 2주 동안 다른 사람(온라인 포함)과 대화를 나눈 빈도는?',
+    options: [
+      { label: '매일 여러 명과 대화',   score: 0 },
+      { label: '거의 매일 누군가와 대화', score: 1 },
+      { label: '주 2~3회',              score: 2 },
+      { label: '주 1회 이하',           score: 3 },
+      { label: '거의 대화하지 않았다',   score: 4 },
+    ],
   },
-] as const;
+  /* ── 노동·경제 2문항 ── */
+  {
+    id: 'A1', category: '노동·경제',
+    text: '지난 한 주 동안 수입을 목적으로 일한 시간이 있었나요?',
+    options: [
+      { label: '정규직·계약직으로 일했다',         score: 0 },
+      { label: '아르바이트·단기 일을 했다',          score: 1 },
+      { label: '일은 없었지만 적극적으로 구직 중',   score: 2 },
+      { label: '일도 없고 구직도 소극적이다',        score: 3 },
+      { label: '일도 없고 지금 일할 생각도 없다',    score: 4 },
+    ],
+  },
+  {
+    id: 'A6', category: '노동·경제',
+    text: '현재 본인의 경제 상황을 어떻게 느끼나요?',
+    options: [
+      { label: '여유롭다',                   score: 0 },
+      { label: '크게 부족하지 않다',          score: 1 },
+      { label: '다소 부족하다',               score: 2 },
+      { label: '많이 부족하다',               score: 3 },
+      { label: '매우 부족하고 생계가 어렵다',  score: 4 },
+    ],
+  },
+  /* ── 정신건강 3문항 ── */
+  {
+    id: 'B12_1', category: '정신건강',
+    text: '지난 2주 동안 기분이 가라앉거나, 우울하거나, 희망이 없다고 느낀 날이 있었나요?',
+    options: [
+      { label: '전혀 없었다',    score: 0 },
+      { label: '며칠 있었다',    score: 1 },
+      { label: '일주일 이상',    score: 2 },
+      { label: '거의 매일',      score: 3 },
+    ],
+  },
+  {
+    id: 'B12_2', category: '정신건강',
+    text: '지난 2주 동안 평소 즐기던 활동에 흥미나 즐거움을 느끼지 못한 날이 있었나요?',
+    options: [
+      { label: '전혀 없었다',    score: 0 },
+      { label: '며칠 있었다',    score: 1 },
+      { label: '일주일 이상',    score: 2 },
+      { label: '거의 매일',      score: 3 },
+    ],
+  },
+  {
+    id: 'B12_9', category: '정신건강',
+    safetyKey: true,
+    text: '지난 2주 동안 차라리 죽는 게 낫겠다거나 자해하고 싶다는 생각이 든 날이 있었나요?',
+    options: [
+      { label: '전혀 없었다',    score: 0 },
+      { label: '며칠 있었다',    score: 1 },
+      { label: '일주일 이상',    score: 2 },
+      { label: '거의 매일',      score: 3 },
+    ],
+  },
+  /* ── 자기관리 1문항 ── */
+  {
+    id: 'B9_4', category: '자기관리',
+    text: '식사, 개인위생, 방 정리 등 일상적인 자기 관리가 잘 이루어지고 있나요?',
+    options: [
+      { label: '매일 규칙적으로 한다',    score: 0 },
+      { label: '대체로 하는 편이다',      score: 1 },
+      { label: '가끔 빠트리는 편이다',    score: 2 },
+      { label: '잘 하지 못하고 있다',     score: 3 },
+      { label: '거의 하지 않고 있다',     score: 4 },
+    ],
+  },
+];
+
+const TOTAL_MAX = QUESTIONS.reduce((s, q) => s + Math.max(...q.options.map(o => o.score)), 0);
+
+const CATEGORY_COLORS: Record<string, string> = {
+  '관계망':    '#6366f1',
+  '활동':      '#0ea5e9',
+  '노동·경제': '#f59e0b',
+  '정신건강':  '#f43f5e',
+  '자기관리':  '#10b981',
+};
+
+function scoreToStage(score: number, safetyTriggered: boolean): string {
+  const pct = score / TOTAL_MAX;
+  if (safetyTriggered && pct < 0.8) {
+    /* Safety override: 위기 응답 시 최소 4단계 이상 */
+    return pct < 0.6 ? '4' : '5';
+  }
+  if (pct < 0.2)  return '1';
+  if (pct < 0.38) return '2';
+  if (pct < 0.56) return '3';
+  if (pct < 0.74) return '4';
+  return '5';
+}
+
+const STAGE_LABELS: Record<string, { label: string; sub: string; color: string }> = {
+  '1': { label: '1단계', sub: '취업 안정권', color: '#10b981' },
+  '2': { label: '2단계', sub: '준비 활성',   color: '#0ea5e9' },
+  '3': { label: '3단계', sub: '준비 정체',   color: '#6366f1' },
+  '4': { label: '4단계', sub: '관계망 약화', color: '#f59e0b' },
+  '5': { label: '5단계', sub: '고위험군',    color: '#f43f5e' },
+};
 
 const RiskAssessment: React.FC = () => {
-  const navigate  = useNavigate();
-  const [selected, setSelected] = useState<string>('');
+  const navigate = useNavigate();
 
-  const handleNext = () => {
-    if (!selected) return;
-    navigate(`/recommendation?stage=${selected}`);
-  };
+  const [step, setStep]       = useState<'survey' | 'result'>('survey');
+  const [current, setCurrent] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [safetyFlag, setSafetyFlag] = useState(false);
 
-  const selectedStage = RISK_STAGES.find(s => s.id === selected);
+  const q = QUESTIONS[current];
+  const progress = ((current) / QUESTIONS.length) * 100;
+  const answered = answers[q.id] !== undefined;
 
-  return (
-    <div className="risk-wrap">
-      <div className="page-header">
-        <h1 className="page-title">위험군 진단</h1>
-        <p className="page-desc">현재 상황에 가장 가까운 단계를 선택하세요. 단계에 따라 추천 자격증 등급과 로드맵 구조가 달라집니다.</p>
-      </div>
+  function select(score: number) {
+    const newAnswers = { ...answers, [q.id]: score };
+    setAnswers(newAnswers);
+    if (q.safetyKey && score >= 2) setSafetyFlag(true);
+    if (current < QUESTIONS.length - 1) {
+      setTimeout(() => setCurrent(c => c + 1), 260);
+    }
+  }
 
-      <div className="card risk-card">
-        <div className="info-banner">
-          <Info size={15} />
-          <span>1단계(안정권) → 5단계(고위험군) 순으로 위험도가 높아집니다.</span>
+  function finish() {
+    setStep('result');
+  }
+
+  function goNext() {
+    if (current < QUESTIONS.length - 1) setCurrent(c => c + 1);
+    else finish();
+  }
+
+  function goPrev() {
+    if (current > 0) setCurrent(c => c - 1);
+  }
+
+  /* ── Result ── */
+  if (step === 'result') {
+    const totalScore = QUESTIONS.reduce((s, q) => s + (answers[q.id] ?? 0), 0);
+    const stage = scoreToStage(totalScore, safetyFlag);
+    const pct = Math.round((totalScore / TOTAL_MAX) * 100);
+    const info = STAGE_LABELS[stage];
+
+    const categoryScores = Object.entries(
+      QUESTIONS.reduce<Record<string, { score: number; max: number }>>((acc, q) => {
+        const max = Math.max(...q.options.map(o => o.score));
+        acc[q.category] = acc[q.category] || { score: 0, max: 0 };
+        acc[q.category].score += answers[q.id] ?? 0;
+        acc[q.category].max   += max;
+        return acc;
+      }, {})
+    );
+
+    return (
+      <div className="survey-wrap">
+        <div className="page-header">
+          <h1 className="page-title">진단 결과</h1>
+          <p className="page-desc">12문항 응답 기반으로 산출된 위험군 단계입니다.</p>
         </div>
 
-        <div className="stages-list">
-          {RISK_STAGES.map(stage => {
-            const isSel = selected === stage.id;
+        {safetyFlag && (
+          <div className="safety-banner">
+            <AlertTriangle size={18} />
+            <div>
+              <p className="safety-title">정서적 어려움이 감지됐습니다</p>
+              <p className="safety-sub">필요하다면 아래 기관에 연락해보세요.</p>
+            </div>
+            <a href="tel:1393" className="safety-cta"><Phone size={14} /> 1393 자살예방상담전화</a>
+          </div>
+        )}
+
+        <div className="card result-card">
+          <div className="result-stage-row">
+            <div className="result-badge" style={{ background: info.color + '18', color: info.color, borderColor: info.color + '40' }}>
+              {info.label}
+            </div>
+            <div>
+              <p className="result-stage-name">{info.sub}</p>
+              <p className="result-score-sub">위험도 점수 {pct}점 / 100점</p>
+            </div>
+          </div>
+
+          <div className="result-bar-bg">
+            <div className="result-bar-fill" style={{ width: `${pct}%`, background: info.color }} />
+          </div>
+
+          <div className="result-cats">
+            {categoryScores.map(([cat, { score, max }]) => {
+              const catPct = Math.round((score / max) * 100);
+              return (
+                <div key={cat} className="result-cat-row">
+                  <span className="result-cat-label">{cat}</span>
+                  <div className="result-cat-bar-bg">
+                    <div
+                      className="result-cat-bar-fill"
+                      style={{ width: `${catPct}%`, background: CATEGORY_COLORS[cat] ?? '#6366f1' }}
+                    />
+                  </div>
+                  <span className="result-cat-pct">{catPct}%</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="result-actions">
+          <button className="btn-ghost" onClick={() => { setStep('survey'); setCurrent(0); setAnswers({}); setSafetyFlag(false); }}>
+            <ArrowLeft size={15} /> 다시 진단
+          </button>
+          <button className="btn-primary" onClick={() => navigate(`/recommendation?stage=${stage}`)}>
+            자격증 추천 보기 <ArrowRight size={15} />
+          </button>
+        </div>
+
+        <style>{`
+          .result-card { padding:1.75rem; display:flex; flex-direction:column; gap:1.25rem; }
+          .result-stage-row { display:flex; align-items:center; gap:1rem; }
+          .result-badge {
+            padding:.4rem 1rem; border-radius:var(--radius-sm);
+            font-size:.9rem; font-weight:800; border:1.5px solid;
+            white-space:nowrap;
+          }
+          .result-stage-name { font-size:1.3rem; font-weight:800; color:var(--text); }
+          .result-score-sub { font-size:.85rem; color:var(--text-muted); margin-top:.2rem; }
+          .result-bar-bg { height:10px; background:var(--border); border-radius:99px; overflow:hidden; }
+          .result-bar-fill { height:100%; border-radius:99px; transition:width 0.8s ease; }
+          .result-cats { display:flex; flex-direction:column; gap:.625rem; }
+          .result-cat-row { display:flex; align-items:center; gap:.75rem; }
+          .result-cat-label { font-size:.78rem; font-weight:600; color:var(--text-muted); width:68px; flex-shrink:0; }
+          .result-cat-bar-bg { flex:1; height:6px; background:var(--border); border-radius:99px; overflow:hidden; }
+          .result-cat-bar-fill { height:100%; border-radius:99px; transition:width 0.6s ease; }
+          .result-cat-pct { font-size:.75rem; color:var(--text-light); width:32px; text-align:right; flex-shrink:0; }
+          .result-actions { display:flex; gap:.75rem; flex-wrap:wrap; }
+        `}</style>
+      </div>
+    );
+  }
+
+  /* ── Survey ── */
+  return (
+    <div className="survey-wrap">
+      <div className="page-header">
+        <h1 className="page-title">위험군 진단</h1>
+        <p className="page-desc">12개 질문에 솔직하게 답해주세요. 결과를 바탕으로 맞춤 자격증을 추천해드립니다.</p>
+      </div>
+
+      {/* Progress */}
+      <div className="survey-progress-wrap">
+        <div className="survey-progress-info">
+          <span className="survey-q-num">{current + 1} / {QUESTIONS.length}</span>
+          <span className="survey-cat-badge" style={{ background: (CATEGORY_COLORS[q.category] ?? '#6366f1') + '18', color: CATEGORY_COLORS[q.category] ?? '#6366f1' }}>
+            {q.category}
+          </span>
+        </div>
+        <div className="survey-prog-bar-bg">
+          <div className="survey-prog-bar-fill" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+
+      {/* Question card */}
+      <div className="card survey-card" key={current}>
+        {q.safetyKey && (
+          <div className="safety-notice">
+            <AlertTriangle size={14} />
+            <span>이 질문은 정서적 위기와 관련된 항목입니다. 편하게 솔직하게 답해주세요.</span>
+          </div>
+        )}
+
+        <p className="survey-q-text">{q.text}</p>
+
+        <div className="survey-options">
+          {q.options.map(opt => {
+            const isSel = answers[q.id] === opt.score;
             return (
               <button
-                key={stage.id}
-                className={`stage-btn ${isSel ? 'selected' : ''}`}
-                onClick={() => setSelected(stage.id)}
+                key={opt.score}
+                className={`survey-opt ${isSel ? 'selected' : ''}`}
+                onClick={() => select(opt.score)}
                 type="button"
               >
-                <div className={`stage-bar ${stage.barClass}`} />
-                <div className="stage-text">
-                  <div className="stage-labels">
-                    <span className="stage-num">{stage.label}</span>
-                    <span className="stage-sub">{stage.sublabel}</span>
-                  </div>
-                  <p className="stage-desc">{stage.desc}</p>
-                  {isSel && (
-                    <p className={`stage-hint ${stage.hintClass}`}>
-                      <CheckCircle2 size={12} />
-                      {stage.hint}
-                    </p>
-                  )}
-                </div>
-                <div className={`stage-check ${isSel ? 'visible' : ''}`}>&#10003;</div>
+                <span className="survey-opt-radio">{isSel ? '●' : '○'}</span>
+                {opt.label}
               </button>
             );
           })}
         </div>
+      </div>
 
-        {selectedStage && (
-          <div className="selected-summary">
-            <span className="summary-label">선택됨</span>
-            <span className="summary-text">
-              <strong>{selectedStage.label} · {selectedStage.sublabel}</strong>에 적합한 자격증 목록을 안내합니다.
-            </span>
-          </div>
-        )}
-
-        <div className="risk-actions">
-          <button className="btn-primary" disabled={!selected} onClick={handleNext}>
-            자격증 추천 보기 <ArrowRight size={17} />
+      {/* Navigation */}
+      <div className="survey-nav">
+        <button className="btn-ghost" onClick={goPrev} disabled={current === 0}>
+          <ArrowLeft size={15} /> 이전
+        </button>
+        {current === QUESTIONS.length - 1 ? (
+          <button className="btn-primary" disabled={!answered} onClick={finish}>
+            결과 보기 <ArrowRight size={15} />
           </button>
-        </div>
+        ) : (
+          <button className="btn-primary" disabled={!answered} onClick={goNext}>
+            다음 <ArrowRight size={15} />
+          </button>
+        )}
       </div>
 
       <style>{`
-        .risk-wrap { max-width:680px; display:flex; flex-direction:column; gap:1.5rem; }
-        .risk-card { padding:1.75rem; display:flex; flex-direction:column; gap:1.25rem; }
-        .info-banner {
-          display:flex; align-items:center; gap:.625rem;
-          padding:.7rem 1rem; background:var(--primary-light);
-          border-radius:var(--radius-sm); color:var(--primary);
-          font-size:.85rem; font-weight:500;
-          border:1px solid rgba(99,102,241,.18);
+        .survey-wrap { max-width:640px; display:flex; flex-direction:column; gap:1.5rem; }
+        .survey-progress-wrap { display:flex; flex-direction:column; gap:.5rem; }
+        .survey-progress-info { display:flex; align-items:center; gap:.75rem; }
+        .survey-q-num { font-size:.85rem; font-weight:700; color:var(--text-muted); }
+        .survey-cat-badge {
+          padding:.2rem .65rem; border-radius:var(--radius-full);
+          font-size:.72rem; font-weight:700;
         }
-        .stages-list { display:flex; flex-direction:column; gap:.5rem; }
-        .stage-btn {
-          display:flex; align-items:flex-start; gap:1rem;
-          padding:1rem 1.125rem; border-radius:var(--radius-sm);
-          border:1.5px solid var(--border); background:var(--surface);
-          text-align:left; transition:var(--transition); width:100%; cursor:pointer;
+        .survey-prog-bar-bg { height:5px; background:var(--border); border-radius:99px; overflow:hidden; }
+        .survey-prog-bar-fill {
+          height:100%; border-radius:99px;
+          background:var(--gradient-primary);
+          transition:width 0.35s ease;
         }
-        .stage-btn:hover { border-color:var(--border-strong); background:var(--surface-2); transform:translateX(2px); }
-        .stage-btn.selected {
-          border-color:var(--primary);
-          background:linear-gradient(135deg,var(--primary-light),rgba(14,165,233,.06));
-          box-shadow:0 4px 18px var(--primary-glow); transform:translateX(0);
+        .survey-card {
+          padding:1.75rem; display:flex; flex-direction:column; gap:1.25rem;
+          animation:survey-in .18s ease;
         }
-        .stage-bar { width:5px; min-height:44px; border-radius:3px; flex-shrink:0; margin-top:2px; }
-        .bar-green  { background:#10b981; }
-        .bar-sky    { background:#0ea5e9; }
-        .bar-indigo { background:#6366f1; }
-        .bar-amber  { background:#f59e0b; }
-        .bar-red    { background:#f43f5e; }
-        .stage-text  { flex:1; display:flex; flex-direction:column; gap:.25rem; }
-        .stage-labels{ display:flex; align-items:baseline; gap:.5rem; flex-wrap:wrap; }
-        .stage-num   { font-size:.78rem; font-weight:700; color:var(--text-light); }
-        .stage-btn.selected .stage-num { color:var(--primary); }
-        .stage-sub   { font-size:.975rem; font-weight:700; color:var(--text); }
-        .stage-desc  { font-size:.845rem; color:var(--text-muted); line-height:1.5; }
-        .stage-hint  {
-          display:flex; align-items:center; gap:.35rem;
-          font-size:.8rem; font-weight:500; margin-top:.35rem;
-          padding:.3rem .6rem; border-radius:var(--radius-xs);
-          width:fit-content; animation:hint-in .18s ease;
+        @keyframes survey-in {
+          from { opacity:0; transform:translateX(10px); }
+          to   { opacity:1; transform:none; }
         }
-        @keyframes hint-in { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
-        .hint-green  { background:#d1fae5; color:#065f46; }
-        .hint-sky    { background:var(--secondary-light); color:#0369a1; }
-        .hint-indigo { background:var(--primary-light); color:var(--primary-dark); }
-        .hint-amber  { background:var(--warning-light); color:#92400e; }
-        .hint-red    { background:var(--danger-light); color:#9f1239; }
-        .stage-check {
-          width:20px; height:20px; border-radius:50%;
-          background:var(--primary); color:#fff;
-          font-size:.7rem; font-weight:700;
-          display:flex; align-items:center; justify-content:center;
-          opacity:0; transition:opacity .15s,transform .15s;
-          flex-shrink:0; transform:scale(.7); margin-top:3px;
+        .safety-notice {
+          display:flex; align-items:center; gap:.5rem;
+          padding:.6rem .875rem; background:var(--warning-light);
+          border-radius:var(--radius-xs); font-size:.8rem;
+          color:#92400e; border:1px solid rgba(245,158,11,.25);
         }
-        .stage-check.visible { opacity:1; transform:scale(1); }
-        .selected-summary {
+        .survey-q-text {
+          font-size:1.05rem; font-weight:700; color:var(--text);
+          line-height:1.55;
+        }
+        .survey-options { display:flex; flex-direction:column; gap:.5rem; }
+        .survey-opt {
           display:flex; align-items:center; gap:.75rem;
-          padding:.75rem 1rem; background:var(--surface-2);
-          border-radius:var(--radius-sm); border:1px solid var(--border);
-          animation:hint-in .2s ease;
+          padding:.875rem 1rem; border-radius:var(--radius-sm);
+          border:1.5px solid var(--border); background:var(--surface);
+          text-align:left; font-size:.9rem; color:var(--text-muted);
+          font-weight:500; transition:var(--transition); cursor:pointer;
+          width:100%;
         }
-        .summary-label {
-          font-size:.72rem; font-weight:700; letter-spacing:.06em;
-          color:var(--primary); background:var(--primary-light);
-          padding:.15rem .5rem; border-radius:var(--radius-xs); white-space:nowrap;
+        .survey-opt:hover { border-color:var(--border-strong); background:var(--surface-2); color:var(--text); }
+        .survey-opt.selected {
+          border-color:var(--primary); background:var(--primary-light);
+          color:var(--primary); font-weight:700;
+          box-shadow:0 2px 12px var(--primary-glow);
         }
-        .summary-text { font-size:.85rem; color:var(--text-muted); line-height:1.4; }
-        .summary-text strong { color:var(--text); }
-        .risk-actions {
-          display:flex; justify-content:flex-end;
-          padding-top:.75rem; border-top:1px solid var(--border);
+        .survey-opt-radio { font-size:.9rem; flex-shrink:0; }
+        .survey-nav {
+          display:flex; gap:.75rem; align-items:center; justify-content:space-between;
+        }
+        .safety-banner {
+          display:flex; align-items:center; gap:.875rem;
+          padding:1rem 1.25rem; background:var(--danger-light);
+          border:1px solid rgba(244,63,94,.25);
+          border-radius:var(--radius-sm); flex-wrap:wrap;
+          color:var(--danger);
+        }
+        .safety-title { font-weight:700; font-size:.9rem; color:#9f1239; }
+        .safety-sub { font-size:.8rem; color:#be123c; margin-top:.1rem; }
+        .safety-cta {
+          margin-left:auto; display:inline-flex; align-items:center; gap:.4rem;
+          padding:.5rem 1rem; background:var(--danger); color:#fff;
+          border-radius:var(--radius-sm); font-size:.85rem; font-weight:700;
+          text-decoration:none; flex-shrink:0;
         }
       `}</style>
     </div>
