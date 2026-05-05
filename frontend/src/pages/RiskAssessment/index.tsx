@@ -17,7 +17,7 @@ const RISK_STAGES = [
     id: '2',
     riskId: 'risk_stage_2',
     label: '2단계',
-    sublabel: '준비 단계',
+    sublabel: '준비단계 (초기)',
     desc: '', // TODO: 세부 기준 정책 확정 후 업데이트 (CLAUDE.md §6)
     dotColor: '#6366f1',
     bgClass: 'stage-indigo',
@@ -26,7 +26,7 @@ const RISK_STAGES = [
     id: '3',
     riskId: 'risk_stage_3',
     label: '3단계',
-    sublabel: '준비 단계',
+    sublabel: '준비단계 (심화)',
     desc: '', // TODO: 세부 기준 정책 확정 후 업데이트 (CLAUDE.md §6)
     dotColor: '#6366f1',
     bgClass: 'stage-indigo',

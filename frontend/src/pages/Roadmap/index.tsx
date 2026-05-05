@@ -1,38 +1,31 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, Circle, Clock, ArrowLeft, Info } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, ArrowLeft, Info, Loader2 } from 'lucide-react';
 
 const RISK_STAGE_LABELS: Record<string, string> = {
   '1': '1단계',
-  '2': '2단계',
-  '3': '3단계',
+  '2': '준비단계 (초기)',
+  '3': '준비단계 (심화)',
   '4': '4단계',
   '5': '5단계',
 };
 
-// Stub data — 실제 로드맵 API 연결 전 데모용
-const MOCK_STAGES = [
-  {
-    id: 'roadmap_stage_01',
-    name: '기초',
-    desc: '기본 개념과 직무 연관성을 이해하는 단계입니다.',
-    status: 'completed' as const,
-  },
-  {
-    id: 'roadmap_stage_02',
-    name: '실무',
-    desc: '실무 적용 가능성을 높이는 단계입니다.',
-    status: 'current' as const,
-  },
-  {
-    id: 'roadmap_stage_03',
-    name: '심화',
-    desc: '직무 전문성을 입증할 수 있는 고급 자격증 취득 단계입니다.',
-    status: 'locked' as const,
-  },
-];
+const RISK_INTERNAL_MAP: Record<string, string> = {
+  '1': 'risk_0001',
+  '2': 'risk_0002',
+  '3': 'risk_0003',
+  '4': 'risk_0004',
+  '5': 'risk_0005',
+};
 
 type StageStatus = 'completed' | 'current' | 'locked';
+
+interface RoadmapStage {
+  id: string;
+  name: string;
+  desc: string;
+  status: StageStatus;
+}
 
 function StageIcon({ status }: { status: StageStatus }) {
   if (status === 'completed') return <CheckCircle2 size={22} className="icon-success" />;
@@ -45,7 +38,67 @@ const Roadmap: React.FC = () => {
   const [searchParams] = useSearchParams();
   const certId = searchParams.get('cert') ?? 'cert_013';
   const stageParam = searchParams.get('stage') ?? '';
+  
+  const [stages, setStages] = useState<RoadmapStage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchRoadmap() {
+      try {
+        setLoading(true);
+        const riskId = RISK_INTERNAL_MAP[stageParam] || 'risk_0001';
+        
+        const response = await fetch('/api/v1/roadmaps', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ risk_stage_id: riskId })
+        });
+        
+        if (!response.ok) throw new Error('API 호출에 실패했습니다.');
+        
+        const json = await response.json();
+        if (json.status === 'ok' && json.data?.stages) {
+          const apiStages = json.data.stages.map((s: any, idx: number) => ({
+            id: s.id,
+            name: s.name,
+            desc: s.description,
+            status: idx === 0 ? 'current' : 'locked'
+          }));
+          setStages(apiStages);
+        } else {
+          throw new Error(json.message || '데이터를 불러올 수 없습니다.');
+        }
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchRoadmap();
+  }, [stageParam]);
+
   const riskLabel = stageParam ? (RISK_STAGE_LABELS[stageParam] ?? stageParam) : '';
+
+  if (loading) {
+    return (
+      <div className="roadmap-loading">
+        <Loader2 size={32} className="animate-spin" />
+        <p>로드맵을 생성 중입니다...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="roadmap-error">
+        <Info size={32} />
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()} className="btn-secondary">다시 시도</button>
+      </div>
+    );
+  }
 
   return (
     <div className="roadmap-wrap">
@@ -60,13 +113,13 @@ const Roadmap: React.FC = () => {
       </div>
 
       <div className="roadmap-notice">
-        <Info size={14} />
-        <span>로드맵 API 연결 준비 중입니다. 아래는 단계 구조 예시입니다.</span>
+        <CheckCircle2 size={14} />
+        <span>진단된 {riskLabel} 상태에 맞춰 최적화된 로드맵입니다.</span>
       </div>
 
       <div className="card roadmap-card">
         <div className="timeline">
-          {MOCK_STAGES.map((stage, idx) => (
+          {stages.map((stage, idx) => (
             <div key={stage.id} className={`tl-row ${stage.status}`}>
               {/* Left: connector */}
               <div className="tl-left">
@@ -196,6 +249,23 @@ const Roadmap: React.FC = () => {
         .icon-success { color: var(--success); }
         .icon-secondary { color: var(--secondary); }
         .icon-muted { color: var(--text-light); }
+
+        .roadmap-loading, .roadmap-error {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 300px;
+          gap: 1rem;
+          color: var(--text-muted);
+        }
+        .animate-spin {
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
       `}</style>
     </div>
   );

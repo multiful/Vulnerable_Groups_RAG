@@ -68,7 +68,7 @@ const MainLayout: React.FC = () => {
       <header className="app-header">
         <div className="container header-inner">
           <Link to="/" className="logo">
-            <span className="logo-mark">VulnerableRAG</span>
+            <span className="logo-text">VulnerableRAG</span>
           </Link>
           <nav className="header-nav">
             {NAV_ITEMS.slice(1).map(item => (
