@@ -293,8 +293,8 @@ const RiskAssessment: React.FC = () => {
           <button className="btn-ghost" onClick={() => { setStep('survey'); setCurrent(0); setAnswers({}); setSafetyFlag(false); }}>
             <ArrowLeft size={15} /> 다시 진단
           </button>
-          <button className="btn-primary" onClick={() => navigate(`/recommendation?stage=${stage}`)}>
-            자격증 추천 보기 <ArrowRight size={15} />
+          <button className="btn-primary" onClick={() => navigate(`/interests?stage=${stage}`)}>
+            관심 분야 선택하기 <ArrowRight size={15} />
           </button>
         </div>
 
@@ -389,7 +389,7 @@ const RiskAssessment: React.FC = () => {
       </div>
 
       <style>{`
-        .survey-wrap { max-width:640px; display:flex; flex-direction:column; gap:1.5rem; }
+        .survey-wrap { max-width:640px; display:flex; flex-direction:column; gap:1.5rem; margin:0 auto; }
         .survey-progress-wrap { display:flex; flex-direction:column; gap:.5rem; }
         .survey-progress-info { display:flex; align-items:center; gap:.75rem; }
         .survey-q-num { font-size:.85rem; font-weight:700; color:var(--text-muted); }

@@ -1,0 +1,29 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5B6CF9"/>
+      <stop offset="100%" stop-color="#A855F7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="100" height="100" rx="22" fill="url(#bg)"/>
+
+  <!-- Arch 1: leftmost / lowest — center ~32, top ~63 -->
+  <path d="M20,83 L20,66 A12,12 0 0,1 44,66 L44,83"
+        fill="none" stroke="white" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Arch 2: middle — center ~50, top ~53 -->
+  <path d="M36,83 L36,54 A12,12 0 0,1 60,54 L60,83"
+        fill="none" stroke="white" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Arch 3: rightmost / highest — center ~68, top ~40 -->
+  <path d="M54,83 L54,42 A12,12 0 0,1 78,42 L78,83"
+        fill="none" stroke="white" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Dot above rightmost arch -->
+  <circle cx="66" cy="27" r="5" fill="white"/>
+</svg>

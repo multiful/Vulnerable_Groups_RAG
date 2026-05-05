@@ -5,14 +5,16 @@ import { CheckCircle2 } from 'lucide-react';
 
 const NAV_LINKS = [
   { label: '위험군 진단', path: '/risk-assessment' },
-  { label: '자격증 추천', path: '/recommendation' },
+  { label: '관심 선택',   path: '/interests' },
   { label: '성장 로드맵', path: '/roadmap' },
+  { label: '자격증 확인', path: '/recommendation' },
 ];
 
 const FLOW_STEPS = [
   { path: '/risk-assessment', label: '위험군 진단', step: 1 },
-  { path: '/recommendation', label: '자격증 추천', step: 2 },
-  { path: '/roadmap',        label: '성장 로드맵', step: 3 },
+  { path: '/interests',       label: '관심 선택',   step: 2 },
+  { path: '/roadmap',         label: '성장 로드맵', step: 3 },
+  { path: '/recommendation',  label: '자격증 확인', step: 4 },
 ];
 
 function StepIndicator({ pathname }: { pathname: string }) {
@@ -70,8 +72,9 @@ const MainLayout: React.FC = () => {
       {/* ── Header ── */}
       <header className="app-header">
         <div className="container header-inner">
-          {/* Logo — text only, no icon */}
+          {/* Logo */}
           <Link to="/" className="logo">
+            <img src="/logo.svg" alt="디딤 로고" className="logo-img" />
             <span className="logo-text">디딤</span>
             <span className="logo-en">Didim</span>
           </Link>
@@ -150,7 +153,7 @@ const MainLayout: React.FC = () => {
         .logo {
           flex-shrink: 0;
           display: flex;
-          align-items: baseline;
+          align-items: center;
           gap: 0.45rem;
           text-decoration: none;
         }
@@ -169,6 +172,7 @@ const MainLayout: React.FC = () => {
           color: var(--text-light);
           letter-spacing: 0.06em;
         }
+        .logo-img { width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0; display: block; }
         @media (max-width: 480px) { .logo-en { display: none; } }
 
         /* Header nav */
@@ -206,7 +210,8 @@ const MainLayout: React.FC = () => {
         .step-bar-inner {
           display: flex;
           align-items: center;
-          max-width: 480px;
+          max-width: 640px;
+          margin: 0 auto;
         }
         .step-item {
           display: flex;

@@ -3,8 +3,9 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import Home from './pages/Home';
 import RiskAssessment from './pages/RiskAssessment';
-import Recommendation from './pages/Recommendation';
+import InterestSelection from './pages/InterestSelection';
 import Roadmap from './pages/Roadmap';
+import Recommendation from './pages/Recommendation';
 
 const App: React.FC = () => {
   return (
@@ -13,8 +14,9 @@ const App: React.FC = () => {
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Home />} />
           <Route path="risk-assessment" element={<RiskAssessment />} />
-          <Route path="recommendation" element={<Recommendation />} />
+          <Route path="interests" element={<InterestSelection />} />
           <Route path="roadmap" element={<Roadmap />} />
+          <Route path="recommendation" element={<Recommendation />} />
         </Route>
       </Routes>
     </BrowserRouter>
