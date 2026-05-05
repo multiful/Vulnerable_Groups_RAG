@@ -68,7 +68,9 @@ const MainLayout: React.FC = () => {
       <header className="app-header">
         <div className="container header-inner">
           <Link to="/" className="logo">
-            <span className="logo-text">VulnerableRAG</span>
+            <span className="logo-mark-icon">C</span>
+            <span className="logo-text">청로드</span>
+            <span className="logo-en">CheongRoad</span>
           </Link>
           <nav className="header-nav">
             {NAV_ITEMS.slice(1).map(item => (
@@ -155,15 +157,44 @@ const MainLayout: React.FC = () => {
           align-items: center;
           gap: 2rem;
         }
-        .logo { flex-shrink: 0; }
-        .logo-mark {
-          font-size: 1.25rem;
+        .logo {
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          text-decoration: none;
+        }
+        .logo-mark-icon {
+          width: 28px;
+          height: 28px;
+          border-radius: 7px;
+          background: var(--gradient-primary);
+          color: #fff;
+          font-size: 0.9rem;
           font-weight: 800;
-          letter-spacing: -0.04em;
-          background: linear-gradient(135deg, var(--primary), var(--secondary));
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 8px var(--primary-glow);
+          flex-shrink: 0;
+        }
+        .logo-text {
+          font-size: 1.1rem;
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          background: var(--gradient-primary);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
+        }
+        .logo-en {
+          font-size: 0.7rem;
+          font-weight: 500;
+          color: var(--text-light);
+          letter-spacing: 0.03em;
+        }
+        @media (max-width: 480px) {
+          .logo-en { display: none; }
         }
         .header-nav {
           display: flex;
@@ -317,6 +348,38 @@ const MainLayout: React.FC = () => {
           display: none;
           position: fixed;
           bottom: 0;
+          left: 0;
+          right: 0;
+          height: var(--mobile-nav-h);
+          background: rgba(255,255,255,0.96);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border-top: 1px solid var(--border);
+          z-index: 100;
+        }
+        @media (max-width: 768px) {
+          .mobile-nav { display: flex; }
+        }
+        .mobile-nav-item {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 3px;
+          color: var(--text-light);
+          font-size: 0.65rem;
+          font-weight: 500;
+          transition: var(--transition);
+        }
+        .mobile-nav-item.active { color: var(--primary); }
+        .mobile-nav-item span { line-height: 1; }
+      `}</style>
+    </div>
+  );
+};
+
+export default MainLayout;
           left: 0;
           right: 0;
           height: var(--mobile-nav-h);
