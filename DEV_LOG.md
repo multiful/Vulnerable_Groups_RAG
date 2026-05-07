@@ -1,7 +1,7 @@
 # DEV_LOG.md
 
 > **파일명**: DEV_LOG.md  
-> **최종 수정일**: 2026-04-27  
+> **최종 수정일**: 2026-05-07  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 날짜별 진행 로그, 변경 요약, 해결 이력  
 > **문서 우선순위**: 14  
@@ -13,6 +13,26 @@
 ## 1. 문서 목적
 
 구현과 문서 정렬 작업의 **타임라인**을 남겨, 이후 기여자가 맥락을 잃지 않게 한다.
+
+---
+
+## 2026-05-07 — 핵심 3단계 플로우 기준으로 기획 문서 전면 정렬
+
+### 변경 문서
+- `README.md`: 핵심 3단계 사용자 흐름(설문→도메인+직무선택→로드맵) 명시, 설문 방식·Safety Override 표기 추가, 온라인 서빙 계층 표 추가
+- `PRD.md`: §2 제품 정의에 3단계 흐름 블록 추가, §7.1에 12문항 설문 구조표·Safety Override 명시, §8.1 설문 방식 명시, §11 시나리오 1을 3단계 순서 흐름으로 재작성
+- `SYSTEM_ARCHITECTURE.md`: §6 Frontend 활성 범위에 InterestSelection 추가, 핵심 3단계 흐름도 추가, §12 Online Runtime Flow를 3단계 흐름으로 재작성
+- `FEATURE_SPEC.md`: F-01을 "12문항 설문 방식" 명세로 전면 재작성(카테고리별 문항표·Safety Override·판정 로직), F-02를 "InterestSelection" 명세로 재작성(도메인 필수·직무 선택·URL 파라미터 전달), 기능 목록 테이블 업데이트
+
+### 배경
+- 실제 구현된 웹 플로우(RiskAssessment → InterestSelection → Roadmap)와 기획 문서 간 불일치 발견
+- 특히 SYSTEM_ARCHITECTURE.md에 InterestSelection 페이지 누락, F-01·F-02 명세가 설문 방식과 도메인+직무 동시 선택 방식을 반영 안 함
+- 사용자 확인 요구: "설문→진단→직무+도메인선택→로드맵 추천" 3단계 플로우가 맞는지 검토 후 문서 전면 업데이트
+
+### 잔여 이슈 (코드 변경 필요)
+- InterestSelection 직무(job) 선택 UI 미구현 → F-02에 "추가 구현 필요"로 표기
+- components/Survey.tsx 미사용 파일 (RiskAssessment/index.tsx가 설문 직접 포함) → 별도 정리 필요
+- Home 이용 흐름이 4단계로 표시 → 3단계 기준으로 UI 수정 검토 필요
 
 ---
 

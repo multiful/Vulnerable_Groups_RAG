@@ -19,6 +19,7 @@ interface RecommendedCert {
   is_redundant: boolean;
   achievability: string;
   related_jobs: string[];
+  llm_reason?: string;
 }
 
 interface StageInfo {
@@ -41,6 +42,7 @@ interface RoadmapData {
   fallback_note: string | null;
   starting_roadmap_stage: { name: string; id: string } | null;
   total_certs_in_roadmap: number;
+  llm_generated?: boolean;
 }
 
 interface ApiResponse {
@@ -80,18 +82,19 @@ const RISK_IDS: Record<string, string> = {
 
 /* ── Local fallback helpers ── */
 const LOCAL_STAGES: StageInfo[] = [
-  { id: 'roadmap_stage_0001', name: '진입 준비',   order: 1, description: '현재 생활 패턴과 진로 준비 수준을 점검합니다.' },
-  { id: 'roadmap_stage_0002', name: '탐색 · 계획', order: 2, description: '관심 도메인 내 입문 자격증을 탐색하고 학습 계획을 세웁니다.' },
-  { id: 'roadmap_stage_0003', name: '기초 취득',   order: 3, description: '기초 자격증을 취득하고 실무 기초 역량을 쌓습니다.' },
-  { id: 'roadmap_stage_0004', name: '전문성 강화', order: 4, description: '중·상급 자격증으로 전문성을 높이고 취업 활동을 시작합니다.' },
-  { id: 'roadmap_stage_0005', name: '전문가 도달', order: 5, description: '기술사·기능장 등 최상위 자격증으로 전문가 포지션에 도달합니다.' },
+  { id: 'roadmap_stage_0001', name: '상태 인식',   order: 1, description: '현재 생활 상태와 진로·취업 준비 수준을 점검하는 초기 단계입니다.' },
+  { id: 'roadmap_stage_0002', name: '탐색 시작',   order: 2, description: '관심 분야, 전공 연계성, 가능한 직무와 자격증을 탐색하는 단계입니다.' },
+  { id: 'roadmap_stage_0003', name: '역량 준비',   order: 3, description: '기초 학습, 자격증 준비, 교육훈련 참여 등으로 역량을 쌓는 단계입니다.' },
+  { id: 'roadmap_stage_0004', name: '실행 확대',   order: 4, description: '지원 활동, 대외활동, 실전 경험을 늘리며 진로 실행을 확장하는 단계입니다.' },
+  { id: 'roadmap_stage_0005', name: '유지·정착',   order: 5, description: '형성된 진로 경로와 생활 리듬을 유지하며 장기 계획으로 정착하는 단계입니다.' },
 ];
 
+/* roadmap_stage_master.csv 기준: risk_0001→0003, risk_0002/0003→0002, risk_0004/0005→0001 */
 const STARTING_STAGE_MAP: Record<number, string> = {
-  1: 'roadmap_stage_0004',
-  2: 'roadmap_stage_0003',
+  1: 'roadmap_stage_0003',
+  2: 'roadmap_stage_0002',
   3: 'roadmap_stage_0002',
-  4: 'roadmap_stage_0002',
+  4: 'roadmap_stage_0001',
   5: 'roadmap_stage_0001',
 };
 
@@ -195,10 +198,36 @@ const Roadmap: React.FC = () => {
   const fetchRoadmap = useCallback(async () => {
     setLoading(true);
     setError(null);
+
+    /* ── 1. LLM endpoint (domain filter → AI ordering) ── */
+    if (riskId && domainParam) {
+      try {
+        const llmBody: Record<string, unknown> = {
+          risk_stage_id: riskId,
+          domain_ids: [domainParam],
+          domain_name: domainName,
+        };
+        const llmRes = await fetch('/api/v1/recommendations/llm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(llmBody),
+        });
+        const llmJson: ApiResponse = await llmRes.json();
+        if (llmJson.success && llmJson.data) {
+          setData(llmJson.data);
+          setLoading(false);
+          return;
+        }
+      } catch {
+        /* fall through */
+      }
+    }
+
+    /* ── 2. DB-based backend endpoint ── */
     try {
       const body: Record<string, unknown> = { top_n_per_stage: 6 };
-      if (riskId)    body.risk_stage_id = riskId;
-      if (domainParam) body.domain_ids  = [domainParam];
+      if (riskId)      body.risk_stage_id = riskId;
+      if (domainParam) body.domain_ids    = [domainParam];
 
       const res = await fetch('/api/v1/recommendations', {
         method: 'POST',
@@ -208,13 +237,14 @@ const Roadmap: React.FC = () => {
       const json: ApiResponse = await res.json();
       if (json.success && json.data) {
         setData(json.data);
+        setLoading(false);
         return;
       }
     } catch {
       /* fall through to local fallback */
     }
 
-    /* ── Local fallback ── */
+    /* ── 3. Local fallback ── */
     try {
       const local = await buildLocalRoadmap(riskId, domainParam, riskNum);
       setData(local);
@@ -223,7 +253,7 @@ const Roadmap: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [riskId, domainParam, riskNum]);
+  }, [riskId, domainParam, domainName, riskNum]);
 
   useEffect(() => { fetchRoadmap(); }, [fetchRoadmap]);
 
@@ -300,10 +330,13 @@ const Roadmap: React.FC = () => {
             ? <><strong>{domainName}</strong> 분야의 단계별 자격증 학습 경로입니다.</>
             : '단계별 자격증 학습 경로를 확인하세요.'}
         </p>
-        {data.fallback_used && data.fallback_note && (
-          <div className="fallback-notice">
+        {data.fallback_note && (
+          <div className={`fallback-notice ${data.llm_generated ? 'llm-notice' : ''}`}>
             <Info size={13} />
-            <span>{data.fallback_note}</span>
+            <span>
+              {data.llm_generated && <strong>[AI] </strong>}
+              {data.fallback_note}
+            </span>
           </div>
         )}
       </div>
@@ -379,25 +412,32 @@ const Roadmap: React.FC = () => {
                               onClick={() => goToCert(cert.cert_id, cert.cert_name)}
                               type="button"
                             >
-                              <span
-                                className="tl-cert-badge"
-                                style={{ background: color + '18', color }}
-                              >
-                                {GRADE_LABEL[cert.cert_grade_tier] ?? '비기술'}
-                              </span>
-                              <span className="tl-cert-name">{cert.cert_name}</span>
-                              <div className="tl-cert-meta">
-                                {cert.avg_pass_rate !== null && (
-                                  <span className={`tl-pass-rate ${cert.is_bottleneck ? 'tl-bottleneck' : ''}`}>
-                                    합격률 {cert.avg_pass_rate}%
-                                    {cert.is_bottleneck && ' ⚠'}
+                              <div className="tl-cert-main">
+                                <div className="tl-cert-top-row">
+                                  <span
+                                    className="tl-cert-badge"
+                                    style={{ background: color + '18', color }}
+                                  >
+                                    {GRADE_LABEL[cert.cert_grade_tier] ?? '비기술'}
                                   </span>
+                                  <span className="tl-cert-name">{cert.cert_name}</span>
+                                  <div className="tl-cert-meta">
+                                    {cert.avg_pass_rate !== null && (
+                                      <span className={`tl-pass-rate ${cert.is_bottleneck ? 'tl-bottleneck' : ''}`}>
+                                        합격률 {cert.avg_pass_rate}%
+                                        {cert.is_bottleneck && ' ⚠'}
+                                      </span>
+                                    )}
+                                    <span className="tl-achievability" style={{ color: aColor }}>
+                                      {achievabilityLabel(cert.achievability)}
+                                    </span>
+                                  </div>
+                                  <ArrowRight size={13} style={{ color: 'var(--text-light)', flexShrink: 0 }} />
+                                </div>
+                                {cert.llm_reason && (
+                                  <p className="tl-cert-reason">{cert.llm_reason}</p>
                                 )}
-                                <span className="tl-achievability" style={{ color: aColor }}>
-                                  {achievabilityLabel(cert.achievability)}
-                                </span>
                               </div>
-                              <ArrowRight size={13} style={{ color: 'var(--text-light)', flexShrink: 0 }} />
                             </button>
                           );
                         })}
@@ -465,6 +505,11 @@ const Roadmap: React.FC = () => {
           font-size: .8rem; color: #92400e; line-height: 1.5;
         }
         .fallback-notice svg { flex-shrink: 0; margin-top: 1px; color: #f59e0b; }
+        .llm-notice {
+          background: #f0fdf4; border-color: rgba(16,185,129,.25);
+          color: #065f46;
+        }
+        .llm-notice svg { color: #10b981; }
 
         /* Stats */
         .rm-stats {
@@ -536,7 +581,7 @@ const Roadmap: React.FC = () => {
         }
         .tl-cert-list { display: flex; flex-direction: column; gap: .325rem; }
         .tl-cert-row {
-          display: flex; align-items: center; gap: .625rem;
+          display: flex; align-items: flex-start; gap: .625rem;
           padding: .55rem .75rem;
           border-radius: var(--radius-xs);
           border: 1px solid var(--border); background: var(--surface);
@@ -545,6 +590,14 @@ const Roadmap: React.FC = () => {
         .tl-cert-row:hover {
           border-color: var(--primary); background: var(--primary-light);
           transform: translateX(3px);
+        }
+        .tl-cert-main { flex: 1; display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
+        .tl-cert-top-row { display: flex; align-items: center; gap: .625rem; width: 100%; }
+        .tl-cert-reason {
+          font-size: .76rem; color: var(--text-muted); line-height: 1.55;
+          font-style: italic; padding-left: .25rem;
+          border-left: 2px solid var(--success-light);
+          padding-left: .5rem; margin: 0;
         }
         .tl-cert-badge {
           padding: .15rem .5rem; border-radius: var(--radius-xs);

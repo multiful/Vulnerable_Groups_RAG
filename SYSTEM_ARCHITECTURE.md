@@ -1,8 +1,8 @@
 # SYSTEM_ARCHITECTURE.md
 
 > **파일명**: SYSTEM_ARCHITECTURE.md  
-> **최종 수정일**: 2026-04-14  
-> **문서 해시**: SHA256:f0777e87c5f69da10091bfe23ac8b38becec69eaadb4094865286b4b10528060
+> **최종 수정일**: 2026-05-07  
+> **문서 해시**: SHA256:TBD
 > **문서 역할**: 시스템 구성, 계층, 책임, 데이터 흐름 정의 문서  
 > **문서 우선순위**: 3  
 > **연관 문서**: README.md, CHANGE_CONTROL.md, PRD.md, FEATURE_SPEC.md, DATA_SCHEMA.md, API_SPEC.md, RAG_PIPELINE.md, DIRECTORY_SPEC.md  
@@ -176,19 +176,30 @@
 프론트엔드는 사용자 입력과 결과 표시를 담당하는 계층이다.  
 프론트는 가능한 한 얇게 유지하며, 도메인 판단과 추천 계산은 백엔드에 둔다.
 
+### 핵심 사용자 흐름 (3단계)
+
+```
+Home
+  → RiskAssessment  (STEP 1: 12문항 설문 → 위험군 판정)
+  → InterestSelection  (STEP 2: 관심 도메인·직무 선택)
+  → Roadmap  (STEP 3: 위험군×도메인 기반 단계형 로드맵)
+       └→ Recommendation  (심화: 자격증 상세·설명 근거)
+```
+
 ### 주요 책임
-- 위험군 입력/진입 UX 제공
-- 관심 직무/도메인 입력 수집
-- 추천 결과 렌더링
-- 로드맵 결과 렌더링
+- 12문항 설문 제공 및 위험군 판정 UX
+- 관심 도메인·직무 선택 수집 (taxonomy 기준)
+- 로드맵 단계형 결과 렌더링
+- 추천 자격증 결과 렌더링
 - 설명 근거 표시
 - 추후 일정/링크 화면 제공
 
 ### 현재 활성 범위
 - Home
-- RiskAssessment
-- Recommendation
+- RiskAssessment (12문항 설문 + 위험군 판정 + Safety Override)
+- InterestSelection (도메인 선택, 직무 선택)
 - Roadmap
+- Recommendation
 
 ### reserved
 - Schedule
@@ -348,16 +359,34 @@ exact match 보강용 선택 저장소
 
 ## 12. Online Runtime Flow
 
-### 12.1 추천 요청 흐름
-1. 사용자가 프론트에서 입력을 제공한다.
-2. 프론트가 recommendation API를 호출한다.
-3. 백엔드는 위험군 기준을 적용한다.
-4. recommendation core가 canonical store에서 candidate row를 조회한다.
-5. 필요 시 evidence retrieval 계층이 설명 근거를 검색한다.
-6. recommendation service가 추천 결과와 근거를 조합한다.
-7. 프론트가 결과를 렌더링한다.
+### 12.1 핵심 사용자 흐름 (3단계)
 
-### 12.2 로드맵 요청 흐름
+**[STEP 1] 위험군 진단**  
+1. 사용자가 RiskAssessment 화면에서 12문항 설문을 완료한다.  
+2. 프론트가 응답 점수 합계로 위험군 단계(1~5)를 판정한다 (백엔드 호출 없음, 클라이언트 사이드).  
+3. Safety Override: 정신건강 위기 응답 시 최소 4단계로 조정 및 위기 안내 배너 표시.  
+4. 결과 화면에서 단계와 카테고리별 점수를 표시한다.
+
+**[STEP 2] 관심 도메인·직무 선택**  
+5. 사용자가 InterestSelection 화면으로 이동한다 (위험군 단계가 URL 파라미터로 전달됨).  
+6. 허용된 domain taxonomy 세부 라벨에서 도메인을 선택한다.  
+7. (직무 선택 UI가 있는 경우) 허용된 job taxonomy 세부 직무에서 직무를 선택한다.
+
+**[STEP 3] 로드맵·추천 조회**  
+8. 사용자가 Roadmap 화면으로 이동한다 (위험군·도메인·직무가 URL 파라미터로 전달됨).  
+9. 프론트가 `/api/v1/recommendations` POST로 로드맵을 요청한다.  
+10. API 미연결 시 로컬 cert_candidates.json fallback으로 로드맵을 구성한다.  
+11. 자격증 클릭 시 Recommendation 화면으로 이동해 상세 정보와 설명 근거를 확인한다.
+
+### 12.2 추천 요청 흐름 (백엔드 연결 후)
+1. 프론트가 위험군·도메인·직무를 담아 recommendation API를 호출한다.
+2. 백엔드는 위험군 기준을 적용한다.
+3. recommendation core가 canonical store에서 candidate row를 조회한다.
+4. 필요 시 evidence retrieval 계층이 설명 근거를 검색한다.
+5. recommendation service가 추천 결과와 근거를 조합한다.
+6. 프론트가 결과를 렌더링한다.
+
+### 12.3 로드맵 요청 흐름
 1. 사용자가 추천 결과 또는 위험군 기준으로 로드맵을 요청한다.
 2. 백엔드는 canonical relation과 roadmap 기준을 조회한다.
 3. roadmap service가 단계형 결과를 생성한다.
