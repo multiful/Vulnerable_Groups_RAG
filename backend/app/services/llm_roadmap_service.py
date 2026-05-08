@@ -112,19 +112,32 @@ def _filter_risk(candidates: list[dict], risk_id: str) -> list[dict]:
     return [c for c in candidates if risk_id in (c.get("recommended_risk_stages") or [])]
 
 
-def _select_top(
+def _select_diverse(
     candidates: list[dict],
     risk_order: int,
-    max_n: int = 25,
+    max_n: int = 35,
 ) -> list[dict]:
-    """위험군 높을수록(3~5) 쉬운 자격증(기능사) 우선, 낮을수록(1~2) 상위 자격증 우선.
-    reverse=False(ascending) → 기능사(1) 먼저 / reverse=True(descending) → 기술사(4) 먼저."""
+    """티어별로 고르게 샘플링해 LLM이 전 단계에 배치할 수 있는 후보를 공급한다.
+
+    high_risk(3~5)면 기능사/산업기사를 더 많이, low_risk(1~2)면 기사/기술사를 더 많이 포함.
+    단순 정렬 대신 버킷 균등 채우기로 한 티어에 쏠리지 않게 한다.
+    """
+    buckets: dict[int, list[dict]] = {1: [], 2: [], 3: [], 4: [], 9: []}  # 9=비기술
+    for c in candidates:
+        tier = _TIER_ORDER.get(c.get("cert_grade_tier", ""), 0)
+        key = tier if tier in buckets else 9
+        buckets[key].append(c)
+
     high_risk = risk_order >= 3
-    return sorted(
-        candidates,
-        key=lambda c: _TIER_ORDER.get(c.get("cert_grade_tier", ""), 3),
-        reverse=not high_risk,
-    )[:max_n]
+    # 위험군 높으면 쉬운 것(1,2) 더 많이, 낮으면 어려운 것(3,4) 더 많이
+    quotas = (
+        {1: 10, 2: 8, 3: 6, 4: 3, 9: 8} if high_risk
+        else {1: 4, 2: 6, 3: 10, 4: 8, 9: 7}
+    )
+    result: list[dict] = []
+    for key, quota in quotas.items():
+        result.extend(buckets[key][:quota])
+    return result[:max_n]
 
 
 def _format_cert_line(c: dict) -> str:
@@ -155,113 +168,168 @@ def _format_cert_line(c: dict) -> str:
     return f"- {cert_id} | {cert_name} | {grade} | {extras}" if extras else f"- {cert_id} | {cert_name} | {grade}"
 
 
-def _build_system_prompt(
-    risk_name: str,
-    risk_desc: str,
-    domain_name: str,
-    starting_stage_name: str,
-) -> str:
+# grade_tier → roadmap_stage 매핑 (risk_order별)
+_TIER_TO_STAGE_HIGH: dict[str, str] = {   # risk 3~5 (높은 위험군)
+    "1_기능사":   "roadmap_stage_0002",
+    "2_산업기사": "roadmap_stage_0003",
+    "3_기사":     "roadmap_stage_0004",
+    "4_기술사":   "roadmap_stage_0005",
+    "5_기능장":   "roadmap_stage_0005",
+    "":           "roadmap_stage_0002",   # 비기술 → 탐색 시작
+}
+_TIER_TO_STAGE_LOW: dict[str, str] = {    # risk 1~2 (낮은 위험군)
+    "1_기능사":   "roadmap_stage_0003",
+    "2_산업기사": "roadmap_stage_0003",
+    "3_기사":     "roadmap_stage_0004",
+    "4_기술사":   "roadmap_stage_0005",
+    "5_기능장":   "roadmap_stage_0005",
+    "":           "roadmap_stage_0003",
+}
+
+
+def _parse_difficulty(dense: str) -> float | None:
+    """text_for_dense에서 시험 난이도 수치(1.0~5.0)를 파싱한다."""
+    m = re.search(r"시험 난이도:\s*(\d+(?:\.\d+)?)", dense)
+    if m:
+        try:
+            return float(m.group(1))
+        except ValueError:
+            pass
+    return None
+
+
+def _difficulty_to_stage(difficulty: float, risk_order: int) -> str:
+    """난이도 수치를 roadmap_stage_id로 변환한다. 위험군이 높을수록 같은 난이도라도 더 이른 단계에 배치."""
+    if risk_order >= 3:
+        if difficulty <= 2.5:
+            return "roadmap_stage_0002"
+        elif difficulty <= 3.5:
+            return "roadmap_stage_0003"
+        else:
+            return "roadmap_stage_0004"
+    else:
+        if difficulty <= 2.0:
+            return "roadmap_stage_0002"
+        elif difficulty <= 3.5:
+            return "roadmap_stage_0003"
+        else:
+            return "roadmap_stage_0004"
+
+
+def _assign_stages(
+    selected: list[dict],
+    risk_order: int,
+    starting_stage_id: str,
+    max_per_stage: int = 4,
+) -> dict[str, list[dict]]:
+    """grade_tier 기반으로 자격증을 단계에 구조적으로 배치한다. LLM 의존 없음.
+    비기술/빈 티어는 text_for_dense의 시험 난이도 수치로 단계를 결정한다."""
+    stage_map = _TIER_TO_STAGE_HIGH if risk_order >= 3 else _TIER_TO_STAGE_LOW
+    stage_order = [s["id"] for s in _LOCAL_STAGES]
+    start_idx = stage_order.index(starting_stage_id) if starting_stage_id in stage_order else 1
+
+    buckets: dict[str, list[dict]] = {sid: [] for sid in stage_order}
+    for c in selected:
+        tier = c.get("cert_grade_tier") or ""
+        if tier in stage_map and tier != "":
+            target = stage_map[tier]
+        else:
+            # 비기술/빈 티어: 난이도 점수로 배치, 없으면 기본값
+            difficulty = _parse_difficulty(c.get("text_for_dense", ""))
+            if difficulty is not None:
+                target = _difficulty_to_stage(difficulty, risk_order)
+            else:
+                target = stage_map.get("", starting_stage_id)
+        # 시작 단계 이전이면 시작 단계로 당김
+        if stage_order.index(target) < start_idx:
+            target = starting_stage_id
+        if len(buckets[target]) < max_per_stage:
+            buckets[target].append(c)
+
+    return buckets
+
+
+def _build_reason_prompt(risk_name: str, domain_name: str) -> str:
     return (
-        f"당신은 청년 취업 진로 상담 전문가입니다.\n\n"
-        f"사용자 정보:\n"
-        f"- 위험군: {risk_name} — {risk_desc}\n"
-        f"- 관심 도메인: {domain_name}\n"
-        f"- 권장 시작 단계: {starting_stage_name}\n\n"
-        f"로드맵 단계 (stage_id → 단계명 → 배치 기준):\n"
-        f"  roadmap_stage_0001 → 상태 인식: 합격률 높고 매우 쉬운 입문 자격증\n"
-        f"  roadmap_stage_0002 → 탐색 시작: 기초·입문 비기술자격, 3급·준전문가\n"
-        f"  roadmap_stage_0003 → 역량 준비: 기능사·중급 비기술자격, 1~2급\n"
-        f"  roadmap_stage_0004 → 실행 확대: 산업기사·기사, 전문가급\n"
-        f"  roadmap_stage_0005 → 유지·정착: 기술사·기능장·최상위\n\n"
-        f"선택 규칙:\n"
-        f"- 각 단계 최대 4개, 전체 최대 12개\n"
-        f"- cert_id는 목록에 있는 것만 사용 (임의 생성 금지)\n"
-        f"- 반드시 valid JSON만 반환 (마크다운 블록 사용 금지)\n\n"
-        f"reason 작성 규칙 (중요):\n"
-        f"- reason 첫 문장은 반드시 해당 cert_id의 자격증명(목록의 두 번째 컬럼)을 정확히 사용해 시작\n"
-        f"- 반드시 해당 자격증의 구체적 정보(합격률·시험 과목·관련 직무 등)를 근거로 작성\n"
-        f"- 이 사용자의 위험군 상황({risk_name})과 연결하여 왜 지금 이 자격증이 적합한지 설명\n"
-        f"- '좋은 기회', '도움이 됩니다' 같은 일반적 문장 사용 금지\n"
-        f"- 한국어 2문장 이내\n\n"
-        f"응답 형식 (JSON):\n"
-        f'{{"roadmap":['
-        f'{{"stage_id":"roadmap_stage_0001","certs":[{{"cert_id":"...","reason":"..."}}]}},'
-        f'{{"stage_id":"roadmap_stage_0002","certs":[]}},'
-        f'{{"stage_id":"roadmap_stage_0003","certs":[]}},'
-        f'{{"stage_id":"roadmap_stage_0004","certs":[]}},'
-        f'{{"stage_id":"roadmap_stage_0005","certs":[]}}'
-        f']}}'
+        f"당신은 청년 취업 진로 상담 전문가입니다.\n"
+        f"사용자 위험군: {risk_name} / 관심 도메인: {domain_name}\n\n"
+        f"아래 자격증 목록의 각 cert_id에 대해 reason을 한국어 2문장 이내로 작성하세요.\n"
+        f"규칙:\n"
+        f"- 첫 문장은 해당 자격증 이름을 정확히 사용해 시작\n"
+        f"- 합격률·시험 과목·관련 직무 등 구체적 수치를 근거로 사용\n"
+        f"- 이 사용자의 위험군 상황과 연결해 왜 지금 이 자격증이 적합한지 설명\n"
+        f"- '좋은 기회', '도움이 됩니다' 같은 일반적 문장 금지\n"
+        f"- valid JSON만 반환 (마크다운 블록 금지)\n\n"
+        f"응답 형식: {{\"reasons\":{{\"cert_id1\":\"reason1\", \"cert_id2\":\"reason2\", ...}}}}"
     )
 
 
-def _call_openai(system_prompt: str, cert_list_text: str, api_key: str) -> str:
+def _call_openai_for_reasons(
+    system_prompt: str,
+    cert_lines: list[str],
+    api_key: str,
+) -> dict[str, str]:
     from openai import OpenAI
     client = OpenAI(api_key=api_key)
+    user_msg = "다음 자격증들에 대한 reason을 작성해 주세요:\n" + "\n".join(cert_lines)
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"사용 가능한 자격증 목록:\n{cert_list_text}"},
+            {"role": "user", "content": user_msg},
         ],
-        temperature=0.2,
-        max_tokens=2000,
+        temperature=0.3,
+        max_tokens=2500,
         response_format={"type": "json_object"},
     )
-    return response.choices[0].message.content or "{}"
+    raw = response.choices[0].message.content or "{}"
+    try:
+        return json.loads(raw).get("reasons", {})
+    except json.JSONDecodeError:
+        return {}
 
 
-def _parse_response(
-    llm_json: str,
-    cand_map: dict[str, dict],
+def _build_roadmap_data(
+    buckets: dict[str, list[dict]],
+    reasons: dict[str, str],
     risk_id: str,
     starting_stage_id: str,
 ) -> dict:
-    try:
-        data = json.loads(llm_json)
-    except json.JSONDecodeError:
-        data = {}
-
-    roadmap_items: list[dict] = data.get("roadmap", [])
-    stage_entries_by_id: dict[str, list[dict]] = {}
-    for item in roadmap_items:
-        sid = item.get("stage_id", "")
-        stage_entries_by_id[sid] = item.get("certs", [])
-
     by_stage: list[dict] = []
     sequence: list[dict] = []
     step = 1
 
     for stage in _LOCAL_STAGES:
         sid = stage["id"]
-        entries = stage_entries_by_id.get(sid, [])
         certs_here: list[dict] = []
-
-        for entry in entries:
-            cert_id = entry.get("cert_id", "")
-            cand = cand_map.get(cert_id)
-            if not cand:
-                continue
+        for cand in buckets.get(sid, []):
+            cert_id = cand["cert_id"]
             achievability = (
                 "immediate" if risk_id in (cand.get("recommended_risk_stages") or [])
                 else "near_term"
             )
+            dense = cand.get("text_for_dense", "")
+            pass_rate: float | None = None
+            _m = re.search(r"3년 평균 합격률:\s*([\d.]+)%", dense)
+            if _m:
+                try:
+                    pass_rate = float(_m.group(1))
+                except ValueError:
+                    pass
             certs_here.append({
                 "step": step,
                 "cert_id": cert_id,
                 "cert_name": cand.get("cert_name", cert_id),
                 "cert_grade_tier": cand.get("cert_grade_tier") or "",
-                "avg_pass_rate": None,
+                "avg_pass_rate": pass_rate,
                 "is_bottleneck": False,
                 "bottleneck_note": None,
                 "is_redundant": False,
                 "achievability": achievability,
                 "related_jobs": (cand.get("related_jobs") or [])[:5],
-                "llm_reason": entry.get("reason", ""),
+                "llm_reason": reasons.get(cert_id, ""),
             })
-            sequence.append({
-                "cert_id": cert_id,
-                "cert_name": cand.get("cert_name", cert_id),
-            })
+            sequence.append({"cert_id": cert_id, "cert_name": cand.get("cert_name", cert_id)})
             step += 1
 
         by_stage.append({
@@ -280,14 +348,17 @@ def _parse_response(
         "roadmap_sequence": sequence,
         "cert_paths": [],
         "fallback_used": False,
-        "fallback_note": "AI가 선별한 맞춤 로드맵입니다. (GPT-4o-mini)",
+        "fallback_note": "AI가 각 자격증 추천 이유를 분석한 맞춤 로드맵입니다. (GPT-4o-mini)",
         "total_certs_in_roadmap": len(sequence),
         "llm_generated": True,
     }
 
 
 def llm_recommendations(body: dict[str, Any], settings: Settings) -> dict:
-    """POST /api/v1/recommendations/llm"""
+    """POST /api/v1/recommendations/llm
+    구조적 배치(grade_tier 기반) + LLM reason 생성 분리 방식.
+    LLM은 단계 배치를 결정하지 않고 reason 텍스트만 담당한다.
+    """
     if not settings.openai_api_key:
         return err_envelope(
             "LLM_NOT_CONFIGURED",
@@ -306,19 +377,17 @@ def llm_recommendations(body: dict[str, Any], settings: Settings) -> dict:
     if not candidates:
         return err_envelope(
             "DATA_NOT_READY",
-            "cert_candidates.jsonl을 찾을 수 없습니다. scripts/build_cert_candidates.py를 먼저 실행하세요.",
+            "cert_candidates.jsonl을 찾을 수 없습니다.",
         )
 
     domain_names = _load_domain_names()
     risk_stages = _load_risk_stages()
 
     domain_name = domain_name_override or domain_names.get(domain_id, domain_id)
-    risk_info = risk_stages.get(risk_id, {})
-    risk_name = risk_info.get("name", risk_id) if risk_id else "알 수 없음"
-    risk_desc = risk_info.get("description", "") if risk_id else ""
-    risk_order = risk_info.get("order", 3)
+    risk_info   = risk_stages.get(risk_id, {})
+    risk_name   = risk_info.get("name", risk_id) if risk_id else "알 수 없음"
+    risk_order  = risk_info.get("order", 3)
     starting_stage_id = _STARTING_STAGE.get(risk_id, "roadmap_stage_0003")
-    starting_stage = _STAGE_MAP.get(starting_stage_id, _LOCAL_STAGES[2])
 
     domain_filtered = _filter_domain(candidates, domain_id)
     if not domain_filtered:
@@ -328,25 +397,20 @@ def llm_recommendations(body: dict[str, Any], settings: Settings) -> dict:
     if len(risk_filtered) < 5:
         risk_filtered = domain_filtered
 
-    selected = _select_top(risk_filtered, risk_order=risk_order, max_n=25)
-    cand_map = {c["cert_id"]: c for c in candidates}
+    selected = _select_diverse(risk_filtered, risk_order=risk_order, max_n=35)
 
-    cert_lines = [
-        _format_cert_line(c)
-        for c in selected
-    ]
-    cert_list_text = "\n".join(cert_lines)
+    # 1. 구조적 배치 (LLM 없이)
+    buckets = _assign_stages(selected, risk_order, starting_stage_id, max_per_stage=4)
 
-    system_prompt = _build_system_prompt(
-        risk_name=risk_name,
-        risk_desc=risk_desc,
-        domain_name=domain_name,
-        starting_stage_name=starting_stage["name"],
-    )
+    # 2. LLM: 배치된 자격증 reason 생성
+    all_placed = [c for certs in buckets.values() for c in certs]
+    cert_lines = [_format_cert_line(c) for c in all_placed]
+    reason_prompt = _build_reason_prompt(risk_name, domain_name)
 
     try:
-        llm_json = _call_openai(system_prompt, cert_list_text, settings.openai_api_key)
-        result = _parse_response(llm_json, cand_map, risk_id, starting_stage_id)
-        return ok_envelope(result)
-    except Exception as exc:
-        return err_envelope("LLM_ERROR", f"LLM 호출 실패: {exc}")
+        reasons = _call_openai_for_reasons(reason_prompt, cert_lines, settings.openai_api_key)
+    except Exception:
+        reasons = {}
+
+    result = _build_roadmap_data(buckets, reasons, risk_id, starting_stage_id)
+    return ok_envelope(result)

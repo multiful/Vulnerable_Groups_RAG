@@ -1,4 +1,4 @@
-[도메인 체계 설계안] — data/domain_tokens_new_cert_full.json 기준
+1[도메인 체계 설계안] — data/domain_tokens_new_cert_full.json 기준
 
 1. 상위 라벨 -> 세부 라벨
 

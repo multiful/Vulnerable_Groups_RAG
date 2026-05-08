@@ -1036,3 +1036,69 @@ c2c_01034,cert_1059,cert_1058,recommended_prior,ITQ B급 → A급 등급 체계,
 c2c_01035,cert_0709,cert_0707,recommended_prior,게임기획전문가 취득 후 게임프로그래밍전문가 권장,it_domain_manual,0.85,True
 c2c_01036,cert_0906,cert_0912,recommended_prior,정보처리기능사 취득 후 컴퓨터활용능력 2급 권장,it_domain_manual,0.85,True
 c2c_01037,cert_0906,cert_1060,recommended_prior,정보처리기능사 취득 후 ITQ 자격 권장,it_domain_manual,0.85,True
+c2c_01038,cert_0671,cert_0457,recommended_prior,NCS 미용 자격 체계 기준,domain_manual,0.85,True
+c2c_01039,cert_0685,cert_0457,recommended_prior,NCS 미용 자격 체계 기준,domain_manual,0.85,True
+c2c_01040,cert_0687,cert_0457,recommended_prior,NCS 미용 자격 체계 기준,domain_manual,0.85,True
+c2c_01041,cert_0689,cert_0457,recommended_prior,NCS 미용 자격 체계 기준,domain_manual,0.85,True
+c2c_01042,cert_0691,cert_0457,recommended_prior,NCS 미용 자격 체계 기준,domain_manual,0.85,True
+c2c_01043,cert_0457,cert_0388,next_step,NCS 미용 자격 체계 기준,domain_manual,0.85,True
+c2c_01044,cert_0672,cert_0458,recommended_prior,NCS 이용 자격 체계 기준,domain_manual,0.85,True
+c2c_01045,cert_0458,cert_0389,next_step,NCS 이용 자격 체계 기준,domain_manual,0.85,True
+c2c_01046,cert_0896,cert_0895,next_step,전산회계운용사 등급 체계,domain_manual,0.85,True
+c2c_01047,cert_0895,cert_0894,next_step,전산회계운용사 등급 체계,domain_manual,0.85,True
+c2c_01048,cert_1037,cert_1018,next_step,전산세무회계 등급 체계,domain_manual,0.85,True
+c2c_01049,cert_1016,cert_1015,next_step,전산세무회계 등급 체계,domain_manual,0.85,True
+c2c_01050,cert_1018,cert_1016,recommended_prior,회계 기반 세무 체계,domain_manual,0.85,True
+c2c_01051,cert_1028,cert_1026,next_step,세무회계 등급 체계,domain_manual,0.85,True
+c2c_01052,cert_1026,cert_1025,next_step,세무회계 등급 체계,domain_manual,0.85,True
+c2c_01053,cert_1285,cert_1284,next_step,회계관리 등급 체계,domain_manual,0.85,True
+c2c_01054,cert_1033,cert_1034,recommended_prior,신용 전문화 체계,domain_manual,0.85,True
+c2c_01055,cert_1051,cert_1167,next_step,보험심사평가사 등급 체계,domain_manual,0.85,True
+c2c_01056,cert_1272,cert_1273,next_step,외환전문역 등급 체계,domain_manual,0.85,True
+c2c_01057,cert_1137,cert_1136,next_step,TESAT 등급 체계,domain_manual,0.85,True
+c2c_01058,cert_1136,cert_1135,next_step,TESAT 등급 체계,domain_manual,0.85,True
+c2c_01059,cert_1135,cert_1134,next_step,TESAT 등급 체계,domain_manual,0.85,True
+c2c_01060,cert_1118,cert_1116,next_step,매경TEST 등급 체계,domain_manual,0.85,True
+c2c_01061,cert_1243,cert_1242,next_step,주니어TESAT 등급 체계,domain_manual,0.85,True
+c2c_01062,cert_1242,cert_1241,next_step,주니어TESAT 등급 체계,domain_manual,0.85,True
+c2c_01063,cert_1241,cert_1240,next_step,주니어TESAT 등급 체계,domain_manual,0.85,True
+c2c_01064,cert_1132,cert_1139,recommended_prior,보험심사역 전문화,domain_manual,0.85,True
+c2c_01065,cert_0922,cert_0921,next_step,비서 등급 체계,domain_manual,0.85,True
+c2c_01066,cert_0921,cert_0920,next_step,비서 등급 체계,domain_manual,0.85,True
+c2c_01067,cert_0901,cert_0907,recommended_prior,전자상거래 체계,domain_manual,0.85,True
+c2c_01068,cert_0907,cert_0900,next_step,전자상거래 등급 체계,domain_manual,0.85,True
+c2c_01069,cert_0699,cert_0698,next_step,사회조사분석사 등급 체계,domain_manual,0.85,True
+c2c_01070,cert_0701,cert_0700,next_step,컨벤션기획사 등급 체계,domain_manual,0.85,True
+c2c_01071,cert_0703,cert_0702,next_step,소비자전문상담사 등급 체계,domain_manual,0.85,True
+c2c_01072,cert_1102,cert_1101,next_step,ERP 등급 체계,domain_manual,0.85,True
+c2c_01073,cert_1098,cert_1097,next_step,ERP 등급 체계,domain_manual,0.85,True
+c2c_01074,cert_1096,cert_1095,next_step,ERP 등급 체계,domain_manual,0.85,True
+c2c_01075,cert_1107,cert_1100,next_step,ERP 등급 체계,domain_manual,0.85,True
+c2c_01076,cert_1129,cert_1110,next_step,SMAT 등급 체계,domain_manual,0.85,True
+c2c_01077,cert_1110,cert_1109,next_step,SMAT 등급 체계,domain_manual,0.85,True
+c2c_01078,cert_1283,cert_1282,next_step,행정관리사 등급 체계,domain_manual,0.85,True
+c2c_01079,cert_1282,cert_1281,next_step,행정관리사 등급 체계,domain_manual,0.85,True
+c2c_01080,cert_0697,cert_0696,next_step,직업상담사 등급 체계,domain_manual,0.85,True
+c2c_01081,cert_0750,cert_0749,next_step,장례지도사 등급 체계,domain_manual,0.85,True
+c2c_01082,cert_0943,cert_0754,next_step,장애인재활상담사 등급 체계,domain_manual,0.85,True
+c2c_01083,cert_0754,cert_0753,next_step,장애인재활상담사 등급 체계,domain_manual,0.85,True
+c2c_01084,cert_0952,cert_0951,next_step,청소년상담사 등급 체계,domain_manual,0.85,True
+c2c_01085,cert_0951,cert_0950,next_step,청소년상담사 등급 체계,domain_manual,0.85,True
+c2c_01086,cert_1162,cert_1260,next_step,가족상담사 등급 체계,domain_manual,0.85,True
+c2c_01087,cert_1260,cert_1259,next_step,가족상담사 등급 체계,domain_manual,0.85,True
+c2c_01088,cert_1259,cert_1155,next_step,가족상담사 등급 체계,domain_manual,0.85,True
+c2c_01089,cert_0705,cert_0704,next_step,임상심리사 등급 체계,domain_manual,0.85,True
+c2c_01090,cert_0775,cert_0781,next_step,응급구조사 등급 체계,domain_manual,0.85,True
+c2c_01091,cert_0737,cert_0726,next_step,언어재활사 등급 체계,domain_manual,0.85,True
+c2c_01092,cert_0965,cert_0964,next_step,정신건강임상심리사 등급 체계,domain_manual,0.85,True
+c2c_01093,cert_0959,cert_0958,next_step,평생교육사 등급 체계,domain_manual,0.85,True
+c2c_01094,cert_0958,cert_0957,next_step,평생교육사 등급 체계,domain_manual,0.85,True
+c2c_01095,cert_0962,cert_0955,next_step,청소년지도사 등급 체계,domain_manual,0.85,True
+c2c_01096,cert_0955,cert_0953,next_step,청소년지도사 등급 체계,domain_manual,0.85,True
+c2c_01097,cert_0746,cert_0782,next_step,보건교육사 등급 체계,domain_manual,0.85,True
+c2c_01098,cert_0782,cert_0818,next_step,보건교육사 등급 체계,domain_manual,0.85,True
+c2c_01099,cert_0763,cert_0756,next_step,정사서 등급 체계,domain_manual,0.85,True
+c2c_01100,cert_0948,cert_0856,next_step,직업능력개발훈련교사 등급 체계,domain_manual,0.85,True
+c2c_01101,cert_0856,cert_0927,next_step,직업능력개발훈련교사 등급 체계,domain_manual,0.85,True
+c2c_01102,cert_0928,cert_0999,next_step,문화예술교육사 등급 체계,domain_manual,0.85,True
+c2c_01103,cert_0985,cert_0984,next_step,환경교육사 등급 체계,domain_manual,0.85,True

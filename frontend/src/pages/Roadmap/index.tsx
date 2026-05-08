@@ -191,6 +191,12 @@ const Roadmap: React.FC = () => {
   const [error, setError]     = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
+  // 탭: 'base' | 'ai'
+  const [activeTab, setActiveTab] = useState<'base' | 'ai'>('base');
+  const [llmData, setLlmData]     = useState<RoadmapData | null>(null);
+  const [llmLoading, setLlmLoading] = useState(false);
+  const [llmFetched, setLlmFetched] = useState(false);
+
   // 인라인 evidence/DAG 드로어
   const [activeCert, setActiveCert] = useState<{ id: string; name: string } | null>(null);
   const [evRows, setEvRows] = useState<{ section_path: string[]; snippet: string; chunk_id: string }[]>([]);
@@ -206,7 +212,7 @@ const Roadmap: React.FC = () => {
     setLoading(true);
     setError(null);
 
-    /* ── 1. DB 우선 렌더 (빠름) ── */
+    /* ── 1. DB 우선 렌더 ── */
     let showed = false;
     try {
       const body: Record<string, unknown> = { top_n_per_stage: 6 };
@@ -235,19 +241,25 @@ const Roadmap: React.FC = () => {
         setLoading(false);
       }
     }
+  }, [riskId, domainParam, riskNum]);
 
-    /* ── 3. LLM 비블로킹 — 결과 오면 조용히 교체 ── */
-    if (riskId && domainParam) {
-      try {
-        const llmRes = await fetch('/api/v1/recommendations/llm', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ risk_stage_id: riskId, domain_ids: [domainParam], domain_name: domainName }),
-        });
-        const llmJson: ApiResponse = await llmRes.json();
-        if (llmJson.success && llmJson.data) setData(llmJson.data);
-      } catch { /* silent */ }
+  // AI 탭 클릭 시 한 번만 호출
+  const fetchLlm = useCallback(async () => {
+    if (llmFetched || llmLoading) return;
+    if (!riskId || !domainParam) return;
+    setLlmLoading(true);
+    try {
+      const res = await fetch('/api/v1/recommendations/llm', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ risk_stage_id: riskId, domain_ids: [domainParam], domain_name: domainName }),
+      });
+      const json: ApiResponse = await res.json();
+      if (json.success && json.data) setLlmData(json.data);
+    } catch { /* silent */ } finally {
+      setLlmLoading(false);
+      setLlmFetched(true);
     }
-  }, [riskId, domainParam, domainName, riskNum]);
+  }, [riskId, domainParam, domainName, llmFetched, llmLoading]);
 
   useEffect(() => { fetchRoadmap(); }, [fetchRoadmap]);
 
@@ -336,8 +348,14 @@ const Roadmap: React.FC = () => {
     </div>
   );
 
-  const stages     = data.roadmap_by_stage ?? [];
+  const displayData = (activeTab === 'ai' && llmData) ? llmData : data;
+  const stages      = displayData.roadmap_by_stage ?? [];
   const startingIdx = stages.findIndex(s => s.is_starting_point);
+
+  function handleTabAi() {
+    setActiveTab('ai');
+    if (!llmFetched && !llmLoading) fetchLlm();
+  }
 
   return (
     <div className="rm-wrap">
@@ -359,36 +377,85 @@ const Roadmap: React.FC = () => {
             ? <><strong>{domainName}</strong> 분야의 단계별 자격증 학습 경로입니다.</>
             : '단계별 자격증 학습 경로를 확인하세요.'}
         </p>
-        {data.fallback_note && (
-          <div className={`fallback-notice ${data.llm_generated ? 'llm-notice' : ''}`}>
-            <Info size={13} />
-            <span>
-              {data.llm_generated && <strong>[AI] </strong>}
-              {data.fallback_note}
-            </span>
-          </div>
-        )}
       </div>
+
+      {/* 탭 */}
+      {(riskId && domainParam) && (
+        <div className="rm-tabs">
+          <button
+            className={`rm-tab${activeTab === 'base' ? ' rm-tab-active' : ''}`}
+            onClick={() => setActiveTab('base')}
+            type="button"
+          >
+            전체 추천
+          </button>
+          <button
+            className={`rm-tab${activeTab === 'ai' ? ' rm-tab-active' : ''}`}
+            onClick={handleTabAi}
+            type="button"
+          >
+            {llmLoading
+              ? <><Loader2 size={12} className="rm-spin rm-spin-sm" /> AI 분석 중…</>
+              : <>✦ AI 맞춤 추천</>}
+          </button>
+        </div>
+      )}
+
+      {/* AI 탭 로딩 */}
+      {activeTab === 'ai' && llmLoading && (
+        <div className="rm-ai-loading">
+          <Loader2 size={22} className="rm-spin" />
+          <p className="rm-state-title">AI가 맞춤 로드맵을 구성하는 중…</p>
+          <p className="rm-state-sub">위험군·도메인을 분석해 최적 경로를 선별합니다 (10초 내외)</p>
+        </div>
+      )}
+
+      {/* AI 탭 실패 */}
+      {activeTab === 'ai' && llmFetched && !llmData && !llmLoading && (
+        <div className="fallback-notice" style={{ margin: 0 }}>
+          <Info size={13} />
+          <span>AI 추천을 가져오지 못했습니다. 전체 추천 탭을 이용해 주세요.</span>
+        </div>
+      )}
+
+      {/* fallback 노트 (전체 탭) */}
+      {activeTab === 'base' && data.fallback_note && (
+        <div className="fallback-notice">
+          <Info size={13} />
+          <span>{data.fallback_note}</span>
+        </div>
+      )}
+
+      {/* AI 탭 안내 */}
+      {activeTab === 'ai' && llmData && (
+        <div className="fallback-notice llm-notice">
+          <Info size={13} />
+          <span><strong>[AI]</strong> {llmData.fallback_note}</span>
+        </div>
+      )}
 
       {/* Stats bar */}
-      <div className="rm-stats">
-        <div className="rm-stat">
-          <span className="rm-stat-num">{data.total_certs_in_roadmap}</span>
-          <span className="rm-stat-label">전체 추천 자격증</span>
+      {!(activeTab === 'ai' && (llmLoading || (!llmData && llmFetched))) && (
+        <div className="rm-stats">
+          <div className="rm-stat">
+            <span className="rm-stat-num">{displayData.total_certs_in_roadmap}</span>
+            <span className="rm-stat-label">추천 자격증</span>
+          </div>
+          <div className="rm-stat-divider" />
+          <div className="rm-stat">
+            <span className="rm-stat-num">{stages.filter(s => s.recommended_certs.length > 0).length}</span>
+            <span className="rm-stat-label">활성 단계</span>
+          </div>
+          <div className="rm-stat-divider" />
+          <div className="rm-stat">
+            <span className="rm-stat-num">{displayData.starting_roadmap_stage?.name ?? '-'}</span>
+            <span className="rm-stat-label">시작점</span>
+          </div>
         </div>
-        <div className="rm-stat-divider" />
-        <div className="rm-stat">
-          <span className="rm-stat-num">{stages.filter(s => s.recommended_certs.length > 0).length}</span>
-          <span className="rm-stat-label">활성 단계</span>
-        </div>
-        <div className="rm-stat-divider" />
-        <div className="rm-stat">
-          <span className="rm-stat-num">{data.starting_roadmap_stage?.name ?? '-'}</span>
-          <span className="rm-stat-label">시작점</span>
-        </div>
-      </div>
+      )}
 
       {/* Timeline */}
+      {!(activeTab === 'ai' && (llmLoading || (!llmData && llmFetched))) && (
       <div className="card rm-card">
         <div className="timeline">
           {stages.map((item, idx) => {
@@ -563,6 +630,7 @@ const Roadmap: React.FC = () => {
           })}
         </div>
       </div>
+      )}
 
       {/* Footer */}
       <div className="rm-footer">
@@ -576,6 +644,30 @@ const Roadmap: React.FC = () => {
 
       <style>{`
         .rm-wrap { max-width: 780px; display: flex; flex-direction: column; gap: 1.5rem; }
+
+        /* Tabs */
+        .rm-tabs {
+          display: flex; gap: 0;
+          border-bottom: 2px solid var(--border);
+        }
+        .rm-tab {
+          padding: .55rem 1.25rem; font-size: .875rem; font-weight: 600;
+          background: none; border: none; cursor: pointer; color: var(--text-muted);
+          border-bottom: 2px solid transparent; margin-bottom: -2px;
+          transition: all .15s; display: inline-flex; align-items: center; gap: .35rem;
+        }
+        .rm-tab:hover { color: var(--primary); }
+        .rm-tab-active { color: var(--primary); border-bottom-color: var(--primary); }
+        .rm-spin-sm { animation: spin 1s linear infinite; }
+
+        /* AI loading */
+        .rm-ai-loading {
+          display: flex; flex-direction: column; align-items: center;
+          justify-content: center; min-height: 260px; gap: .875rem;
+          text-align: center; color: var(--text-muted);
+          background: var(--surface); border: 1px solid var(--border);
+          border-radius: var(--radius-sm); padding: 2rem;
+        }
 
         .back-btn {
           display: inline-flex; align-items: center; gap: .35rem;
