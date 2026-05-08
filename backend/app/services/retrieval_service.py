@@ -50,8 +50,28 @@ def _load_cert_names() -> dict[str, str]:
     return out
 
 
+def _parse_dense_sections(text: str) -> list[dict]:
+    """text_for_dense를 섹션별로 분리해 evidence 목록으로 반환."""
+    import re
+    sections = [
+        ("직무 · 역할", r"관련 직무:\s*([^\.]+)"),
+        ("합격률 · 난이도", r"(?:3년 평균 합격률|시험 난이도|연간 검정 횟수)[^\n]{0,200}"),
+        ("시험 과목", r"시험 과목:\s*([^\.]+)"),
+        ("관련 학과", r"관련 학과:\s*([^\.]+)"),
+    ]
+    results = []
+    for label, pattern in sections:
+        m = re.search(pattern, text)
+        if m:
+            snippet = m.group(0).strip()[:400]
+            results.append({"label": label, "snippet": snippet})
+    if not results:
+        results.append({"label": "자격증 개요", "snippet": text[:600]})
+    return results
+
+
 def _candidate_fallback(cert_id: str) -> list[dict]:
-    """cert_candidates.jsonl의 text_for_dense를 로컬 evidence로 반환."""
+    """cert_candidates.jsonl의 text_for_dense를 섹션별 evidence로 반환."""
     cands = _load_candidates()
     cand = cands.get(cert_id)
     if not cand:
@@ -59,15 +79,21 @@ def _candidate_fallback(cert_id: str) -> list[dict]:
     text = (cand.get("text_for_dense") or "").strip()
     if not text:
         return []
-    return [{
-        "doc_id": f"cand_{cert_id}",
-        "chunk_id": f"cand_{cert_id}_dense",
-        "source_type": "candidate",
-        "snippet": text[:1500],
-        "section_path": [],
-        "source_url": None,
-        "cert_name": cand.get("cert_name", ""),
-    }]
+
+    cert_name = cand.get("cert_name", "")
+    sections = _parse_dense_sections(text)
+    rows = []
+    for i, sec in enumerate(sections):
+        rows.append({
+            "doc_id": f"cand_{cert_id}",
+            "chunk_id": f"cand_{cert_id}_sec{i}",
+            "source_type": "candidate",
+            "snippet": sec["snippet"],
+            "section_path": [sec["label"]],
+            "source_url": None,
+            "cert_name": cert_name,
+        })
+    return rows
 
 
 def _supabase_configured(settings: Settings) -> bool:

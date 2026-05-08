@@ -40,6 +40,7 @@ interface EvidenceRow {
   snippet: string;
   section_path: string[];
   source_url: string | null;
+  cert_name?: string;
 }
 interface EvidenceState {
   loading: boolean;
@@ -47,6 +48,22 @@ interface EvidenceState {
   error: string | null;
   fetched: boolean;
   certId: string;
+}
+
+interface RelatedCert {
+  cert_id: string;
+  cert_name: string;
+  cert_grade_tier: string;
+  relation_label: string;
+  relation_type: string;
+  avg_pass_rate: number | null;
+}
+interface DagState {
+  loading: boolean;
+  predecessors: RelatedCert[];
+  successors: RelatedCert[];
+  certId: string;
+  fetched: boolean;
 }
 
 const Recommendation: React.FC = () => {
@@ -68,6 +85,9 @@ const Recommendation: React.FC = () => {
     loading: false, rows: [], error: null, fetched: false, certId: '',
   });
   const [showEvidence, setShowEvidence] = useState(false);
+  const [dag, setDag] = useState<DagState>({
+    loading: false, predecessors: [], successors: [], certId: '', fetched: false,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -87,7 +107,7 @@ const Recommendation: React.FC = () => {
       if (domainParam && !cert.related_domains.includes(domainParam))      return false;
       if (selectedGrade && cert.cert_grade_tier !== selectedGrade)         return false;
       const q = deferredQuery;
-      if (q && !cert.cert_name.includes(q) && !cert.text_for_dense.includes(q)) return false;
+      if (q && !cert.cert_name.includes(q)) return false;
       return true;
     });
   }, [allCerts, riskId, domainParam, selectedGrade, deferredQuery]);
@@ -114,6 +134,27 @@ const Recommendation: React.FC = () => {
       }
     } catch {
       setEvidence({ loading: false, rows: [], error: '서버에 연결할 수 없습니다.', fetched: true, certId });
+    }
+  }, []);
+
+  const fetchDag = useCallback(async (certId: string) => {
+    setDag({ loading: true, predecessors: [], successors: [], certId, fetched: false });
+    try {
+      const res = await fetch(`/api/v1/recommendations/related?cert_id=${encodeURIComponent(certId)}`);
+      const json = await res.json();
+      if (json.success) {
+        setDag({
+          loading: false,
+          predecessors: json.data?.predecessors ?? [],
+          successors: json.data?.successors ?? [],
+          certId,
+          fetched: true,
+        });
+      } else {
+        setDag({ loading: false, predecessors: [], successors: [], certId, fetched: true });
+      }
+    } catch {
+      setDag({ loading: false, predecessors: [], successors: [], certId, fetched: true });
     }
   }, []);
 
@@ -156,8 +197,8 @@ const Recommendation: React.FC = () => {
             <p className="featured-summary">{featuredCert.text_for_dense}</p>
           </div>
           <div className="featured-actions">
-            <button className="btn-primary" onClick={() => fetchEvidence(featuredCert.cert_id)}>
-              <FileText size={15} /> 설명 근거 검색
+            <button className="btn-primary" onClick={() => { fetchEvidence(featuredCert.cert_id); fetchDag(featuredCert.cert_id); }}>
+              <FileText size={15} /> 근거 · 경로 보기
             </button>
             <button className="btn-ghost" onClick={() => goToRoadmap(featuredCert.cert_id)}>
               <Map size={15} /> 로드맵 보기
@@ -171,12 +212,46 @@ const Recommendation: React.FC = () => {
           <div className="ev-header">
             <div className="ev-header-left">
               <BookOpen size={15} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-              <span className="ev-title">설명 근거 · {evidenceCertName}</span>
+              <span className="ev-title">근거 정보 · {evidenceCertName}</span>
             </div>
             <button className="ev-close" onClick={() => setShowEvidence(false)}><X size={15} /></button>
           </div>
+
+          {/* DAG 경로 */}
+          {dag.fetched && (dag.predecessors.length > 0 || dag.successors.length > 0) && (
+            <div className="dag-panel">
+              {dag.predecessors.length > 0 && (
+                <div className="dag-section">
+                  <span className="dag-label dag-label-pre">선행 권장</span>
+                  <div className="dag-chips">
+                    {dag.predecessors.map(p => (
+                      <button key={p.cert_id} className="dag-chip" onClick={() => { fetchEvidence(p.cert_id); fetchDag(p.cert_id); }}>
+                        {p.cert_name}
+                        {p.avg_pass_rate && <span className="dag-rate">{p.avg_pass_rate}%</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {dag.successors.length > 0 && (
+                <div className="dag-section">
+                  <span className="dag-label dag-label-next">다음 단계</span>
+                  <div className="dag-chips">
+                    {dag.successors.map(s => (
+                      <button key={s.cert_id} className="dag-chip dag-chip-next" onClick={() => { fetchEvidence(s.cert_id); fetchDag(s.cert_id); }}>
+                        {s.cert_name}
+                        {s.avg_pass_rate && <span className="dag-rate">{s.avg_pass_rate}%</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Evidence 섹션 */}
           {evidence.loading && (
-            <div className="ev-loading"><Loader2 size={18} className="ev-spin" /><span>공식 문서에서 근거를 검색하는 중…</span></div>
+            <div className="ev-loading"><Loader2 size={18} className="ev-spin" /><span>근거 정보를 불러오는 중…</span></div>
           )}
           {!evidence.loading && evidence.error && (
             <div className="ev-empty"><AlertCircle size={16} style={{ flexShrink: 0 }} /><span>{evidence.error}</span></div>
@@ -184,7 +259,7 @@ const Recommendation: React.FC = () => {
           {!evidence.loading && evidence.fetched && evidence.rows.length === 0 && !evidence.error && (
             <div className="ev-empty">
               <AlertCircle size={16} style={{ flexShrink: 0 }} />
-              <span>현재 근거 문서가 없습니다. 벡터 스토어가 구성되면 공식 문서 발췌가 표시됩니다.</span>
+              <span>현재 근거 문서가 없습니다.</span>
             </div>
           )}
           {!evidence.loading && evidence.rows.length > 0 && (
@@ -192,15 +267,17 @@ const Recommendation: React.FC = () => {
               {evidence.rows.map((row, i) => (
                 <div key={row.chunk_id || i} className="ev-row">
                   <div className="ev-row-header">
-                    <span className="ev-source-badge">{row.source_type.toUpperCase()}</span>
-                    {row.section_path?.length > 0 && <span className="ev-section">{row.section_path.join(' › ')}</span>}
+                    {row.section_path?.length > 0
+                      ? <span className="ev-section-label">{row.section_path.join(' › ')}</span>
+                      : <span className="ev-source-badge">{row.source_type.toUpperCase()}</span>
+                    }
                     {row.source_url && (
                       <a href={row.source_url} target="_blank" rel="noreferrer" className="ev-link">
                         <ExternalLink size={11} /> 원문
                       </a>
                     )}
                   </div>
-                  <p className="ev-snippet">"{row.snippet}"</p>
+                  <p className="ev-snippet">{row.snippet}</p>
                 </div>
               ))}
             </div>
@@ -263,9 +340,9 @@ const Recommendation: React.FC = () => {
                     </div>
                     <div className="cert-actions">
                       <button className="text-btn evidence-btn"
-                        onClick={() => fetchEvidence(cert.cert_id)}
+                        onClick={() => { fetchEvidence(cert.cert_id); fetchDag(cert.cert_id); }}
                         style={{ color: gradeColor(cert.cert_grade_tier) }}>
-                        <FileText size={13} /> 설명 근거
+                        <FileText size={13} /> 근거·경로
                       </button>
                       <button className="text-btn roadmap-btn" onClick={() => goToRoadmap(cert.cert_id)}>
                         <Map size={13} /> 로드맵 <ArrowRight size={12} />
@@ -305,9 +382,21 @@ const Recommendation: React.FC = () => {
         @keyframes spin{to{transform:rotate(360deg)}}
         .ev-empty{display:flex;align-items:flex-start;gap:.5rem;font-size:.84rem;color:var(--text-muted);line-height:1.6}
         .ev-list{display:flex;flex-direction:column;gap:.75rem}
+        .dag-panel{display:flex;flex-direction:column;gap:.625rem;padding:.875rem;background:var(--surface-2);border-radius:var(--radius-sm);border:1px solid var(--border)}
+        .dag-section{display:flex;align-items:flex-start;gap:.625rem;flex-wrap:wrap}
+        .dag-label{font-size:.7rem;font-weight:700;padding:.2rem .55rem;border-radius:var(--radius-full);white-space:nowrap;flex-shrink:0;margin-top:.15rem}
+        .dag-label-pre{background:#fff7ed;color:#c2410c;border:1px solid rgba(194,65,12,.2)}
+        .dag-label-next{background:#f0fdf4;color:#15803d;border:1px solid rgba(21,128,61,.2)}
+        .dag-chips{display:flex;flex-wrap:wrap;gap:.375rem}
+        .dag-chip{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .65rem;background:#fff;border:1px solid var(--border);border-radius:var(--radius-full);font-size:.78rem;font-weight:600;color:var(--text);cursor:pointer;transition:border-color .15s,background .15s}
+        .dag-chip:hover{border-color:var(--primary);background:var(--primary-light);color:var(--primary)}
+        .dag-chip-next{border-color:rgba(21,128,61,.25)}
+        .dag-chip-next:hover{border-color:#15803d;background:#f0fdf4;color:#15803d}
+        .dag-rate{font-size:.68rem;color:var(--text-light);font-weight:400}
         .ev-row{padding:.875rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.5rem}
         .ev-row-header{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
         .ev-source-badge{padding:.15rem .5rem;background:var(--primary-light);color:var(--primary);border-radius:var(--radius-xs);font-size:.64rem;font-weight:700;letter-spacing:.06em}
+        .ev-section-label{font-size:.75rem;font-weight:700;color:var(--primary);padding:.1rem .5rem;background:var(--primary-light);border-radius:var(--radius-xs)}
         .ev-section{font-size:.75rem;color:var(--text-light)}
         .ev-link{display:inline-flex;align-items:center;gap:.25rem;font-size:.75rem;color:var(--secondary);text-decoration:none;margin-left:auto}
         .ev-link:hover{text-decoration:underline}

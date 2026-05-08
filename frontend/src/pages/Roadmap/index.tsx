@@ -1,10 +1,10 @@
 // Content Hash: SHA256:TBD
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, Loader2, AlertTriangle,
   CheckCircle2, Clock, Lock, ChevronDown, ChevronUp,
-  Info,
+  Info, FileText, X,
 } from 'lucide-react';
 
 /* ── Types ── */
@@ -191,6 +191,13 @@ const Roadmap: React.FC = () => {
   const [error, setError]     = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
+  // 인라인 evidence/DAG 드로어
+  const [activeCert, setActiveCert] = useState<{ id: string; name: string } | null>(null);
+  const [evRows, setEvRows] = useState<{ section_path: string[]; snippet: string; chunk_id: string }[]>([]);
+  const [dagData, setDagData] = useState<{ predecessors: { cert_id: string; cert_name: string; relation_label: string }[]; successors: { cert_id: string; cert_name: string; relation_label: string }[] } | null>(null);
+  const [evLoading, setEvLoading] = useState(false);
+  const drawerAbortRef = useRef<AbortController | null>(null);
+
   const riskId    = RISK_IDS[stageParam] ?? '';
   const riskNum   = parseInt(stageParam) || 0;
   const riskLabel = RISK_LABELS[stageParam] ?? '';
@@ -199,63 +206,85 @@ const Roadmap: React.FC = () => {
     setLoading(true);
     setError(null);
 
-    /* ── 1. LLM endpoint (domain filter → AI ordering) ── */
-    if (riskId && domainParam) {
-      try {
-        const llmBody: Record<string, unknown> = {
-          risk_stage_id: riskId,
-          domain_ids: [domainParam],
-          domain_name: domainName,
-        };
-        const llmRes = await fetch('/api/v1/recommendations/llm', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(llmBody),
-        });
-        const llmJson: ApiResponse = await llmRes.json();
-        if (llmJson.success && llmJson.data) {
-          setData(llmJson.data);
-          setLoading(false);
-          return;
-        }
-      } catch {
-        /* fall through */
-      }
-    }
-
-    /* ── 2. DB-based backend endpoint ── */
+    /* ── 1. DB 우선 렌더 (빠름) ── */
+    let showed = false;
     try {
       const body: Record<string, unknown> = { top_n_per_stage: 6 };
       if (riskId)      body.risk_stage_id = riskId;
       if (domainParam) body.domain_ids    = [domainParam];
-
-      const res = await fetch('/api/v1/recommendations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res  = await fetch('/api/v1/recommendations', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
       const json: ApiResponse = await res.json();
       if (json.success && json.data) {
         setData(json.data);
         setLoading(false);
-        return;
+        showed = true;
       }
-    } catch {
-      /* fall through to local fallback */
+    } catch { /* fall through */ }
+
+    /* ── 2. 로컬 fallback (DB 실패 시) ── */
+    if (!showed) {
+      try {
+        const local = await buildLocalRoadmap(riskId, domainParam, riskNum);
+        setData(local);
+      } catch {
+        setError('데이터를 불러오지 못했습니다. 새로고침 해주세요.');
+      } finally {
+        setLoading(false);
+      }
     }
 
-    /* ── 3. Local fallback ── */
-    try {
-      const local = await buildLocalRoadmap(riskId, domainParam, riskNum);
-      setData(local);
-    } catch {
-      setError('데이터를 불러오지 못했습니다. 새로고침 해주세요.');
-    } finally {
-      setLoading(false);
+    /* ── 3. LLM 비블로킹 — 결과 오면 조용히 교체 ── */
+    if (riskId && domainParam) {
+      try {
+        const llmRes = await fetch('/api/v1/recommendations/llm', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ risk_stage_id: riskId, domain_ids: [domainParam], domain_name: domainName }),
+        });
+        const llmJson: ApiResponse = await llmRes.json();
+        if (llmJson.success && llmJson.data) setData(llmJson.data);
+      } catch { /* silent */ }
     }
   }, [riskId, domainParam, domainName, riskNum]);
 
   useEffect(() => { fetchRoadmap(); }, [fetchRoadmap]);
+
+  const openCertDrawer = useCallback(async (certId: string, certName: string) => {
+    if (activeCert?.id === certId) {
+      setActiveCert(null);
+      drawerAbortRef.current?.abort();
+      return;
+    }
+    drawerAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    drawerAbortRef.current = ctrl;
+
+    setActiveCert({ id: certId, name: certName });
+    setEvRows([]);
+    setDagData(null);
+    setEvLoading(true);
+    try {
+      const [evRes, dagRes] = await Promise.all([
+        fetch('/api/v1/recommendations/evidence', {
+          method: 'POST', signal: ctrl.signal,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cert_id: certId }),
+        }),
+        fetch(`/api/v1/recommendations/related?cert_id=${encodeURIComponent(certId)}`, { signal: ctrl.signal }),
+      ]);
+      if (ctrl.signal.aborted) return;
+      const evJson = await evRes.json();
+      const dagJson = await dagRes.json();
+      if (evJson.success) setEvRows(evJson.data?.evidence ?? []);
+      if (dagJson.success) setDagData(dagJson.data);
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') return;
+    } finally {
+      if (!ctrl.signal.aborted) setEvLoading(false);
+    }
+  }, [activeCert]);
 
   function toggleExpand(id: string) {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
@@ -403,42 +432,117 @@ const Roadmap: React.FC = () => {
                       <p className="tl-certs-label">추천 자격증 ({certs.length}개)</p>
                       <div className="tl-cert-list">
                         {shown.map(cert => {
-                          const color  = gradeColor(cert.cert_grade_tier);
-                          const aColor = achievabilityColor(cert.achievability);
+                          const color    = gradeColor(cert.cert_grade_tier);
+                          const aColor   = achievabilityColor(cert.achievability);
+                          const isActive = activeCert?.id === cert.cert_id;
                           return (
-                            <button
-                              key={cert.cert_id}
-                              className="tl-cert-row"
-                              onClick={() => goToCert(cert.cert_id, cert.cert_name)}
-                              type="button"
-                            >
-                              <div className="tl-cert-main">
-                                <div className="tl-cert-top-row">
-                                  <span
-                                    className="tl-cert-badge"
-                                    style={{ background: color + '18', color }}
-                                  >
-                                    {GRADE_LABEL[cert.cert_grade_tier] ?? '비기술'}
-                                  </span>
-                                  <span className="tl-cert-name">{cert.cert_name}</span>
-                                  <div className="tl-cert-meta">
-                                    {cert.avg_pass_rate !== null && (
-                                      <span className={`tl-pass-rate ${cert.is_bottleneck ? 'tl-bottleneck' : ''}`}>
-                                        합격률 {cert.avg_pass_rate}%
-                                        {cert.is_bottleneck && ' ⚠'}
-                                      </span>
-                                    )}
-                                    <span className="tl-achievability" style={{ color: aColor }}>
-                                      {achievabilityLabel(cert.achievability)}
+                            <React.Fragment key={cert.cert_id}>
+                              <div className={`tl-cert-row${isActive ? ' tl-cert-row-active' : ''}`}>
+                                <button
+                                  className="tl-cert-main"
+                                  onClick={() => goToCert(cert.cert_id, cert.cert_name)}
+                                  type="button"
+                                >
+                                  <div className="tl-cert-top-row">
+                                    <span
+                                      className="tl-cert-badge"
+                                      style={{ background: color + '18', color }}
+                                    >
+                                      {GRADE_LABEL[cert.cert_grade_tier] ?? '비기술'}
                                     </span>
+                                    <span className="tl-cert-name">{cert.cert_name}</span>
+                                    <div className="tl-cert-meta">
+                                      {cert.avg_pass_rate !== null && (
+                                        <span className={`tl-pass-rate ${cert.is_bottleneck ? 'tl-bottleneck' : ''}`}>
+                                          합격률 {cert.avg_pass_rate}%
+                                          {cert.is_bottleneck && ' ⚠'}
+                                        </span>
+                                      )}
+                                      <span className="tl-achievability" style={{ color: aColor }}>
+                                        {achievabilityLabel(cert.achievability)}
+                                      </span>
+                                    </div>
+                                    <ArrowRight size={13} style={{ color: 'var(--text-light)', flexShrink: 0 }} />
                                   </div>
-                                  <ArrowRight size={13} style={{ color: 'var(--text-light)', flexShrink: 0 }} />
-                                </div>
-                                {cert.llm_reason && (
-                                  <p className="tl-cert-reason">{cert.llm_reason}</p>
-                                )}
+                                  {cert.llm_reason && (
+                                    <p className="tl-cert-reason">{cert.llm_reason}</p>
+                                  )}
+                                </button>
+                                <button
+                                  className={`tl-drawer-btn${isActive ? ' tl-drawer-btn-active' : ''}`}
+                                  onClick={() => openCertDrawer(cert.cert_id, cert.cert_name)}
+                                  type="button"
+                                  title="근거 · 경로 보기"
+                                >
+                                  {isActive ? <X size={13} /> : <FileText size={13} />}
+                                </button>
                               </div>
-                            </button>
+
+                              {isActive && (
+                                <div className="rm-drawer">
+                                  {evLoading ? (
+                                    <div className="rm-drawer-loading">
+                                      <Loader2 size={14} className="rm-spin" />
+                                      <span>근거 · 경로 로드 중…</span>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      {dagData && (dagData.predecessors.length > 0 || dagData.successors.length > 0) && (
+                                        <div className="rm-dag-section">
+                                          <p className="rm-dag-title">자격증 경로</p>
+                                          {dagData.predecessors.length > 0 && (
+                                            <div className="rm-dag-row">
+                                              <span className="rm-dag-label rm-dag-label-pre">선행 권장</span>
+                                              <div className="rm-dag-chips">
+                                                {dagData.predecessors.map(p => (
+                                                  <button
+                                                    key={p.cert_id}
+                                                    className="rm-dag-chip rm-dag-chip-pre"
+                                                    onClick={() => openCertDrawer(p.cert_id, p.cert_name)}
+                                                    type="button"
+                                                  >{p.cert_name}</button>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                          {dagData.successors.length > 0 && (
+                                            <div className="rm-dag-row">
+                                              <span className="rm-dag-label rm-dag-label-next">다음 단계</span>
+                                              <div className="rm-dag-chips">
+                                                {dagData.successors.map(s => (
+                                                  <button
+                                                    key={s.cert_id}
+                                                    className="rm-dag-chip rm-dag-chip-next"
+                                                    onClick={() => openCertDrawer(s.cert_id, s.cert_name)}
+                                                    type="button"
+                                                  >{s.cert_name}</button>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                      {evRows.length > 0 && (
+                                        <div className="rm-ev-section">
+                                          <p className="rm-dag-title">추천 근거</p>
+                                          {evRows.map((ev, i) => (
+                                            <div key={(ev as any).chunk_id ?? i} className="rm-ev-row">
+                                              {(ev.section_path?.length ?? 0) > 0 && (
+                                                <span className="rm-ev-label">{ev.section_path[0]}</span>
+                                              )}
+                                              <p className="rm-ev-snippet">{ev.snippet}</p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                      {!evLoading && !dagData && evRows.length === 0 && (
+                                        <p className="rm-drawer-empty">근거 데이터가 없습니다.</p>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </React.Fragment>
                           );
                         })}
                       </div>
@@ -581,18 +685,73 @@ const Roadmap: React.FC = () => {
         }
         .tl-cert-list { display: flex; flex-direction: column; gap: .325rem; }
         .tl-cert-row {
-          display: flex; align-items: flex-start; gap: .625rem;
-          padding: .55rem .75rem;
+          display: flex; align-items: stretch;
           border-radius: var(--radius-xs);
           border: 1px solid var(--border); background: var(--surface);
-          cursor: pointer; transition: all .18s; text-align: left; width: 100%;
+          transition: all .18s; width: 100%; overflow: hidden;
         }
-        .tl-cert-row:hover {
-          border-color: var(--primary); background: var(--primary-light);
-          transform: translateX(3px);
+        .tl-cert-row:hover { border-color: var(--primary); transform: translateX(3px); }
+        .tl-cert-row-active { border-color: var(--primary); background: var(--primary-light); }
+        .tl-cert-main {
+          flex: 1; display: flex; flex-direction: column; gap: .3rem; min-width: 0;
+          padding: .55rem .75rem; text-align: left; background: none; border: none;
+          cursor: pointer;
         }
-        .tl-cert-main { flex: 1; display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
+        .tl-cert-row:hover .tl-cert-main { background: var(--primary-light); }
+        .tl-cert-row-active .tl-cert-main { background: transparent; }
+        .tl-drawer-btn {
+          flex-shrink: 0; width: 34px; display: flex; align-items: center; justify-content: center;
+          background: none; border: none; border-left: 1px solid var(--border);
+          color: var(--text-light); cursor: pointer; transition: all .15s;
+        }
+        .tl-drawer-btn:hover { background: rgba(99,102,241,.08); color: var(--primary); }
+        .tl-drawer-btn-active { color: var(--primary); background: rgba(99,102,241,.1); }
         .tl-cert-top-row { display: flex; align-items: center; gap: .625rem; width: 100%; }
+
+        /* Inline evidence/DAG drawer */
+        .rm-drawer {
+          margin: .1rem 0 .375rem;
+          border: 1px solid rgba(99,102,241,.3); border-radius: var(--radius-xs);
+          background: #f8f9ff; padding: .875rem 1rem;
+          display: flex; flex-direction: column; gap: .75rem;
+        }
+        .rm-drawer-loading {
+          display: flex; align-items: center; gap: .5rem;
+          color: var(--text-muted); font-size: .8rem;
+        }
+        .rm-dag-section, .rm-ev-section { display: flex; flex-direction: column; gap: .35rem; }
+        .rm-dag-title {
+          font-size: .69rem; font-weight: 700; color: var(--text-light);
+          letter-spacing: .06em; text-transform: uppercase; margin-bottom: .15rem;
+        }
+        .rm-dag-row { display: flex; align-items: flex-start; gap: .5rem; flex-wrap: wrap; }
+        .rm-dag-label {
+          font-size: .66rem; font-weight: 700; padding: .15rem .45rem;
+          border-radius: var(--radius-full); white-space: nowrap;
+          flex-shrink: 0; margin-top: .125rem; border: 1px solid;
+        }
+        .rm-dag-label-pre { background: #fff7ed; color: #c2410c; border-color: rgba(194,65,12,.25); }
+        .rm-dag-label-next { background: #f0fdf4; color: #15803d; border-color: rgba(21,128,61,.25); }
+        .rm-dag-chips { display: flex; flex-wrap: wrap; gap: .3rem; }
+        .rm-dag-chip {
+          padding: .18rem .56rem; border-radius: var(--radius-full);
+          font-size: .72rem; font-weight: 600; cursor: pointer;
+          border: 1px solid; transition: all .15s; background: none;
+        }
+        .rm-dag-chip-pre { color: #c2410c; border-color: rgba(194,65,12,.3); }
+        .rm-dag-chip-pre:hover { background: #fff7ed; }
+        .rm-dag-chip-next { color: #15803d; border-color: rgba(21,128,61,.3); }
+        .rm-dag-chip-next:hover { background: #f0fdf4; }
+        .rm-ev-row {
+          display: flex; flex-direction: column; gap: .2rem;
+          padding: .45rem .625rem; background: var(--surface);
+          border-radius: var(--radius-xs); border-left: 3px solid var(--primary);
+        }
+        .rm-ev-label {
+          font-size: .66rem; font-weight: 700; color: var(--primary); letter-spacing: .04em;
+        }
+        .rm-ev-snippet { font-size: .79rem; color: var(--text-muted); line-height: 1.55; margin: 0; }
+        .rm-drawer-empty { font-size: .8rem; color: var(--text-light); font-style: italic; margin: 0; }
         .tl-cert-reason {
           font-size: .76rem; color: var(--text-muted); line-height: 1.55;
           font-style: italic; padding-left: .25rem;
