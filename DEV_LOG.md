@@ -1,7 +1,7 @@
 # DEV_LOG.md
 
 > **파일명**: DEV_LOG.md  
-> **최종 수정일**: 2026-05-07  
+> **최종 수정일**: 2026-05-09  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 날짜별 진행 로그, 변경 요약, 해결 이력  
 > **문서 우선순위**: 14  
@@ -13,6 +13,31 @@
 ## 1. 문서 목적
 
 구현과 문서 정렬 작업의 **타임라인**을 남겨, 이후 기여자가 맥락을 잃지 않게 한다.
+
+---
+
+## 2026-05-09 — 백엔드 Render 배포 완료
+
+### 수행
+
+- **Render Web Service 생성**: `Vulnerable_Groups_RAG` 서비스
+  - Root Directory: (비움 — 저장소 루트 기준)
+  - Build Command: `pip install -r backend/requirements.txt`
+  - Start Command: `uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT`
+- **배포 URL**: `https://vulnerable-groups-rag.onrender.com`
+- **환경변수 설정**: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_TABLE_NAME`, `SUPABASE_MATCH_RPC`, `EMBEDDING_PROVIDER`, `OPENAI_API_KEY`, `OPENAI_EMBEDDING_MODEL` 등 주입 완료
+- **최초 배포 실패 원인**: Root Directory를 `backend`로 설정했을 때 `from backend.app...` import 경로 불일치 → Root Directory 제거 후 해결
+
+### 프론트 배포 시 추가 필요 작업
+
+- `frontend/vercel.json` 생성 완료: `/api/*` → Render 프록시 + SPA fallback 포함
+  - `VITE_API_BASE_URL` 환경변수 불필요 (vercel.json 프록시로 대체)
+- 프론트 배포 후 Render 환경변수 `CORS_ORIGINS`에 Vercel 배포 URL 추가 필요
+  - Settings → Environment → `CORS_ORIGINS` 값에 `,https://<your-app>.vercel.app` 추가
+
+### 검증
+
+- `https://vulnerable-groups-rag.onrender.com/api/v1/health` 에서 응답 확인 필요
 
 ---
 
