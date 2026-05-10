@@ -1,6 +1,7 @@
 // Content Hash: SHA256:TBD
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { CertFlowDiagram } from '../../components/charts/CertFlowDiagram';
+import { getCertCandidates } from '../../api/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, Loader2, AlertTriangle,
@@ -125,8 +126,7 @@ interface RawCert {
 }
 
 async function buildLocalRoadmap(riskId: string, domainId: string, riskNum: number): Promise<RoadmapData> {
-  const resp = await fetch('/data/cert_candidates.json');
-  const all: RawCert[] = await resp.json();
+  const all = await getCertCandidates() as unknown as RawCert[];
 
   const filtered = all.filter(c => {
     const domainOk = !domainId || (c.related_domains ?? []).includes(domainId) || c.primary_domain === domainId;
@@ -213,23 +213,27 @@ const Roadmap: React.FC = () => {
     setLoading(true);
     setError(null);
 
-    /* ── 1. DB 우선 렌더 ── */
+    /* ── 1. DB 우선 렌더 (5초 timeout) ── */
     let showed = false;
     try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 5000);
       const body: Record<string, unknown> = { top_n_per_stage: 6 };
       if (riskId)      body.risk_stage_id = riskId;
       if (domainParam) body.domain_ids    = [domainParam];
       const res  = await fetch('/api/v1/recommendations', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
+        signal: ctrl.signal,
       });
+      clearTimeout(tid);
       const json: ApiResponse = await res.json();
       if (json.success && json.data) {
         setData(json.data);
         setLoading(false);
         showed = true;
       }
-    } catch { /* fall through */ }
+    } catch { /* fall through to local */ }
 
     /* ── 2. 로컬 fallback (DB 실패 시) ── */
     if (!showed) {
@@ -244,23 +248,28 @@ const Roadmap: React.FC = () => {
     }
   }, [riskId, domainParam, riskNum]);
 
-  // AI 탭 클릭 시 한 번만 호출
+  // AI 탭 클릭 시 호출 (실패 후 재시도 가능)
   const fetchLlm = useCallback(async () => {
-    if (llmFetched || llmLoading) return;
+    if (llmLoading) return;
     if (!riskId || !domainParam) return;
     setLlmLoading(true);
+    setLlmFetched(false);
     try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 12000);
       const res = await fetch('/api/v1/recommendations/llm', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ risk_stage_id: riskId, domain_ids: [domainParam], domain_name: domainName }),
+        signal: ctrl.signal,
       });
+      clearTimeout(tid);
       const json: ApiResponse = await res.json();
       if (json.success && json.data) setLlmData(json.data);
-    } catch { /* silent */ } finally {
+    } catch { /* silent — retry 버튼으로 재시도 */ } finally {
       setLlmLoading(false);
       setLlmFetched(true);
     }
-  }, [riskId, domainParam, domainName, llmFetched, llmLoading]);
+  }, [riskId, domainParam, domainName, llmLoading]);
 
   useEffect(() => { fetchRoadmap(); }, [fetchRoadmap]);
 
@@ -355,7 +364,7 @@ const Roadmap: React.FC = () => {
 
   function handleTabAi() {
     setActiveTab('ai');
-    if (!llmFetched && !llmLoading) fetchLlm();
+    if (!llmData && !llmLoading) fetchLlm();
   }
 
   return (
@@ -413,9 +422,10 @@ const Roadmap: React.FC = () => {
 
       {/* AI 탭 실패 */}
       {activeTab === 'ai' && llmFetched && !llmData && !llmLoading && (
-        <div className="fallback-notice" style={{ margin: 0 }}>
+        <div className="fallback-notice rm-ai-fail" style={{ margin: 0 }}>
           <Info size={13} />
-          <span>AI 추천을 가져오지 못했습니다. 전체 추천 탭을 이용해 주세요.</span>
+          <span>AI 추천을 가져오지 못했습니다 (서버 응답 없음 또는 12초 초과).</span>
+          <button className="rm-retry-btn" onClick={fetchLlm} type="button">재시도</button>
         </div>
       )}
 
@@ -432,6 +442,20 @@ const Roadmap: React.FC = () => {
         <div className="fallback-notice llm-notice">
           <Info size={13} />
           <span><strong>[AI]</strong> {llmData.fallback_note}</span>
+        </div>
+      )}
+
+      {/* 추천 결과 0건 안내 */}
+      {!(activeTab === 'ai' && (llmLoading || (!llmData && llmFetched))) &&
+        displayData.total_certs_in_roadmap === 0 && (
+        <div className="fallback-notice rm-empty-notice">
+          <Info size={13} />
+          <span>
+            선택한 조건에 해당하는 자격증이 없습니다.
+            {domainName ? ` "${domainName}" 도메인과 위험군 조합 결과가 없을 수 있습니다. ` : ' '}
+            다른 도메인을 선택하거나 전체 추천 탭을 확인해보세요.
+          </span>
+          <button className="rm-retry-btn" onClick={() => navigate(-1)} type="button">도메인 변경</button>
         </div>
       )}
 
@@ -702,6 +726,16 @@ const Roadmap: React.FC = () => {
           color: #065f46;
         }
         .llm-notice svg { color: #10b981; }
+        .rm-ai-fail { background: #fef2f2; border-color: rgba(239,68,68,.25); color: #7f1d1d; }
+        .rm-ai-fail svg { color: #ef4444; }
+        .rm-empty-notice { background: #f8fafc; border-color: var(--border); color: var(--text-muted); }
+        .rm-retry-btn {
+          margin-left: auto; flex-shrink: 0; padding: .2rem .7rem;
+          background: none; border: 1px solid currentColor; border-radius: var(--radius-xs);
+          font-size: .75rem; font-weight: 600; cursor: pointer; color: inherit;
+          transition: background .15s;
+        }
+        .rm-retry-btn:hover { background: rgba(0,0,0,.06); }
 
         /* Stats */
         .rm-stats {

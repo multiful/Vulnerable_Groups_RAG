@@ -1,6 +1,7 @@
 // Content Hash: SHA256:TBD
 import React, { useState, useMemo, useEffect, useCallback, useDeferredValue } from 'react';
 import { CertFlowDiagram } from '../../components/charts/CertFlowDiagram';
+import { getCertCandidates } from '../../api/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, Map, FileText, ChevronDown, AlertCircle,
@@ -93,8 +94,7 @@ const Recommendation: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/data/cert_candidates.json')
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    getCertCandidates()
       .then((data: CertCandidate[]) => { if (!cancelled) { setAllCerts(data); setCertsLoading(false); } })
       .catch((err: Error) => { if (!cancelled) { setFetchError(err.message); setCertsLoading(false); } });
     return () => { cancelled = true; };

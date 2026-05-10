@@ -16,7 +16,7 @@ router = APIRouter()
 
 @router.post("/recommendations")
 def post_recommendations(body: dict[str, Any] | None = None) -> dict:
-    return recommendation_service.recommendations_placeholder(body or {})
+    return recommendation_service.recommendations(body or {})
 
 
 @router.post("/recommendations/llm")

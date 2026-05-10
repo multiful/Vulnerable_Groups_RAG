@@ -1,6 +1,6 @@
 // Content Hash: SHA256:TBD
 // Role: 자격증 선행/현재/후행 관계를 SVG 베지어 화살표 + 위치 지정 노드로 렌더링
-import React from 'react';
+import React, { useId } from 'react';
 
 export interface FlowNode {
   cert_id: string;
@@ -26,6 +26,10 @@ const PD = 4;     // SVG canvas padding
 export const CertFlowDiagram: React.FC<Props> = ({
   current, predecessors, successors, onNodeClick,
 }) => {
+  const uid = useId().replace(/:/g, '-');
+  const preMarkerId = `cfd-pre${uid}`;
+  const nxtMarkerId = `cfd-nxt${uid}`;
+
   const hasPred = predecessors.length > 0;
   const hasSucc = successors.length > 0;
 
@@ -62,10 +66,10 @@ export const CertFlowDiagram: React.FC<Props> = ({
         style={{ position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none' }}
       >
         <defs>
-          <marker id="cfd-arr-pre" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+          <marker id={preMarkerId} markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
             <path d="M0,0 L7,2.5 L0,5 Z" fill="#f97316" />
           </marker>
-          <marker id="cfd-arr-nxt" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+          <marker id={nxtMarkerId} markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
             <path d="M0,0 L7,2.5 L0,5 Z" fill="#22c55e" />
           </marker>
         </defs>
@@ -76,7 +80,7 @@ export const CertFlowDiagram: React.FC<Props> = ({
             <path key={`pa${i}`}
               d={bezier(predX + NW, midY, centerX, centerMidY)}
               stroke="#f97316" strokeWidth="1.5" fill="none"
-              strokeDasharray="5,3" markerEnd="url(#cfd-arr-pre)"
+              strokeDasharray="5,3" markerEnd={`url(#${preMarkerId})`}
             />
           );
         })}
@@ -87,7 +91,7 @@ export const CertFlowDiagram: React.FC<Props> = ({
             <path key={`sa${i}`}
               d={bezier(centerX + NW, centerMidY, succX, midY)}
               stroke="#22c55e" strokeWidth="1.5" fill="none"
-              markerEnd="url(#cfd-arr-nxt)"
+              markerEnd={`url(#${nxtMarkerId})`}
             />
           );
         })}
