@@ -1,5 +1,6 @@
 // Content Hash: SHA256:TBD
 import React, { useState, useMemo, useEffect, useCallback, useDeferredValue } from 'react';
+import { CertFlowDiagram } from '../../components/charts/CertFlowDiagram';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, Map, FileText, ChevronDown, AlertCircle,
@@ -41,6 +42,7 @@ interface EvidenceRow {
   section_path: string[];
   source_url: string | null;
   cert_name?: string;
+  similarity?: number | null;
 }
 interface EvidenceState {
   loading: boolean;
@@ -220,32 +222,15 @@ const Recommendation: React.FC = () => {
           {/* DAG 경로 */}
           {dag.fetched && (dag.predecessors.length > 0 || dag.successors.length > 0) && (
             <div className="dag-panel">
-              {dag.predecessors.length > 0 && (
-                <div className="dag-section">
-                  <span className="dag-label dag-label-pre">선행 권장</span>
-                  <div className="dag-chips">
-                    {dag.predecessors.map(p => (
-                      <button key={p.cert_id} className="dag-chip" onClick={() => { fetchEvidence(p.cert_id); fetchDag(p.cert_id); }}>
-                        {p.cert_name}
-                        {p.avg_pass_rate && <span className="dag-rate">{p.avg_pass_rate}%</span>}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {dag.successors.length > 0 && (
-                <div className="dag-section">
-                  <span className="dag-label dag-label-next">다음 단계</span>
-                  <div className="dag-chips">
-                    {dag.successors.map(s => (
-                      <button key={s.cert_id} className="dag-chip dag-chip-next" onClick={() => { fetchEvidence(s.cert_id); fetchDag(s.cert_id); }}>
-                        {s.cert_name}
-                        {s.avg_pass_rate && <span className="dag-rate">{s.avg_pass_rate}%</span>}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <p className="dag-panel-title">자격증 경로</p>
+              <div className="dag-flow-scroll">
+                <CertFlowDiagram
+                  current={{ cert_id: dag.certId, cert_name: evidenceCertName }}
+                  predecessors={dag.predecessors}
+                  successors={dag.successors}
+                  onNodeClick={(id) => { fetchEvidence(id); fetchDag(id); }}
+                />
+              </div>
             </div>
           )}
 
@@ -264,22 +249,36 @@ const Recommendation: React.FC = () => {
           )}
           {!evidence.loading && evidence.rows.length > 0 && (
             <div className="ev-list">
-              {evidence.rows.map((row, i) => (
-                <div key={row.chunk_id || i} className="ev-row">
-                  <div className="ev-row-header">
-                    {row.section_path?.length > 0
-                      ? <span className="ev-section-label">{row.section_path.join(' › ')}</span>
-                      : <span className="ev-source-badge">{row.source_type.toUpperCase()}</span>
-                    }
-                    {row.source_url && (
-                      <a href={row.source_url} target="_blank" rel="noreferrer" className="ev-link">
-                        <ExternalLink size={11} /> 원문
-                      </a>
-                    )}
+              {evidence.rows.map((row, i) => {
+                const pct = row.similarity != null ? Math.round(row.similarity * 100) : null;
+                const isLocal = row.source_type === 'candidate' || row.source_type === 'local_candidates';
+                return (
+                  <div key={row.chunk_id || i} className="ev-row">
+                    <div className="ev-row-header">
+                      <span className={`ev-src-tag ${isLocal ? 'ev-src-local' : 'ev-src-db'}`}>
+                        {isLocal ? '로컬' : 'DB'}
+                      </span>
+                      {row.section_path?.length > 0 && (
+                        <span className="ev-section-label">{row.section_path.join(' › ')}</span>
+                      )}
+                      {pct != null && (
+                        <div className="ev-score-wrap">
+                          <div className="ev-score-track">
+                            <div className="ev-score-fill" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="ev-score-pct">{pct}%</span>
+                        </div>
+                      )}
+                      {row.source_url && (
+                        <a href={row.source_url} target="_blank" rel="noreferrer" className="ev-link">
+                          <ExternalLink size={11} /> 원문
+                        </a>
+                      )}
+                    </div>
+                    <p className="ev-snippet">{row.snippet}</p>
                   </div>
-                  <p className="ev-snippet">{row.snippet}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -383,19 +382,18 @@ const Recommendation: React.FC = () => {
         .ev-empty{display:flex;align-items:flex-start;gap:.5rem;font-size:.84rem;color:var(--text-muted);line-height:1.6}
         .ev-list{display:flex;flex-direction:column;gap:.75rem}
         .dag-panel{display:flex;flex-direction:column;gap:.625rem;padding:.875rem;background:var(--surface-2);border-radius:var(--radius-sm);border:1px solid var(--border)}
-        .dag-section{display:flex;align-items:flex-start;gap:.625rem;flex-wrap:wrap}
-        .dag-label{font-size:.7rem;font-weight:700;padding:.2rem .55rem;border-radius:var(--radius-full);white-space:nowrap;flex-shrink:0;margin-top:.15rem}
-        .dag-label-pre{background:#fff7ed;color:#c2410c;border:1px solid rgba(194,65,12,.2)}
-        .dag-label-next{background:#f0fdf4;color:#15803d;border:1px solid rgba(21,128,61,.2)}
-        .dag-chips{display:flex;flex-wrap:wrap;gap:.375rem}
-        .dag-chip{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .65rem;background:#fff;border:1px solid var(--border);border-radius:var(--radius-full);font-size:.78rem;font-weight:600;color:var(--text);cursor:pointer;transition:border-color .15s,background .15s}
-        .dag-chip:hover{border-color:var(--primary);background:var(--primary-light);color:var(--primary)}
-        .dag-chip-next{border-color:rgba(21,128,61,.25)}
-        .dag-chip-next:hover{border-color:#15803d;background:#f0fdf4;color:#15803d}
-        .dag-rate{font-size:.68rem;color:var(--text-light);font-weight:400}
+        .dag-panel-title{font-size:.7rem;font-weight:700;color:var(--text-light);letter-spacing:.05em;text-transform:uppercase}
+        .dag-flow-scroll{overflow-x:auto;padding-bottom:.25rem}
         .ev-row{padding:.875rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.5rem}
         .ev-row-header{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
         .ev-source-badge{padding:.15rem .5rem;background:var(--primary-light);color:var(--primary);border-radius:var(--radius-xs);font-size:.64rem;font-weight:700;letter-spacing:.06em}
+        .ev-src-tag{padding:.1rem .4rem;border-radius:3px;font-size:.62rem;font-weight:700;letter-spacing:.05em;flex-shrink:0}
+        .ev-src-db{background:#ede9fe;color:#6d28d9}
+        .ev-src-local{background:#f1f5f9;color:#64748b}
+        .ev-score-wrap{display:flex;align-items:center;gap:.3rem;margin-left:auto}
+        .ev-score-track{width:44px;height:4px;background:var(--border);border-radius:99px;overflow:hidden}
+        .ev-score-fill{height:100%;background:var(--primary);border-radius:99px}
+        .ev-score-pct{font-size:.66rem;font-weight:700;color:var(--primary);white-space:nowrap}
         .ev-section-label{font-size:.75rem;font-weight:700;color:var(--primary);padding:.1rem .5rem;background:var(--primary-light);border-radius:var(--radius-xs)}
         .ev-section{font-size:.75rem;color:var(--text-light)}
         .ev-link{display:inline-flex;align-items:center;gap:.25rem;font-size:.75rem;color:var(--secondary);text-decoration:none;margin-left:auto}

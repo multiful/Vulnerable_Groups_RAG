@@ -1,5 +1,6 @@
 // Content Hash: SHA256:TBD
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { CertFlowDiagram } from '../../components/charts/CertFlowDiagram';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, Loader2, AlertTriangle,
@@ -199,8 +200,8 @@ const Roadmap: React.FC = () => {
 
   // 인라인 evidence/DAG 드로어
   const [activeCert, setActiveCert] = useState<{ id: string; name: string } | null>(null);
-  const [evRows, setEvRows] = useState<{ section_path: string[]; snippet: string; chunk_id: string }[]>([]);
-  const [dagData, setDagData] = useState<{ predecessors: { cert_id: string; cert_name: string; relation_label: string }[]; successors: { cert_id: string; cert_name: string; relation_label: string }[] } | null>(null);
+  const [evRows, setEvRows] = useState<{ section_path: string[]; snippet: string; chunk_id: string; source_type?: string; similarity?: number | null; source_url?: string | null }[]>([]);
+  const [dagData, setDagData] = useState<{ predecessors: { cert_id: string; cert_name: string; relation_label: string; cert_grade_tier?: string; avg_pass_rate?: number | null }[]; successors: { cert_id: string; cert_name: string; relation_label: string; cert_grade_tier?: string; avg_pass_rate?: number | null }[] } | null>(null);
   const [evLoading, setEvLoading] = useState(false);
   const drawerAbortRef = useRef<AbortController | null>(null);
 
@@ -557,49 +558,44 @@ const Roadmap: React.FC = () => {
                                       {dagData && (dagData.predecessors.length > 0 || dagData.successors.length > 0) && (
                                         <div className="rm-dag-section">
                                           <p className="rm-dag-title">자격증 경로</p>
-                                          {dagData.predecessors.length > 0 && (
-                                            <div className="rm-dag-row">
-                                              <span className="rm-dag-label rm-dag-label-pre">선행 권장</span>
-                                              <div className="rm-dag-chips">
-                                                {dagData.predecessors.map(p => (
-                                                  <button
-                                                    key={p.cert_id}
-                                                    className="rm-dag-chip rm-dag-chip-pre"
-                                                    onClick={() => openCertDrawer(p.cert_id, p.cert_name)}
-                                                    type="button"
-                                                  >{p.cert_name}</button>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          )}
-                                          {dagData.successors.length > 0 && (
-                                            <div className="rm-dag-row">
-                                              <span className="rm-dag-label rm-dag-label-next">다음 단계</span>
-                                              <div className="rm-dag-chips">
-                                                {dagData.successors.map(s => (
-                                                  <button
-                                                    key={s.cert_id}
-                                                    className="rm-dag-chip rm-dag-chip-next"
-                                                    onClick={() => openCertDrawer(s.cert_id, s.cert_name)}
-                                                    type="button"
-                                                  >{s.cert_name}</button>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          )}
+                                          <div className="rm-flow-scroll">
+                                            <CertFlowDiagram
+                                              current={{ cert_id: activeCert?.id ?? '', cert_name: activeCert?.name ?? '' }}
+                                              predecessors={dagData.predecessors}
+                                              successors={dagData.successors}
+                                              onNodeClick={(id, name) => openCertDrawer(id, name)}
+                                            />
+                                          </div>
                                         </div>
                                       )}
                                       {evRows.length > 0 && (
                                         <div className="rm-ev-section">
                                           <p className="rm-dag-title">추천 근거</p>
-                                          {evRows.map((ev, i) => (
-                                            <div key={(ev as any).chunk_id ?? i} className="rm-ev-row">
-                                              {(ev.section_path?.length ?? 0) > 0 && (
-                                                <span className="rm-ev-label">{ev.section_path[0]}</span>
-                                              )}
-                                              <p className="rm-ev-snippet">{ev.snippet}</p>
-                                            </div>
-                                          ))}
+                                          {evRows.map((ev, i) => {
+                                            const pct = ev.similarity != null ? Math.round(ev.similarity * 100) : null;
+                                            const isLocal = ev.source_type === 'candidate' || ev.source_type === 'local_candidates';
+                                            return (
+                                              <div key={ev.chunk_id ?? i} className="rm-ev-card">
+                                                <div className="rm-ev-card-hdr">
+                                                  <span className={`rm-ev-src ${isLocal ? 'rm-ev-src-local' : 'rm-ev-src-db'}`}>
+                                                    {isLocal ? '로컬' : 'DB'}
+                                                  </span>
+                                                  {(ev.section_path?.length ?? 0) > 0 && (
+                                                    <span className="rm-ev-sec-path">{ev.section_path[0]}</span>
+                                                  )}
+                                                  {pct != null && (
+                                                    <div className="rm-ev-score">
+                                                      <div className="rm-ev-score-track">
+                                                        <div className="rm-ev-score-fill" style={{ width: `${pct}%` }} />
+                                                      </div>
+                                                      <span className="rm-ev-score-pct">{pct}%</span>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                                <p className="rm-ev-snippet">{ev.snippet}</p>
+                                              </div>
+                                            );
+                                          })}
                                         </div>
                                       )}
                                       {!evLoading && !dagData && evRows.length === 0 && (
@@ -816,32 +812,25 @@ const Roadmap: React.FC = () => {
           font-size: .69rem; font-weight: 700; color: var(--text-light);
           letter-spacing: .06em; text-transform: uppercase; margin-bottom: .15rem;
         }
-        .rm-dag-row { display: flex; align-items: flex-start; gap: .5rem; flex-wrap: wrap; }
-        .rm-dag-label {
-          font-size: .66rem; font-weight: 700; padding: .15rem .45rem;
-          border-radius: var(--radius-full); white-space: nowrap;
-          flex-shrink: 0; margin-top: .125rem; border: 1px solid;
+        .rm-flow-scroll { overflow-x: auto; padding-bottom: .25rem; }
+        .rm-ev-card {
+          display: flex; flex-direction: column; gap: .3rem;
+          padding: .5rem .625rem; background: var(--surface);
+          border-radius: var(--radius-xs); border: 1px solid var(--border);
+          border-left: 3px solid var(--primary-light);
         }
-        .rm-dag-label-pre { background: #fff7ed; color: #c2410c; border-color: rgba(194,65,12,.25); }
-        .rm-dag-label-next { background: #f0fdf4; color: #15803d; border-color: rgba(21,128,61,.25); }
-        .rm-dag-chips { display: flex; flex-wrap: wrap; gap: .3rem; }
-        .rm-dag-chip {
-          padding: .18rem .56rem; border-radius: var(--radius-full);
-          font-size: .72rem; font-weight: 600; cursor: pointer;
-          border: 1px solid; transition: all .15s; background: none;
+        .rm-ev-card-hdr { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+        .rm-ev-src {
+          padding: .1rem .35rem; border-radius: 3px;
+          font-size: .6rem; font-weight: 700; letter-spacing: .05em; flex-shrink: 0;
         }
-        .rm-dag-chip-pre { color: #c2410c; border-color: rgba(194,65,12,.3); }
-        .rm-dag-chip-pre:hover { background: #fff7ed; }
-        .rm-dag-chip-next { color: #15803d; border-color: rgba(21,128,61,.3); }
-        .rm-dag-chip-next:hover { background: #f0fdf4; }
-        .rm-ev-row {
-          display: flex; flex-direction: column; gap: .2rem;
-          padding: .45rem .625rem; background: var(--surface);
-          border-radius: var(--radius-xs); border-left: 3px solid var(--primary);
-        }
-        .rm-ev-label {
-          font-size: .66rem; font-weight: 700; color: var(--primary); letter-spacing: .04em;
-        }
+        .rm-ev-src-db { background: #ede9fe; color: #6d28d9; }
+        .rm-ev-src-local { background: #f1f5f9; color: #64748b; }
+        .rm-ev-sec-path { font-size: .7rem; font-weight: 600; color: var(--primary); }
+        .rm-ev-score { display: flex; align-items: center; gap: .3rem; margin-left: auto; }
+        .rm-ev-score-track { width: 42px; height: 4px; background: var(--border); border-radius: 99px; overflow: hidden; }
+        .rm-ev-score-fill { height: 100%; background: var(--primary); border-radius: 99px; }
+        .rm-ev-score-pct { font-size: .65rem; font-weight: 700; color: var(--primary); white-space: nowrap; }
         .rm-ev-snippet { font-size: .79rem; color: var(--text-muted); line-height: 1.55; margin: 0; }
         .rm-drawer-empty { font-size: .8rem; color: var(--text-light); font-style: italic; margin: 0; }
         .tl-cert-reason {
