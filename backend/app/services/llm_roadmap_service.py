@@ -294,6 +294,7 @@ def _build_roadmap_data(
     reasons: dict[str, str],
     risk_id: str,
     starting_stage_id: str,
+    llm_generated: bool = True,
 ) -> dict:
     by_stage: list[dict] = []
     sequence: list[dict] = []
@@ -348,9 +349,13 @@ def _build_roadmap_data(
         "roadmap_sequence": sequence,
         "cert_paths": [],
         "fallback_used": False,
-        "fallback_note": "AI가 각 자격증 추천 이유를 분석한 맞춤 로드맵입니다. (GPT-4o-mini)",
+        "fallback_note": (
+            "AI가 각 자격증 추천 이유를 분석한 맞춤 로드맵입니다. (GPT-4o-mini)"
+            if llm_generated
+            else "단계별 자격증 경로를 구성했습니다. (AI 설명 없음)"
+        ),
         "total_certs_in_roadmap": len(sequence),
-        "llm_generated": True,
+        "llm_generated": llm_generated,
     }
 
 
@@ -359,12 +364,6 @@ def llm_recommendations(body: dict[str, Any], settings: Settings) -> dict:
     구조적 배치(grade_tier 기반) + LLM reason 생성 분리 방식.
     LLM은 단계 배치를 결정하지 않고 reason 텍스트만 담당한다.
     """
-    if not settings.openai_api_key:
-        return err_envelope(
-            "LLM_NOT_CONFIGURED",
-            "OpenAI API 키가 설정되지 않았습니다. backend/.env 에 OPENAI_API_KEY를 추가하세요.",
-        )
-
     risk_id: str = body.get("risk_stage_id") or ""
     domain_ids: list[str] = list(body.get("domain_ids") or [])
     domain_name_override: str = body.get("domain_name") or ""
@@ -402,15 +401,18 @@ def llm_recommendations(body: dict[str, Any], settings: Settings) -> dict:
     # 1. 구조적 배치 (LLM 없이)
     buckets = _assign_stages(selected, risk_order, starting_stage_id, max_per_stage=4)
 
-    # 2. LLM: 배치된 자격증 reason 생성
-    all_placed = [c for certs in buckets.values() for c in certs]
-    cert_lines = [_format_cert_line(c) for c in all_placed]
-    reason_prompt = _build_reason_prompt(risk_name, domain_name)
+    # 2. LLM: reason 생성 (API 키 없으면 스킵)
+    reasons: dict[str, str] = {}
+    llm_generated = False
+    if settings.openai_api_key:
+        all_placed = [c for certs in buckets.values() for c in certs]
+        cert_lines = [_format_cert_line(c) for c in all_placed]
+        reason_prompt = _build_reason_prompt(risk_name, domain_name)
+        try:
+            reasons = _call_openai_for_reasons(reason_prompt, cert_lines, settings.openai_api_key)
+            llm_generated = True
+        except Exception:
+            reasons = {}
 
-    try:
-        reasons = _call_openai_for_reasons(reason_prompt, cert_lines, settings.openai_api_key)
-    except Exception:
-        reasons = {}
-
-    result = _build_roadmap_data(buckets, reasons, risk_id, starting_stage_id)
+    result = _build_roadmap_data(buckets, reasons, risk_id, starting_stage_id, llm_generated=llm_generated)
     return ok_envelope(result)

@@ -210,76 +210,100 @@ const Roadmap: React.FC = () => {
   const [evRows, setEvRows] = useState<{ section_path: string[]; snippet: string; chunk_id: string; source_type?: string; similarity?: number | null; source_url?: string | null }[]>([]);
   const [dagData, setDagData] = useState<{ predecessors: { cert_id: string; cert_name: string; relation_label: string; cert_grade_tier?: string; avg_pass_rate?: number | null }[]; successors: { cert_id: string; cert_name: string; relation_label: string; cert_grade_tier?: string; avg_pass_rate?: number | null }[] } | null>(null);
   const [evLoading, setEvLoading] = useState(false);
-  const drawerAbortRef = useRef<AbortController | null>(null);
+  const drawerAbortRef  = useRef<AbortController | null>(null);
+  const roadmapAbortRef = useRef<AbortController | null>(null);
+  const llmAbortRef     = useRef<AbortController | null>(null);
+  const llmFetchingRef  = useRef(false);
 
   const riskId    = RISK_IDS[stageParam] ?? '';
   const riskNum   = parseInt(stageParam) || 0;
   const riskLabel = RISK_LABELS[stageParam] ?? '';
 
   const fetchRoadmap = useCallback(async () => {
+    /* Cancel any in-flight call (fixes React StrictMode double-invocation) */
+    roadmapAbortRef.current?.abort();
+    const compCtrl = new AbortController();
+    roadmapAbortRef.current = compCtrl;
+
     setLoading(true);
     setError(null);
 
-    /* ── 1. DB 우선 렌더 (5초 timeout) ── */
+    /* ── 1. DB 우선 렌더 (5초 backend-only timeout) ── */
     let showed = false;
     try {
-      const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 5000);
+      const backendCtrl = new AbortController();
+      const tid = setTimeout(() => backendCtrl.abort(), 5000);
       const body: Record<string, unknown> = { top_n_per_stage: 6 };
       if (riskId)      body.risk_stage_id = riskId;
       if (domainParam) body.domain_ids    = [domainParam];
       if (jobParam)    body.job_ids       = [jobParam];
-      const res  = await fetch('/api/v1/recommendations', {
+      const res = await fetch('/api/v1/recommendations', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-        signal: ctrl.signal,
+        signal: backendCtrl.signal,
       });
       clearTimeout(tid);
+      if (compCtrl.signal.aborted) return;
       const json: ApiResponse = await res.json();
       if (json.success && json.data) {
         setData(json.data);
         setLoading(false);
         showed = true;
       }
-    } catch { /* fall through to local */ }
+    } catch {
+      if (compCtrl.signal.aborted) return;
+    }
 
     /* ── 2. 로컬 fallback (DB 실패 시) ── */
     if (!showed) {
       try {
         const local = await buildLocalRoadmap(riskId, domainParam, riskNum, jobParam || undefined);
+        if (compCtrl.signal.aborted) return;
         setData(local);
       } catch {
+        if (compCtrl.signal.aborted) return;
         setError('데이터를 불러오지 못했습니다. 새로고침 해주세요.');
       } finally {
-        setLoading(false);
+        if (!compCtrl.signal.aborted) setLoading(false);
       }
     }
-  }, [riskId, domainParam, riskNum]);
+  }, [riskId, domainParam, riskNum, jobParam]);
 
   // AI 탭 클릭 시 호출 (실패 후 재시도 가능)
   const fetchLlm = useCallback(async () => {
-    if (llmLoading) return;
+    if (llmFetchingRef.current) return;
     if (!riskId || !domainParam) return;
+    /* Cancel any previous llm fetch */
+    llmAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    llmAbortRef.current = ctrl;
+    llmFetchingRef.current = true;
     setLlmLoading(true);
     setLlmFetched(false);
     try {
-      const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 12000);
+      const tid = setTimeout(() => ctrl.abort(), 30000);
       const res = await fetch('/api/v1/recommendations/llm', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ risk_stage_id: riskId, domain_ids: [domainParam], domain_name: domainName, job_ids: jobParam ? [jobParam] : undefined }),
         signal: ctrl.signal,
       });
       clearTimeout(tid);
+      if (llmAbortRef.current !== ctrl) return;
       const json: ApiResponse = await res.json();
       if (json.success && json.data) setLlmData(json.data);
-    } catch { /* silent — retry 버튼으로 재시도 */ } finally {
-      setLlmLoading(false);
-      setLlmFetched(true);
+    } catch { /* timeout → fallback notice shown; external abort → ref check guards */ } finally {
+      llmFetchingRef.current = false;
+      if (llmAbortRef.current === ctrl) {
+        setLlmLoading(false);
+        setLlmFetched(true);
+      }
     }
-  }, [riskId, domainParam, domainName, llmLoading]);
+  }, [riskId, domainParam, domainName]);
 
-  useEffect(() => { fetchRoadmap(); }, [fetchRoadmap]);
+  useEffect(() => {
+    fetchRoadmap();
+    return () => { roadmapAbortRef.current?.abort(); };
+  }, [fetchRoadmap]);
 
   const openCertDrawer = useCallback(async (certId: string, certName: string) => {
     if (activeCert?.id === certId) {
@@ -429,16 +453,16 @@ const Roadmap: React.FC = () => {
         <div className="rm-ai-loading">
           <Loader2 size={22} className="rm-spin" />
           <p className="rm-state-title">AI가 맞춤 로드맵을 구성하는 중…</p>
-          <p className="rm-state-sub">위험군과 도메인을 분석해 최적 경로를 선별합니다 (10초 내외)</p>
+          <p className="rm-state-sub">위험군과 도메인을 분석해 최적 경로를 선별합니다 (20~30초 소요)</p>
         </div>
       )}
 
-      {/* AI 탭 실패 */}
+      {/* AI 탭 실패 → 기본 추천으로 대체 (소프트 안내) */}
       {activeTab === 'ai' && llmFetched && !llmData && !llmLoading && (
-        <div className="fallback-notice rm-ai-fail" style={{ margin: 0 }}>
+        <div className="fallback-notice rm-ai-fallback" style={{ margin: 0 }}>
           <Info size={13} />
-          <span>AI 추천을 가져오지 못했습니다 (서버 응답 없음 또는 12초 초과).</span>
-          <button className="rm-retry-btn" onClick={fetchLlm} type="button">재시도</button>
+          <span>AI 분석 결과를 가져오지 못했습니다. 아래에 기본 추천을 표시합니다.</span>
+          <button className="rm-retry-btn" onClick={fetchLlm} type="button">다시 시도</button>
         </div>
       )}
 
@@ -459,7 +483,7 @@ const Roadmap: React.FC = () => {
       )}
 
       {/* 추천 결과 0건 안내 */}
-      {!(activeTab === 'ai' && (llmLoading || (!llmData && llmFetched))) &&
+      {!(activeTab === 'ai' && llmLoading) &&
         displayData.total_certs_in_roadmap === 0 && (
         <div className="fallback-notice rm-empty-notice">
           <Info size={14} style={{ flexShrink: 0, marginTop: '.1rem' }} />
@@ -485,7 +509,7 @@ const Roadmap: React.FC = () => {
       )}
 
       {/* Stats bar */}
-      {!(activeTab === 'ai' && (llmLoading || (!llmData && llmFetched))) && (
+      {!(activeTab === 'ai' && llmLoading) && (
         <div className="rm-stats">
           <div className="rm-stat">
             <span className="rm-stat-num">{displayData.total_certs_in_roadmap}</span>
@@ -505,7 +529,7 @@ const Roadmap: React.FC = () => {
       )}
 
       {/* Timeline */}
-      {!(activeTab === 'ai' && (llmLoading || (!llmData && llmFetched))) && (
+      {!(activeTab === 'ai' && llmLoading) && (
       <div className="card rm-card">
         <div className="timeline">
           {stages.map((item, idx) => {
@@ -756,8 +780,8 @@ const Roadmap: React.FC = () => {
           color: #065f46;
         }
         .llm-notice svg { color: #10b981; }
-        .rm-ai-fail { background: #fef2f2; border-color: rgba(239,68,68,.25); color: #7f1d1d; }
-        .rm-ai-fail svg { color: #ef4444; }
+        .rm-ai-fallback { background: #f8fafc; border-color: var(--border); color: var(--text-muted); }
+        .rm-ai-fallback svg { color: var(--text-light); }
         .rm-empty-notice { background: #f8fafc; border-color: var(--border); color: var(--text-muted); }
         .rm-retry-btn {
           margin-left: auto; flex-shrink: 0; padding: .2rem .7rem;
