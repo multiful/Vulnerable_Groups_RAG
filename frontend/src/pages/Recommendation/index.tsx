@@ -1,5 +1,5 @@
 // Content Hash: SHA256:TBD
-import React, { useState, useMemo, useEffect, useCallback, useDeferredValue } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useDeferredValue, memo } from 'react';
 import { CertFlowDiagram } from '../../components/charts/CertFlowDiagram';
 import { getCertCandidates } from '../../api/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -155,6 +155,43 @@ interface DagState {
   fetched: boolean;
 }
 
+/* ── Memoized cert card: evidence/dag 상태 변경 시 재렌더 방지 ── */
+const CertCard = memo(({
+  cert, onEvidence, onDag, onRoadmap,
+}: {
+  cert: CertCandidate;
+  onEvidence: (id: string) => void;
+  onDag: (id: string) => void;
+  onRoadmap: (id: string) => void;
+}) => {
+  const summary = buildCertSummary(cert);
+  const color   = gradeColor(cert.cert_grade_tier);
+  return (
+    <div className="card cert-card">
+      <div className="cert-top">
+        <div className="cert-top-row">
+          <span className={`badge ${gradeBadgeClass(cert.cert_grade_tier)}`}>
+            {GRADE_LABEL[cert.cert_grade_tier] ?? cert.cert_grade_tier}
+          </span>
+          <span className="cert-issuer">{cert.issuer}</span>
+        </div>
+        <h3 className="cert-name">{cert.cert_name}</h3>
+        <p className="cert-summary">{summary}</p>
+      </div>
+      <div className="cert-actions">
+        <button className="text-btn evidence-btn"
+          onClick={() => { onEvidence(cert.cert_id); onDag(cert.cert_id); }}
+          style={{ color }}>
+          <FileText size={13} /> 추천 이유
+        </button>
+        <button className="text-btn roadmap-btn" onClick={() => onRoadmap(cert.cert_id)}>
+          <Map size={13} /> 로드맵 <ArrowRight size={12} />
+        </button>
+      </div>
+    </div>
+  );
+});
+
 const Recommendation: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -249,14 +286,14 @@ const Recommendation: React.FC = () => {
     }
   }, []);
 
-  function goToRoadmap(certId: string) {
+  const goToRoadmap = useCallback((certId: string) => {
     const p = new URLSearchParams();
     if (stageParam)  p.set('stage', stageParam);
     if (domainParam) p.set('domain', domainParam);
     if (domainName)  p.set('domainName', domainName);
     p.set('cert', certId);
     navigate(`/roadmap?${p.toString()}`);
-  }
+  }, [stageParam, domainParam, domainName, navigate]);
 
   const evidenceCertName = allCerts.find(c => c.cert_id === evidence.certId)?.cert_name ?? evidence.certId;
 
@@ -415,28 +452,13 @@ const Recommendation: React.FC = () => {
             <div className="cert-grid-scroll">
               <div className="cert-grid">
                 {filtered.slice(0, 60).map(cert => (
-                  <div key={cert.candidate_id} className="card cert-card">
-                    <div className="cert-top">
-                      <div className="cert-top-row">
-                        <span className={`badge ${gradeBadgeClass(cert.cert_grade_tier)}`}>
-                          {GRADE_LABEL[cert.cert_grade_tier] ?? cert.cert_grade_tier}
-                        </span>
-                        <span className="cert-issuer">{cert.issuer}</span>
-                      </div>
-                      <h3 className="cert-name">{cert.cert_name}</h3>
-                      <p className="cert-summary">{buildCertSummary(cert)}</p>
-                    </div>
-                    <div className="cert-actions">
-                      <button className="text-btn evidence-btn"
-                        onClick={() => { fetchEvidence(cert.cert_id); fetchDag(cert.cert_id); }}
-                        style={{ color: gradeColor(cert.cert_grade_tier) }}>
-                        <FileText size={13} /> 추천 이유
-                      </button>
-                      <button className="text-btn roadmap-btn" onClick={() => goToRoadmap(cert.cert_id)}>
-                        <Map size={13} /> 로드맵 <ArrowRight size={12} />
-                      </button>
-                    </div>
-                  </div>
+                  <CertCard
+                    key={cert.candidate_id}
+                    cert={cert}
+                    onEvidence={fetchEvidence}
+                    onDag={fetchDag}
+                    onRoadmap={goToRoadmap}
+                  />
                 ))}
                 {filtered.length === 0 && (
                   <div className="no-results">
