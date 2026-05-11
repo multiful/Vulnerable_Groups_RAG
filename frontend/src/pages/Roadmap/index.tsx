@@ -703,19 +703,22 @@ const Roadmap: React.FC = () => {
                                                   '2.5':'중','3':'중 (보통)','3.0':'중 (보통)','3.5':'중상',
                                                   '4':'중상','4.0':'중상','4.5':'상','5':'상 (어려움)','5.0':'상 (어려움)',
                                                 };
-                                                const dm2 = ev.snippet.match(/시험 난이도:\s*([0-9.]+)/);
+                                                const dm2 = ev.snippet.match(/시험 난이도:\s*(\d+(?:\.\d+)?)/);
                                                 if (dm2) rawPills.push(`난이도: ${diffLabels[dm2[1]] ?? dm2[1]}`);
                                                 const pm2 = ev.snippet.match(/3년 평균 합격률:\s*([\d.]+)/);
                                                 if (pm2) rawPills.push(`합격률: ${Math.round(parseFloat(pm2[1]))}%`);
-                                                const fm2 = ev.snippet.match(/연간 검정 횟수:\s*([^.]+)/);
+                                                const fm2 = ev.snippet.match(/연간 검정 횟수:\s*([^.\n]+)/);
                                                 if (fm2) rawPills.push(`연간 시험: ${fm2[1].trim()}`);
                                                 pills = rawPills.length ? rawPills : [ev.snippet];
                                               }
                                               return (
-                                                <div key={ev.chunk_id ?? i} className="rm-ev-exam-row">
-                                                  {pills.map((p, pi) => (
-                                                    <span key={pi} className="rm-ev-exam-pill">{p}</span>
-                                                  ))}
+                                                <div key={ev.chunk_id ?? i} className="rm-ev-exam-section">
+                                                  <span className="rm-ev-exam-label">시험 정보</span>
+                                                  <div className="rm-ev-exam-row">
+                                                    {pills.map((p, pi) => (
+                                                      <span key={pi} className="rm-ev-exam-pill">{p}</span>
+                                                    ))}
+                                                  </div>
                                                 </div>
                                               );
                                             }
@@ -1005,8 +1008,10 @@ const Roadmap: React.FC = () => {
         .rm-ev-career-box { padding: .625rem .75rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-xs); display: flex; flex-direction: column; gap: .3rem; }
         .rm-ev-career-label { font-size: .62rem; font-weight: 800; letter-spacing: .07em; color: #15803d; text-transform: uppercase; }
         .rm-ev-career-text { font-size: .79rem; color: #14532d; line-height: 1.65; margin: 0; }
-        .rm-ev-exam-row { display: flex; flex-wrap: wrap; gap: .4rem; padding: .4rem 0; }
-        .rm-ev-exam-pill { display: inline-flex; align-items: center; padding: .2rem .6rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: .74rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+        .rm-ev-exam-section { padding: .625rem .75rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-xs); display: flex; flex-direction: column; gap: .4rem; }
+        .rm-ev-exam-label { font-size: .62rem; font-weight: 800; letter-spacing: .07em; color: var(--primary); text-transform: uppercase; }
+        .rm-ev-exam-row { display: flex; flex-wrap: wrap; gap: .35rem; }
+        .rm-ev-exam-pill { display: inline-flex; align-items: center; padding: .2rem .6rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: .74rem; font-weight: 600; color: var(--text); white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
         .tl-cert-reason {
           font-size: .76rem; color: var(--text-muted); line-height: 1.55;
           font-style: italic; padding-left: .25rem;

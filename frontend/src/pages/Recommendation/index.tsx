@@ -522,26 +522,27 @@ const Recommendation: React.FC = () => {
                   } else {
                     // 구형 Supabase 데이터: 필드별 파싱
                     const rawPills: string[] = [];
-                    const dm2 = row.snippet.match(/시험 난이도:\s*([0-9.]+)/);
-                    if (dm2) {
-                      const diffLabels: Record<string, string> = {
-                        '1':'하 (쉬움)','1.0':'하 (쉬움)','1.5':'중하','2':'중하','2.0':'중하',
-                        '2.5':'중','3':'중 (보통)','3.0':'중 (보통)','3.5':'중상',
-                        '4':'중상','4.0':'중상','4.5':'상','5':'상 (어려움)','5.0':'상 (어려움)',
-                      };
-                      rawPills.push(`난이도: ${diffLabels[dm2[1]] ?? dm2[1]}`);
-                    }
+                    const diffLabels: Record<string, string> = {
+                      '1':'하 (쉬움)','1.0':'하 (쉬움)','1.5':'중하','2':'중하','2.0':'중하',
+                      '2.5':'중','3':'중 (보통)','3.0':'중 (보통)','3.5':'중상',
+                      '4':'중상','4.0':'중상','4.5':'상','5':'상 (어려움)','5.0':'상 (어려움)',
+                    };
+                    const dm2 = row.snippet.match(/시험 난이도:\s*(\d+(?:\.\d+)?)/);
+                    if (dm2) rawPills.push(`난이도: ${diffLabels[dm2[1]] ?? dm2[1]}`);
                     const pm2 = row.snippet.match(/3년 평균 합격률:\s*([\d.]+)/);
                     if (pm2) rawPills.push(`합격률: ${Math.round(parseFloat(pm2[1]))}%`);
-                    const fm2 = row.snippet.match(/연간 검정 횟수:\s*([^.]+)/);
+                    const fm2 = row.snippet.match(/연간 검정 횟수:\s*([^.\n]+)/);
                     if (fm2) rawPills.push(`연간 시험: ${fm2[1].trim()}`);
                     pills = rawPills.length ? rawPills : [row.snippet];
                   }
                   return (
-                    <div key={row.chunk_id || i} className="ev-exam-row">
-                      {pills.map((p, pi) => (
-                        <span key={pi} className="ev-exam-pill">{p}</span>
-                      ))}
+                    <div key={row.chunk_id || i} className="ev-exam-section">
+                      <span className="ev-exam-section-label">시험 정보</span>
+                      <div className="ev-exam-row">
+                        {pills.map((p, pi) => (
+                          <span key={pi} className="ev-exam-pill">{p}</span>
+                        ))}
+                      </div>
                     </div>
                   );
                 }
@@ -818,8 +819,10 @@ const Recommendation: React.FC = () => {
         .ev-career-box{padding:.875rem 1rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.4rem}
         .ev-career-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:#15803d;text-transform:uppercase}
         .ev-career-text{font-size:.855rem;color:#14532d;line-height:1.7;margin:0}
-        .ev-exam-row{display:flex;flex-wrap:wrap;gap:.5rem;padding:.625rem 0}
-        .ev-exam-pill{display:inline-flex;align-items:center;padding:.25rem .75rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-full);font-size:.8rem;font-weight:600;color:var(--text-muted);white-space:nowrap}
+        .ev-exam-section{padding:.875rem 1rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.5rem}
+        .ev-exam-section-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:var(--primary);text-transform:uppercase}
+        .ev-exam-row{display:flex;flex-wrap:wrap;gap:.5rem}
+        .ev-exam-pill{display:inline-flex;align-items:center;padding:.25rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-full);font-size:.8rem;font-weight:600;color:var(--text);white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.04)}
         .videos-panel{padding:1.25rem;display:flex;flex-direction:column;gap:.875rem;border-left:3px solid #ef4444}
         .cache-badge{padding:.1rem .4rem;background:#f1f5f9;color:#64748b;border-radius:3px;font-size:.62rem;font-weight:700;letter-spacing:.05em;flex-shrink:0}
         .videos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.875rem}
