@@ -270,6 +270,81 @@ const RiskAssessment: React.FC = () => {
             <div className="result-bar-fill" style={{ width: `${pct}%`, background: info.color }} />
           </div>
 
+          {/* ── 방사형 차트 ── */}
+          <div className="result-radar-wrap">
+            <svg viewBox="0 0 260 260" className="result-radar-svg">
+              {/* 격자 링 25/50/75/100% */}
+              {[0.25, 0.5, 0.75, 1].map(frac => (
+                <polygon
+                  key={frac}
+                  points={categoryScores.map((_entry, i) => {
+                    const a = -Math.PI / 2 + (2 * Math.PI / 5) * i;
+                    const r = frac * 90;
+                    return `${130 + r * Math.cos(a)},${130 + r * Math.sin(a)}`;
+                  }).join(' ')}
+                  fill="none"
+                  stroke="var(--border)"
+                  strokeWidth={frac === 1 ? 1.5 : 0.8}
+                />
+              ))}
+              {/* 축 선 */}
+              {categoryScores.map(([cat], i) => {
+                const a = -Math.PI / 2 + (2 * Math.PI / 5) * i;
+                return (
+                  <line key={cat}
+                    x1="130" y1="130"
+                    x2={130 + 90 * Math.cos(a)} y2={130 + 90 * Math.sin(a)}
+                    stroke="var(--border)" strokeWidth="1"
+                  />
+                );
+              })}
+              {/* 데이터 다각형 */}
+              <polygon
+                points={categoryScores.map(([, { score, max }], i) => {
+                  const a = -Math.PI / 2 + (2 * Math.PI / 5) * i;
+                  const r = (score / max) * 90;
+                  return `${130 + r * Math.cos(a)},${130 + r * Math.sin(a)}`;
+                }).join(' ')}
+                fill={info.color}
+                fillOpacity="0.18"
+                stroke={info.color}
+                strokeWidth="2.5"
+                strokeLinejoin="round"
+              />
+              {/* 꼭짓점 점 */}
+              {categoryScores.map(([cat, { score, max }], i) => {
+                const a = -Math.PI / 2 + (2 * Math.PI / 5) * i;
+                const r = (score / max) * 90;
+                return (
+                  <circle key={cat}
+                    cx={130 + r * Math.cos(a)} cy={130 + r * Math.sin(a)}
+                    r="4.5" fill={CATEGORY_COLORS[cat] ?? info.color}
+                    stroke="#fff" strokeWidth="1.5"
+                  />
+                );
+              })}
+              {/* 라벨 */}
+              {categoryScores.map(([cat], i) => {
+                const a = -Math.PI / 2 + (2 * Math.PI / 5) * i;
+                const r = 108;
+                const x = 130 + r * Math.cos(a);
+                const y = 130 + r * Math.sin(a);
+                const anchor =
+                  Math.abs(Math.cos(a)) < 0.15 ? 'middle'
+                  : Math.cos(a) > 0 ? 'start' : 'end';
+                return (
+                  <text key={cat} x={x} y={y}
+                    textAnchor={anchor} dominantBaseline="middle"
+                    fontSize="10.5" fontWeight="700"
+                    fill={CATEGORY_COLORS[cat] ?? '#888'}
+                  >
+                    {cat}
+                  </text>
+                );
+              })}
+            </svg>
+          </div>
+
           <div className="result-cats">
             {categoryScores.map(([cat, { score, max }]) => {
               const catPct = Math.round((score / max) * 100);
@@ -316,6 +391,12 @@ const RiskAssessment: React.FC = () => {
           .result-cat-bar-bg { flex:1; height:6px; background:var(--border); border-radius:99px; overflow:hidden; }
           .result-cat-bar-fill { height:100%; border-radius:99px; transition:width 0.6s ease; }
           .result-cat-pct { font-size:.75rem; color:var(--text-light); width:32px; text-align:right; flex-shrink:0; }
+          .result-radar-wrap {
+            display:flex; justify-content:center; padding:.25rem 0;
+          }
+          .result-radar-svg {
+            width:100%; max-width:240px; height:auto; overflow:visible;
+          }
           .result-actions { display:flex; gap:.75rem; flex-wrap:wrap; }
         `}</style>
       </div>

@@ -22,4 +22,5 @@ export interface CertCandidate {
   quality_flags: Record<string, unknown>;
   updated_at: string;
   content_hash: string;
+  exam_sessions_per_year?: number | null;
 }

@@ -334,9 +334,10 @@ def _build_paths_from(
     results: list[list[dict]] = []
 
     def dfs(chain: list[dict]) -> None:
+        if len(results) >= max_paths:
+            return
         node = chain[-1]["cert_id"]
         edges = graph.get(node, ())
-        # depth 도달 또는 리프 → 기록
         if len(chain) > max_depth or not edges:
             if len(chain) > 1:
                 results.append([dict(s) for s in chain])
@@ -344,6 +345,8 @@ def _build_paths_from(
         visited = {s["cert_id"] for s in chain}
         extended = False
         for to_id, rel_type, source in edges:
+            if len(results) >= max_paths:
+                break
             if to_id in visited:
                 continue
             extended = True
@@ -610,6 +613,8 @@ def _build_roadmap_sequence(
         if sid in stage_groups:
             stage_groups[sid].append(c)
 
+    step_map = {s["cert_id"]: s["step"] for s in sequence}
+
     by_stage: list[dict] = []
     for stage_info in sorted_stages:
         sid = stage_info["id"]
@@ -622,9 +627,7 @@ def _build_roadmap_sequence(
             "is_starting_point": sid == starting_roadmap_id,
             "recommended_certs": [
                 {
-                    "step": next(
-                        (s["step"] for s in sequence if s["cert_id"] == c["cert_id"]), None
-                    ),
+                    "step": step_map.get(c["cert_id"]),
                     "cert_id": c["cert_id"],
                     "cert_name": c["cert_name"],
                     "cert_grade_tier": c.get("cert_grade_tier", "") or "비기술자격",
