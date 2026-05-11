@@ -1,15 +1,17 @@
 # File: retrieval_service.py
-# Last Updated: 2026-05-07
+# Last Updated: 2026-05-12
 # Content Hash: SHA256:TBD
-# Role: evidence 검색 — Supabase certificates_vectors(primary) → 로컬 candidates fallback
+# Role: evidence 검색 — Supabase certificates_vectors(primary) → 공인민간자격 카탈로그 → 로컬 candidates fallback
 #
 # Supabase가 미설정이거나 오류 시 cert_candidates.jsonl text_for_dense로 자동 폴백.
 # match_certificates RPC 직접 호출 (supabase-py 2.30 호환, LangChain 우회).
+# private_cert_catalog.json: 공인민간자격 정보자료집(2025) 파싱 결과 → 응시료·활용현황 로컬 조회.
 # reserved: reranker, BM25 상시 사용은 별도 승인 전 구현하지 않는다.
 from __future__ import annotations
 
 import csv
 import json
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -20,6 +22,9 @@ from backend.app.schemas.envelope import err_envelope, ok_envelope
 _PROJECT_ROOT = Path(__file__).parents[3]
 _CANDIDATES_JSONL = _PROJECT_ROOT / "data/canonical/candidates/cert_candidates.jsonl"
 _CERT_MASTER_CSV = _PROJECT_ROOT / "data/processed/master/cert_master.csv"
+_PRIVATE_CATALOG_JSON = _PROJECT_ROOT / "data/index_ready/private_cert_catalog.json"
+
+_NATIONAL_CATALOG_JSON = _PROJECT_ROOT / "data/index_ready/national_cert_catalog.json"
 
 _SUPABASE_MATCH_RPC = "match_certificates"
 
@@ -96,6 +101,159 @@ def _candidate_fallback(cert_id: str) -> list[dict]:
     return rows
 
 
+@lru_cache(maxsize=1)
+def _load_private_catalog() -> dict[str, dict]:
+    """공인민간자격 카탈로그 JSON 로드. cert_name 인덱스 반환."""
+    if not _PRIVATE_CATALOG_JSON.exists():
+        return {}
+    try:
+        with _PRIVATE_CATALOG_JSON.open(encoding="utf-8") as f:
+            data = json.load(f)
+        return data.get("index", {})
+    except Exception:
+        return {}
+
+
+def _catalog_lookup(cert_name: str) -> list[dict]:
+    """공인민간자격 카탈로그에서 cert_name 으로 evidence 목록 생성.
+    정확 일치 → 부분 일치(공백 정규화) 순으로 시도."""
+    index = _load_private_catalog()
+    if not index:
+        return []
+
+    rec = index.get(cert_name)
+    if not rec:
+        # 공백·특수문자 정규화 후 부분 일치 탐색
+        norm = re.sub(r'[\s\(\)\[\]（）]', '', cert_name).lower()
+        for key, val in index.items():
+            if norm and norm in re.sub(r'[\s\(\)\[\]（）]', '', key).lower():
+                rec = val
+                break
+
+    if not rec:
+        return []
+
+    rows: list[dict] = []
+    found_name = rec.get("cert_name", cert_name)
+    source_id = f"private_catalog_{re.sub(r'[^a-zA-Z0-9가-힣]', '_', found_name)}"
+
+    def _row(section: str, snippet: str) -> dict:
+        return {
+            "doc_id": "private_cert_catalog_2025",
+            "chunk_id": f"{source_id}_{section}",
+            "source_type": "private_cert_catalog",
+            "snippet": snippet,
+            "section_path": [section],
+            "source_url": None,
+            "cert_name": found_name,
+            "similarity": None,
+        }
+
+    # 응시료
+    if rec.get("exam_fee"):
+        rows.append(_row("응시료", f"응시료: {rec['exam_fee']}"))
+
+    # 자격 활용 현황 (빈 줄 제거)
+    usage_raw = rec.get("usage_status", "")
+    if usage_raw:
+        usage_clean = "\n".join(
+            line for line in usage_raw.split("\n")
+            if line.strip().replace("+", "").strip()
+        )
+        if usage_clean:
+            rows.append(_row("자격 활용 현황", usage_clean))
+
+    # 공인번호 · 주무부처 · 유효기간 (노이즈 값 제외)
+    meta_parts = []
+    if rec.get("gong_in_no"):
+        meta_parts.append(f"공인번호: {rec['gong_in_no']}")
+    if rec.get("ministry"):
+        meta_parts.append(f"주무부처: {rec['ministry']}")
+    validity = rec.get("validity", "")
+    if validity and len(validity) < 40 and "직무" not in validity and "내용" not in validity:
+        meta_parts.append(f"자격 유효기간: {validity}")
+    if meta_parts:
+        rows.append(_row("공인 정보", " · ".join(meta_parts)))
+
+    # 응시 자격 (제한없음 이외만)
+    eligibility = rec.get("eligibility", "")
+    if eligibility and eligibility not in ("제한없음", "없음"):
+        rows.append(_row("응시 자격", f"응시 자격: {eligibility}"))
+
+    # 검정 현황 요약 (있으면)
+    if rec.get("exam_history_summary"):
+        rows.append(_row("검정 현황", rec["exam_history_summary"]))
+
+    return rows
+
+
+@lru_cache(maxsize=1)
+def _load_national_catalog() -> dict[str, dict]:
+    """국가자격 정보집 JSON 로드. cert_name 인덱스 반환."""
+    if not _NATIONAL_CATALOG_JSON.exists():
+        return {}
+    try:
+        with _NATIONAL_CATALOG_JSON.open(encoding="utf-8") as f:
+            data = json.load(f)
+        return data.get("index", {})
+    except Exception:
+        return {}
+
+
+def _national_catalog_lookup(cert_name: str) -> list[dict]:
+    """국가자격 정보집에서 cert_name 으로 evidence 목록 생성.
+    정확 일치 → 부분 일치(공백 정규화) 순으로 시도."""
+    index = _load_national_catalog()
+    if not index:
+        return []
+
+    rec = index.get(cert_name)
+    if not rec:
+        norm = re.sub(r'[\s\(\)\[\]（）]', '', cert_name).lower()
+        for key, val in index.items():
+            if norm and norm in re.sub(r'[\s\(\)\[\]（）]', '', key).lower():
+                rec = val
+                break
+
+    if not rec:
+        return []
+
+    rows: list[dict] = []
+    found_name = rec.get("cert_name", cert_name)
+    source_id = f"national_catalog_{re.sub(r'[^a-zA-Z0-9가-힣]', '_', found_name)}"
+
+    def _row(section: str, snippet: str) -> dict:
+        return {
+            "doc_id": "national_cert_catalog_2026",
+            "chunk_id": f"{source_id}_{section}",
+            "source_type": "national_cert_catalog",
+            "snippet": snippet,
+            "section_path": [section],
+            "source_url": None,
+            "cert_name": found_name,
+            "similarity": None,
+        }
+
+    if rec.get("purpose"):
+        rows.append(_row("도입목적", rec["purpose"]))
+
+    if rec.get("career"):
+        rows.append(_row("진로(자격활용)", f"진로(자격활용): {rec['career']}"))
+
+    if rec.get("exam_fee"):
+        rows.append(_row("응시료", f"응시료: {rec['exam_fee']}"))
+
+    meta_parts = []
+    if rec.get("agency"):
+        meta_parts.append(f"시행기관: {rec['agency']}")
+    if rec.get("ministry"):
+        meta_parts.append(f"소관부처: {rec['ministry']}")
+    if meta_parts:
+        rows.append(_row("시행기관·소관부처", " · ".join(meta_parts)))
+
+    return rows
+
+
 def _supabase_configured(settings: Settings) -> bool:
     return bool(
         settings.supabase_url
@@ -162,12 +320,30 @@ def search_evidence(body: dict[str, Any], settings: Settings) -> dict[str, Any]:
     parts.extend(body.get("related_jobs") or [])
     query_text = " ".join(p for p in parts if p).strip() or "자격증 공식 안내"
 
-    # 1. Supabase certificates_vectors (match_certificates RPC)
-    rows = _search_supabase(cert_name, query_text, settings)
-    if rows:
-        return ok_envelope({"cert_id": cert_id, "evidence": rows, "source": "supabase"})
+    # 공인민간자격 카탈로그 조회 (cert_name 기반 직접 매핑)
+    catalog_rows = _catalog_lookup(cert_name) if cert_name else []
+    # 국가자격 정보집 카탈로그 조회
+    national_rows = _national_catalog_lookup(cert_name) if cert_name else []
 
-    # 2. 로컬 cert_candidates text_for_dense fallback
+    local_catalog_rows = national_rows + catalog_rows  # 국가자격 우선
+
+    # 1. Supabase certificates_vectors (match_certificates RPC)
+    db_rows = _search_supabase(cert_name, query_text, settings)
+    if db_rows:
+        combined = local_catalog_rows + db_rows
+        return ok_envelope({"cert_id": cert_id, "evidence": combined, "source": "supabase"})
+
+    # 2. 카탈로그만 있어도 반환
+    if local_catalog_rows:
+        cand_rows = _candidate_fallback(cert_id)
+        combined = local_catalog_rows + cand_rows
+        return ok_envelope({
+            "cert_id": cert_id,
+            "evidence": combined,
+            "source": "catalog",
+        })
+
+    # 3. 로컬 cert_candidates text_for_dense fallback
     rows = _candidate_fallback(cert_id)
     source_note = (
         "Supabase 미연결 — cert_candidates text_for_dense를 근거로 사용합니다."

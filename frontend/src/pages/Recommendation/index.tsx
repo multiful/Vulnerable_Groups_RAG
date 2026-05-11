@@ -379,13 +379,23 @@ const Recommendation: React.FC = () => {
               {evidence.rows.map((row, i) => {
                 const pct = row.similarity != null ? Math.round(row.similarity * 100) : null;
                 const isLocal = row.source_type === 'candidate' || row.source_type === 'local_candidates';
+                const isCatalog = row.source_type === 'private_cert_catalog' || row.source_type === 'national_cert_catalog';
+                const isNational = row.source_type === 'national_cert_catalog';
+                const snippetLines = isCatalog
+                  ? row.snippet.split('\n').filter(Boolean)
+                  : null;
                 return (
-                  <div key={row.chunk_id || i} className="ev-row">
+                  <div key={row.chunk_id || i} className={`ev-row${isCatalog ? ' ev-row-catalog' : ''}`}>
                     <div className="ev-row-header">
                       {row.section_path?.length > 0 && (
                         <span className="ev-section-label">{row.section_path.join(' › ')}</span>
                       )}
-                      {pct != null && (
+                      {isCatalog && (
+                        <span className={`ev-src-tag ${isNational ? 'ev-src-national' : 'ev-src-catalog'}`}>
+                          {isNational ? '국가자격' : '공인민간자격'}
+                        </span>
+                      )}
+                      {!isCatalog && pct != null && (
                         <div className="ev-score-wrap">
                           <div className="ev-score-track">
                             <div className="ev-score-fill" style={{ width: `${pct}%` }} />
@@ -393,14 +403,22 @@ const Recommendation: React.FC = () => {
                           <span className="ev-score-pct">관련도 {pct}%</span>
                         </div>
                       )}
-                      {isLocal && <span className="ev-src-tag ev-src-local">후보 데이터</span>}
+                      {!isCatalog && isLocal && <span className="ev-src-tag ev-src-local">후보 데이터</span>}
                       {row.source_url && (
                         <a href={row.source_url} target="_blank" rel="noreferrer" className="ev-link">
                           <ExternalLink size={11} /> 원문 보기
                         </a>
                       )}
                     </div>
-                    <p className="ev-snippet">{row.snippet}</p>
+                    {snippetLines && snippetLines.length > 1 ? (
+                      <ul className="ev-catalog-list">
+                        {snippetLines.map((line, li) => (
+                          <li key={li}>{line.replace(/^\+\s*/, '')}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="ev-snippet">{row.snippet}</p>
+                    )}
                   </div>
                 );
               })}
@@ -517,6 +535,11 @@ const Recommendation: React.FC = () => {
         .ev-src-tag{padding:.1rem .4rem;border-radius:3px;font-size:.62rem;font-weight:700;letter-spacing:.05em;flex-shrink:0}
         .ev-src-db{background:#ede9fe;color:#6d28d9}
         .ev-src-local{background:#f1f5f9;color:#64748b}
+        .ev-src-catalog{background:#fef3c7;color:#92400e}
+        .ev-src-national{background:#dbeafe;color:#1e40af}
+        .ev-row-catalog{border-color:rgba(245,158,11,.3);background:#fffbeb}
+        .ev-catalog-list{margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:.3rem}
+        .ev-catalog-list li{font-size:.84rem;color:var(--text-muted);line-height:1.65}
         .ev-score-wrap{display:flex;align-items:center;gap:.3rem;margin-left:auto}
         .ev-score-track{width:44px;height:4px;background:var(--border);border-radius:99px;overflow:hidden}
         .ev-score-fill{height:100%;background:var(--primary);border-radius:99px}
