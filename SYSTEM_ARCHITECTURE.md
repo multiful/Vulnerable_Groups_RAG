@@ -52,7 +52,16 @@
 - Evidence Retrieval
 - Storage Access
 
-**현재 구현 참고 (스택)**: 프론트는 React + Vite(`frontend/`). 백엔드는 FastAPI(`backend/`). Evidence retrieval 런타임은 **LangChain** 임베딩(OpenAI 또는 HuggingFace)과 **Supabase pgvector**(`backend/rag/`)를 사용한다. 벡터 DB는 팀·테넌트 Supabase 프로젝트 URL·service_role 키로만 연결한다. 배포 가정: 프론트 Vercel, API Railway 또는 Render — CORS·`VITE_API_BASE_URL` 등 환경변수로 출처를 맞춘다. **LlamaIndex** 전환 시 `backend/rag/llamaindex/` 및 `RAG_PIPELINE.md`를 선행 갱신한다.
+**현재 구현 참고 (스택)**: 프론트는 React + Vite(`frontend/`). 백엔드는 FastAPI(`backend/`). Evidence retrieval 런타임은 **LangChain** 임베딩(OpenAI 또는 HuggingFace)과 **Supabase pgvector**(`backend/rag/`)를 사용한다. 벡터 DB는 팀·테넌트 Supabase 프로젝트 URL·service_role 키로만 연결한다.
+
+**현재 배포 현황 (2026-05-11 기준)**:
+- 프론트엔드: **Netlify** — https://guileless-gumption-24a361.netlify.app/
+- 백엔드 API: **Render** (무료 플랜) — https://vulnerable-groups-rag.onrender.com
+- API 문서: https://vulnerable-groups-rag.onrender.com/docs
+- Netlify `public/_redirects`로 `/api/*` → 백엔드 프록시 처리
+- Render 무료 플랜 슬립 방지: UptimeRobot 5분 주기 헬스체크 (`/api/v1/health`)
+
+CORS·`VITE_API_BASE_URL` 등 환경변수로 출처를 맞춘다. **LlamaIndex** 전환 시 `backend/rag/llamaindex/` 및 `RAG_PIPELINE.md`를 선행 갱신한다.
 
 ### 2.2 Offline Build
 추천과 검색이 가능하도록 데이터를 구축·정규화·인덱싱하는 배치 계층
