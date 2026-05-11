@@ -180,9 +180,9 @@ const Recommendation: React.FC = () => {
         <h1 className="page-title">자격증 확인</h1>
         <p className="page-desc">
           {domainName && riskLabel
-            ? <><strong>{domainName}</strong> · <strong>{riskLabel}</strong> 기준 추천 자격증입니다.</>
+            ? <><strong>{domainName}</strong> 분야에서 <strong>{riskLabel}</strong>에 맞는 자격증을 골랐습니다.</>
             : domainName
-              ? <><strong>{domainName}</strong> 도메인 추천 자격증입니다.</>
+              ? <><strong>{domainName}</strong> 분야 추천 자격증입니다.</>
               : '추천 자격증을 확인하세요.'}
         </p>
       </div>
@@ -200,7 +200,7 @@ const Recommendation: React.FC = () => {
           </div>
           <div className="featured-actions">
             <button className="btn-primary" onClick={() => { fetchEvidence(featuredCert.cert_id); fetchDag(featuredCert.cert_id); }}>
-              <FileText size={15} /> 근거 · 경로 보기
+              <FileText size={15} /> 왜 추천됐나요
             </button>
             <button className="btn-ghost" onClick={() => goToRoadmap(featuredCert.cert_id)}>
               <Map size={15} /> 로드맵 보기
@@ -214,7 +214,7 @@ const Recommendation: React.FC = () => {
           <div className="ev-header">
             <div className="ev-header-left">
               <BookOpen size={15} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-              <span className="ev-title">근거 정보 · {evidenceCertName}</span>
+              <span className="ev-title">{evidenceCertName}을 추천하는 이유</span>
             </div>
             <button className="ev-close" onClick={() => setShowEvidence(false)}><X size={15} /></button>
           </div>
@@ -222,7 +222,7 @@ const Recommendation: React.FC = () => {
           {/* DAG 경로 */}
           {dag.fetched && (dag.predecessors.length > 0 || dag.successors.length > 0) && (
             <div className="dag-panel">
-              <p className="dag-panel-title">자격증 경로</p>
+              <p className="dag-panel-title">관련 자격증 경로</p>
               <div className="dag-flow-scroll">
                 <CertFlowDiagram
                   current={{ cert_id: dag.certId, cert_name: evidenceCertName }}
@@ -249,6 +249,7 @@ const Recommendation: React.FC = () => {
           )}
           {!evidence.loading && evidence.rows.length > 0 && (
             <div className="ev-list">
+              <p className="ev-intro">공식 문서에서 찾아낸 이 자격증 관련 내용입니다. 아래 자료를 바탕으로 추천이 이루어졌습니다.</p>
               {evidence.rows.map((row, i) => {
                 const pct = row.similarity != null ? Math.round(row.similarity * 100) : null;
                 const isLocal = row.source_type === 'candidate' || row.source_type === 'local_candidates';
@@ -341,7 +342,7 @@ const Recommendation: React.FC = () => {
                       <button className="text-btn evidence-btn"
                         onClick={() => { fetchEvidence(cert.cert_id); fetchDag(cert.cert_id); }}
                         style={{ color: gradeColor(cert.cert_grade_tier) }}>
-                        <FileText size={13} /> 근거·경로
+                        <FileText size={13} /> 추천 이유
                       </button>
                       <button className="text-btn roadmap-btn" onClick={() => goToRoadmap(cert.cert_id)}>
                         <Map size={13} /> 로드맵 <ArrowRight size={12} />
@@ -380,6 +381,7 @@ const Recommendation: React.FC = () => {
         .ev-spin{animation:spin 1s linear infinite;color:var(--primary)}
         @keyframes spin{to{transform:rotate(360deg)}}
         .ev-empty{display:flex;align-items:flex-start;gap:.5rem;font-size:.84rem;color:var(--text-muted);line-height:1.6}
+        .ev-intro{font-size:.8rem;color:var(--text-muted);line-height:1.65;padding-bottom:.25rem}
         .ev-list{display:flex;flex-direction:column;gap:.75rem}
         .dag-panel{display:flex;flex-direction:column;gap:.625rem;padding:.875rem;background:var(--surface-2);border-radius:var(--radius-sm);border:1px solid var(--border)}
         .dag-panel-title{font-size:.7rem;font-weight:700;color:var(--text-light);letter-spacing:.05em;text-transform:uppercase}
