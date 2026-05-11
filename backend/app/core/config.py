@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     # --- HTTP ---
     cors_origins: str = Field(
-        default="http://localhost:5173,http://127.0.0.1:5173",
+        default="http://localhost:5173,http://127.0.0.1:5173,https://didim.life,https://www.didim.life",
         description="쉼표로 구분. Vite 기본 포트 + Vercel 배포 도메인 추가",
     )
     rag_top_k: int = Field(default=5, ge=1, le=50)
