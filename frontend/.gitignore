@@ -1,0 +1,20 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# env files (비밀키 포함 가능 - 절대 커밋 금지)
+.env
+.env.local
+.env.*.local
+
+# 예외: .env.production은 공개 URL만 있으므로 허용
+!.env.production
+
+# logs
+*.log
+
+# editor
+.DS_Store
+.vscode/
