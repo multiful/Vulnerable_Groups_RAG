@@ -2,7 +2,7 @@
 
 > **파일명**: FOLDER.md  
 > **폴더 경로**: `scripts/parse`  
-> **최종 수정일**: 2026-04-03  
+> **최종 수정일**: 2026-05-12  
 > **문서 해시**: SHA256:TBD  
 > **문서 역할**: 디렉터리 스캐폴드 명시서 — 담는 내용·금지·다음 단계 연계  
 > **문서 우선순위**: reference (충돌 시 루트 기준 문서 우선)  
@@ -20,9 +20,17 @@
 
 CSV canonicalize(그건 `scripts/canonicalize/`).
 
-## 3. 산출·연계
+## 3. 파일 목록
 
-산출은 `data/index_ready/parse_ir/` 등으로 — `RAG_PIPELINE.md`.
+| 파일 | 역할 |
+|---|---|
+| `run.py` | parse 배치 진입점 스텁 |
+| `parse_private_cert_catalog.py` | 공인민간자격 정보자료집 PDF → `data/index_ready/private_cert_catalog.json` 변환 |
+| `parse_national_cert_catalog.py` | 국가자격 정보집 PDF → `data/index_ready/national_cert_catalog.json` 변환 |
+
+## 4. 산출·연계
+
+산출은 `data/index_ready/parse_ir/` 또는 `data/index_ready/private_cert_catalog.json` 등으로 — `RAG_PIPELINE.md`.
 
 ---
 

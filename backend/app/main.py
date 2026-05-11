@@ -26,6 +26,7 @@ async def lifespan(app: FastAPI):
     from backend.app.services import recommendation_service as rs
     from backend.app.services import dag_service as ds
     from backend.app.services import llm_roadmap_service as ls
+    from backend.app.services import retrieval_service as ret
 
     loaders = [
         rs._load_candidates,
@@ -44,6 +45,10 @@ async def lifespan(app: FastAPI):
         ls._load_candidates,
         ls._load_domain_names,
         ls._load_risk_stages,
+        ret._load_candidates,
+        ret._load_cert_names,
+        ret._load_private_catalog,
+        ret._load_national_catalog,
     ]
     try:
         await asyncio.gather(*(asyncio.to_thread(fn) for fn in loaders))

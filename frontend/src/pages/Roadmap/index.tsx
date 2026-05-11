@@ -648,16 +648,27 @@ const Roadmap: React.FC = () => {
                                           {evRows.map((ev, i) => {
                                             const pct = ev.similarity != null ? Math.round(ev.similarity * 100) : null;
                                             const isLocal = ev.source_type === 'candidate' || ev.source_type === 'local_candidates';
+                                            const isCatalog = ev.source_type === 'private_cert_catalog' || ev.source_type === 'national_cert_catalog';
+                                            const isNational = ev.source_type === 'national_cert_catalog';
+                                            const snippetLines = isCatalog
+                                              ? ev.snippet.split('\n').filter(Boolean)
+                                              : null;
                                             return (
-                                              <div key={ev.chunk_id ?? i} className="rm-ev-card">
+                                              <div key={ev.chunk_id ?? i} className={`rm-ev-card${isCatalog ? ' rm-ev-card-catalog' : ''}`}>
                                                 <div className="rm-ev-card-hdr">
-                                                  <span className={`rm-ev-src ${isLocal ? 'rm-ev-src-local' : 'rm-ev-src-db'}`}>
-                                                    {isLocal ? '로컬' : 'DB'}
-                                                  </span>
+                                                  {isCatalog ? (
+                                                    <span className={`rm-ev-src ${isNational ? 'rm-ev-src-national' : 'rm-ev-src-catalog'}`}>
+                                                      {isNational ? '국가' : '공인'}
+                                                    </span>
+                                                  ) : (
+                                                    <span className={`rm-ev-src ${isLocal ? 'rm-ev-src-local' : 'rm-ev-src-db'}`}>
+                                                      {isLocal ? '로컬' : 'DB'}
+                                                    </span>
+                                                  )}
                                                   {(ev.section_path?.length ?? 0) > 0 && (
                                                     <span className="rm-ev-sec-path">{ev.section_path[0]}</span>
                                                   )}
-                                                  {pct != null && (
+                                                  {!isCatalog && pct != null && (
                                                     <div className="rm-ev-score">
                                                       <div className="rm-ev-score-track">
                                                         <div className="rm-ev-score-fill" style={{ width: `${pct}%` }} />
@@ -666,7 +677,15 @@ const Roadmap: React.FC = () => {
                                                     </div>
                                                   )}
                                                 </div>
-                                                <p className="rm-ev-snippet">{ev.snippet}</p>
+                                                {snippetLines && snippetLines.length > 1 ? (
+                                                  <ul className="rm-ev-catalog-list">
+                                                    {snippetLines.map((line, li) => (
+                                                      <li key={li}>{line.replace(/^\+\s*/, '')}</li>
+                                                    ))}
+                                                  </ul>
+                                                ) : (
+                                                  <p className="rm-ev-snippet">{ev.snippet}</p>
+                                                )}
                                               </div>
                                             );
                                           })}
@@ -918,6 +937,11 @@ const Roadmap: React.FC = () => {
         }
         .rm-ev-src-db { background: #ede9fe; color: #6d28d9; }
         .rm-ev-src-local { background: #f1f5f9; color: #64748b; }
+        .rm-ev-src-catalog { background: #fef3c7; color: #92400e; }
+        .rm-ev-src-national { background: #dbeafe; color: #1e40af; }
+        .rm-ev-card-catalog { border-color: rgba(245,158,11,.35); border-left-color: #f59e0b; background: #fffbeb; }
+        .rm-ev-catalog-list { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .3rem; }
+        .rm-ev-catalog-list li { font-size: .78rem; color: var(--text-muted); line-height: 1.6; }
         .rm-ev-sec-path { font-size: .7rem; font-weight: 600; color: var(--primary); }
         .rm-ev-score { display: flex; align-items: center; gap: .3rem; margin-left: auto; }
         .rm-ev-score-track { width: 42px; height: 4px; background: var(--border); border-radius: 99px; overflow: hidden; }
