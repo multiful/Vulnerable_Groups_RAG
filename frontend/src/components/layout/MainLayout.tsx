@@ -3,6 +3,46 @@ import React, { useRef, useEffect } from 'react';
 import { Outlet, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 
+const SUPPORT_LINKS = [
+  {
+    label: '청년정책',
+    url: 'https://www.youthcenter.go.kr/bbs03List/48?srchParam=&curPageNum=1&srchParamEtc1=&srchParamEtc2=9&srchParamEtc3=DESC&srchParamEtc4=1',
+    subLinks: [
+      { label: '청년정책 목록', url: 'https://www.youthcenter.go.kr/bbs03List/48?srchParam=&curPageNum=1&srchParamEtc1=&srchParamEtc2=9&srchParamEtc3=DESC&srchParamEtc4=1' },
+      { label: '정책 통합검색', url: 'https://www.youthcenter.go.kr/youthPolicy/ythPlcyTotalSearch' },
+      { label: '청년정책 바로가기', url: 'https://www.youthcenter.go.kr/youthPolicy/ythPlcyLinkMain' },
+      { label: '일경험 지원', url: 'https://www.youthcenter.go.kr/youthPolicy/ythPlcyOverseasMain' },
+    ],
+  },
+  {
+    label: '고용24',
+    url: 'https://www.work24.go.kr',
+    subLinks: [
+      { label: '고용24 홈', url: 'https://www.work24.go.kr' },
+      { label: '실업급여 신청', url: 'https://www.work24.go.kr/cm/c/f/1100/selecSystInfo.do?systClId=SC00000254&systId=SI00000411' },
+      { label: '국민내일배움카드', url: 'https://www.work24.go.kr' },
+    ],
+  },
+  {
+    label: '국민취업지원제도',
+    url: 'https://www.work24.go.kr/ua/z/z/1300/selectEmssRqutIntro.do',
+    subLinks: [
+      { label: '신청 소개', url: 'https://www.work24.go.kr/ua/z/z/1300/selectEmssRqutIntro.do' },
+      { label: '제도 안내', url: 'https://www.work24.go.kr/cm/c/f/1100/selecSystInfo.do?systId=SI00000316&systClId=SC00000206' },
+      { label: '일경험 프로그램', url: 'https://www.work24.go.kr/cm/c/f/1100/selecSystInfo.do?systId=SI00000448&systClId=SC00000115' },
+    ],
+  },
+  {
+    label: 'Q-net 자격증',
+    url: 'https://www.q-net.or.kr',
+    subLinks: [
+      { label: '자격증 정보', url: 'https://www.q-net.or.kr/man001.do' },
+      { label: '원서접수', url: 'https://www.q-net.or.kr/rcv001.do?id=rcv00103' },
+      { label: '시험일정', url: 'https://www.q-net.or.kr/crf021.do?id=crf02101&scheType=03' },
+    ],
+  },
+];
+
 const NAV_LINKS = [
   { label: '위험군 진단', path: '/risk-assessment' },
   { label: '관심 선택',   path: '/interests' },
@@ -69,6 +109,41 @@ const MainLayout: React.FC = () => {
   return (
     <div className="app-root">
 
+      {/* ── 청년지원제도 배너 ── */}
+      <div className="support-banner">
+        <div className="support-banner-inner">
+          <span className="support-banner-label">청년지원제도</span>
+          <div className="support-banner-links">
+            {SUPPORT_LINKS.map(item => (
+              <div key={item.url} className="support-dropdown-wrap">
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="support-banner-link"
+                >
+                  {item.label} <span className="support-arrow">▾</span>
+                </a>
+                <div className="support-dropdown">
+                  <div className="support-dropdown-title">{item.label}</div>
+                  {item.subLinks.map(sub => (
+                    <a
+                      key={sub.url}
+                      href={sub.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="support-dropdown-item"
+                    >
+                      {sub.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── Header ── */}
       <header className="app-header">
         <div className="container header-inner">
@@ -121,6 +196,125 @@ const MainLayout: React.FC = () => {
       </nav>
 
       <style>{`
+        /* ── 청년지원제도 배너 ── */
+        .support-banner {
+          background: linear-gradient(90deg, #f0f7ff 0%, #e8f4fd 100%);
+          border-bottom: 1px solid #c8e0f7;
+          padding: 0.45rem 0;
+          position: relative;
+          z-index: 200;
+        }
+        .support-banner-inner {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 1.5rem;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+        .support-banner-label {
+          font-size: 0.72rem;
+          font-weight: 700;
+          color: #2563eb;
+          white-space: nowrap;
+          background: #dbeafe;
+          padding: 0.2rem 0.6rem;
+          border-radius: 99px;
+          flex-shrink: 0;
+        }
+        .support-banner-links {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          flex-wrap: wrap;
+        }
+        /* 드롭다운 래퍼 */
+        .support-dropdown-wrap {
+          position: relative;
+        }
+        .support-banner-link {
+          font-size: 0.75rem;
+          font-weight: 500;
+          color: #374151;
+          text-decoration: none;
+          padding: 0.2rem 0.7rem;
+          border-radius: 99px;
+          border: 1px solid #d1d5db;
+          background: #fff;
+          transition: all 0.15s ease;
+          white-space: nowrap;
+          display: flex;
+          align-items: center;
+          gap: 0.2rem;
+        }
+        .support-arrow {
+          font-size: 0.6rem;
+          color: #9ca3af;
+        }
+        .support-banner-link:hover {
+          background: #2563eb;
+          color: #fff;
+          border-color: #2563eb;
+        }
+        .support-banner-link:hover .support-arrow {
+          color: #fff;
+        }
+        /* 드롭다운 메뉴 */
+        .support-dropdown {
+          display: none;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          min-width: 160px;
+          background: #fff;
+          border: 1px solid #e5e7eb;
+          border-radius: 10px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+          padding: 0.5rem 0;
+          padding-top: 14px;
+          margin-top: 0;
+          z-index: 300;
+        }
+        /* 갭을 메워주는 가상 브릿지 */
+        .support-dropdown::before {
+          content: '';
+          position: absolute;
+          top: -10px;
+          left: 0;
+          right: 0;
+          height: 10px;
+        }
+        .support-dropdown-wrap:hover .support-dropdown {
+          display: block;
+        }
+        .support-dropdown-title {
+          font-size: 0.7rem;
+          font-weight: 700;
+          color: #2563eb;
+          padding: 0.4rem 1rem 0.3rem;
+          border-bottom: 1px solid #f3f4f6;
+          margin-bottom: 0.25rem;
+        }
+        .support-dropdown-item {
+          display: block;
+          font-size: 0.78rem;
+          color: #374151;
+          text-decoration: none;
+          padding: 0.45rem 1rem;
+          transition: all 0.12s ease;
+          white-space: nowrap;
+        }
+        .support-dropdown-item:hover {
+          background: #eff6ff;
+          color: #2563eb;
+          padding-left: 1.2rem;
+        }
+        @media (max-width: 768px) {
+          .support-banner-inner { gap: 0.6rem; }
+          .support-banner-links { gap: 0.2rem; }
+          .support-banner-link { font-size: 0.68rem; padding: 0.15rem 0.5rem; }
+        }
+
         /* ── Root ── */
         .app-root {
           display: flex;
