@@ -73,9 +73,9 @@ function achievabilityColor(a: string): string {
 }
 
 const RISK_LABELS: Record<string, string> = {
-  '1': '1단계 · 취업 안정권', '2': '2단계 · 준비 활성',
-  '3': '3단계 · 준비 정체',   '4': '4단계 · 관계망 약화',
-  '5': '5단계 · 고위험군',
+  '1': '1단계 (취업 안정권)', '2': '2단계 (준비 활성)',
+  '3': '3단계 (준비 정체)',   '4': '4단계 (관계망 약화)',
+  '5': '5단계 (고위험군)',
 };
 const RISK_IDS: Record<string, string> = {
   '1': 'risk_0001', '2': 'risk_0002', '3': 'risk_0003',
@@ -84,11 +84,11 @@ const RISK_IDS: Record<string, string> = {
 
 /* ── Local fallback helpers ── */
 const LOCAL_STAGES: StageInfo[] = [
-  { id: 'roadmap_stage_0001', name: '상태 인식',   order: 1, description: '현재 생활 상태와 진로·취업 준비 수준을 점검하는 초기 단계입니다.' },
+  { id: 'roadmap_stage_0001', name: '상태 인식',   order: 1, description: '현재 생활 상태와 진로 및 취업 준비 수준을 점검하는 초기 단계입니다.' },
   { id: 'roadmap_stage_0002', name: '탐색 시작',   order: 2, description: '관심 분야, 전공 연계성, 가능한 직무와 자격증을 탐색하는 단계입니다.' },
   { id: 'roadmap_stage_0003', name: '역량 준비',   order: 3, description: '기초 학습, 자격증 준비, 교육훈련 참여 등으로 역량을 쌓는 단계입니다.' },
   { id: 'roadmap_stage_0004', name: '실행 확대',   order: 4, description: '지원 활동, 대외활동, 실전 경험을 늘리며 진로 실행을 확장하는 단계입니다.' },
-  { id: 'roadmap_stage_0005', name: '유지·정착',   order: 5, description: '형성된 진로 경로와 생활 리듬을 유지하며 장기 계획으로 정착하는 단계입니다.' },
+  { id: 'roadmap_stage_0005', name: '유지 및 정착', order: 5, description: '형성된 진로 경로와 생활 리듬을 유지하며 장기 계획으로 정착하는 단계입니다.' },
 ];
 
 /* roadmap_stage_master.csv 기준: risk_0001→0003, risk_0002/0003→0002, risk_0004/0005→0001 */
@@ -416,7 +416,7 @@ const Roadmap: React.FC = () => {
         <div className="rm-ai-loading">
           <Loader2 size={22} className="rm-spin" />
           <p className="rm-state-title">AI가 맞춤 로드맵을 구성하는 중…</p>
-          <p className="rm-state-sub">위험군·도메인을 분석해 최적 경로를 선별합니다 (10초 내외)</p>
+          <p className="rm-state-sub">위험군과 도메인을 분석해 최적 경로를 선별합니다 (10초 내외)</p>
         </div>
       )}
 
@@ -564,7 +564,7 @@ const Roadmap: React.FC = () => {
                                   className={`tl-drawer-btn${isActive ? ' tl-drawer-btn-active' : ''}`}
                                   onClick={() => openCertDrawer(cert.cert_id, cert.cert_name)}
                                   type="button"
-                                  title="근거 · 경로 보기"
+                                  title="추천 이유 보기"
                                 >
                                   {isActive ? <X size={13} /> : <FileText size={13} />}
                                 </button>
@@ -575,7 +575,7 @@ const Roadmap: React.FC = () => {
                                   {evLoading ? (
                                     <div className="rm-drawer-loading">
                                       <Loader2 size={14} className="rm-spin" />
-                                      <span>근거 · 경로 로드 중…</span>
+                                      <span>자료를 불러오는 중…</span>
                                     </div>
                                   ) : (
                                     <>
@@ -594,7 +594,8 @@ const Roadmap: React.FC = () => {
                                       )}
                                       {evRows.length > 0 && (
                                         <div className="rm-ev-section">
-                                          <p className="rm-dag-title">추천 근거</p>
+                                          <p className="rm-dag-title">왜 이 자격증인가요</p>
+                                          <p className="rm-ev-intro">공식 문서에서 찾아낸 이 자격증 관련 내용입니다. 이 자료를 바탕으로 추천이 이루어졌습니다.</p>
                                           {evRows.map((ev, i) => {
                                             const pct = ev.similarity != null ? Math.round(ev.similarity * 100) : null;
                                             const isLocal = ev.source_type === 'candidate' || ev.source_type === 'local_candidates';
@@ -844,7 +845,11 @@ const Roadmap: React.FC = () => {
         .rm-dag-section, .rm-ev-section { display: flex; flex-direction: column; gap: .35rem; }
         .rm-dag-title {
           font-size: .69rem; font-weight: 700; color: var(--text-light);
-          letter-spacing: .06em; text-transform: uppercase; margin-bottom: .15rem;
+          letter-spacing: .04em; text-transform: uppercase; margin-bottom: .15rem;
+        }
+        .rm-ev-intro {
+          font-size: .78rem; color: var(--text-muted); line-height: 1.6;
+          margin-bottom: .35rem;
         }
         .rm-flow-scroll { overflow-x: auto; padding-bottom: .25rem; }
         .rm-ev-card {
