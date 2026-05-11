@@ -23,7 +23,7 @@ const CG = 50;    // horizontal gap between columns
 const RG = 10;    // vertical gap between rows in same column
 const PD = 4;     // SVG canvas padding
 
-export const CertFlowDiagram: React.FC<Props> = ({
+const CertFlowDiagramInner: React.FC<Props> = ({
   current, predecessors, successors, onNodeClick,
 }) => {
   const uid = useId().replace(/:/g, '-');
@@ -169,3 +169,5 @@ export const CertFlowDiagram: React.FC<Props> = ({
     </div>
   );
 };
+
+export const CertFlowDiagram = React.memo(CertFlowDiagramInner);
