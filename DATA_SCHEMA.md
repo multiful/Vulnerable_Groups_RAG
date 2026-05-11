@@ -1,7 +1,7 @@
 # DATA_SCHEMA.md
 
 > **파일명**: DATA_SCHEMA.md  
-> **최종 수정일**: 2026-04-19  
+> **최종 수정일**: 2026-05-12  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 데이터 구조, 엔티티, 관계, 공통 필드, 제약조건 정의 문서  
 > **문서 우선순위**: 5  
@@ -583,6 +583,32 @@
 - 하나의 자격증은 여러 NCS 소직무와 연결될 수 있다.
 - join 기준: `ncs_mapping_rows`의 대직무코드 + 중직무코드 + 소직무코드 → `ncs_master.ncsID`
 - 현재 커버리지: cert 743/1,290 (57.6%), ncs 248/261 (95.0%)
+
+---
+
+## 6.12 cert_video_cache (Supabase 캐시)
+
+자격증별 YouTube 영상 검색 결과 캐시 (F-11). canonical relation은 아니지만 운영용 부속 테이블로 본 문서에서 함께 정의한다.
+
+| 필드명 | 타입 | 필수 | nullable | 설명 |
+|---|---|---:|---:|---|
+| `cert_id` | string (PK) | Y | N | 자격증 식별자 (candidates의 `cert_id`와 동일) |
+| `cert_name` | string | Y | N | 호출 시점의 자격증명 (디버깅용 기록) |
+| `search_query` | string | Y | N | 실제 호출한 검색 쿼리 (OR 조합 결과) |
+| `videos` | jsonb | Y | N | 영상 리스트. 각 요소는 `{video_id, title, channel, thumbnail_url, url}` |
+| `query_version` | int | Y | N | 검색 쿼리 구성 정책 버전 (기본 1). 정책 변경 시 증가 → 캐시 무효화 |
+| `fetched_at` | timestamptz | Y | N | 외부 API 호출 시각. TTL 비교 기준 |
+| `quota_exceeded_at` | timestamptz | N | Y | 마지막 quota 초과 발생 시각 (운영 모니터링용) |
+
+### 제약
+- `cert_id`는 PK. 자격증당 1행 유지 (upsert).
+- `videos` 최대 5개 (F-11 정책).
+- TTL: `fetched_at + interval '30 days' < now()` 인 경우 캐시 만료로 간주, 재호출 후 upsert.
+- `query_version`이 application 코드의 현재 버전과 다르면 캐시 미스로 취급.
+- 본 테이블은 candidates / canonical relation 빌드에 영향을 주지 않는다. 부속 운영 데이터로만 사용.
+
+### Supabase DDL
+`docs/architecture/supabase_cert_video_cache.sql` 참고.
 
 ---
 

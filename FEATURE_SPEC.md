@@ -1,7 +1,7 @@
 # FEATURE_SPEC.md
 
 > **파일명**: FEATURE_SPEC.md  
-> **최종 수정일**: 2026-05-07  
+> **최종 수정일**: 2026-05-12  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 기능별 입력, 출력, 처리 규칙, 예외, 상태 정의 문서  
 > **문서 우선순위**: 4  
@@ -74,6 +74,7 @@
 | F-08 | 시험 일정 조회 | reserved | 사용자 |
 | F-09 | 접수 일정 / 지원 링크 조회 | reserved | 사용자 |
 | F-10 | 관리자 점검 화면 | reserved | 운영자 |
+| F-11 | 관련 동영상 추천 (YouTube) | 활성 | 사용자 |
 
 ---
 
@@ -432,6 +433,47 @@ reserved
 
 ---
 
+## F-11. 관련 동영상 추천 (YouTube)
+
+### 목적
+추천된 자격증의 학습 자료 접근성을 높이기 위해, 자격증명 기반으로 YouTube 강의·인강·합격 영상을 추천한다.
+
+### 주 사용자
+- 사용자
+
+### 입력
+- 자격증 식별자 (`cert_id`)
+
+### 출력
+- 영상 리스트 (최대 5개). 각 영상은 아래 정보를 포함한다.
+  - `video_id`: YouTube 영상 ID
+  - `title`: 영상 제목
+  - `channel`: 채널명
+  - `thumbnail_url`: 썸네일 URL
+  - `url`: 시청 링크 (`https://www.youtube.com/watch?v={video_id}`)
+- 캐시 메타: `fetched_at`, `cache_hit`
+
+### 처리 규칙
+- 검색 쿼리는 `cert_name`을 사용해 다음 OR 조합으로 구성한다: `"{cert_name} 강의" | "{cert_name} 인강" | "{cert_name} 합격"`.
+- YouTube Data API v3의 `search.list` endpoint를 사용하며 `part=snippet`, `type=video`, `maxResults=5`, `regionCode=KR`, `relevanceLanguage=ko`로 호출한다.
+- 검색 결과는 Supabase `cert_video_cache` 테이블(§DATA_SCHEMA.md §6.12)에 캐싱한다.
+- TTL: **30일**. `fetched_at`이 30일 이내면 캐시를 반환하고, 만료되면 재호출 후 upsert한다.
+- 캐시 키는 `cert_id` 단일. 검색 쿼리 구성 정책이 바뀌면 `query_version` 필드를 증가시켜 무효화한다.
+- YouTube API quota(검색 100 units/호출, 일일 10,000 units 무료) 초과 시 캐시된 결과가 있으면 반환하고, 없으면 빈 결과 + `quota_exceeded` 에러 메시지를 응답한다.
+- 추천 핵심 흐름과 분리된 부가 기능이므로, 본 기능이 실패해도 추천 자체는 정상 동작해야 한다.
+
+### 예외 상황
+- `cert_id`가 candidates에 없음 → 404
+- YouTube API 키 미설정 → 500 (운영자 알림 필요)
+- YouTube API 쿼터 초과 → 캐시 fallback (없으면 빈 배열 + `quota_exceeded`)
+- 검색 결과 0건 → 빈 배열 반환 (오류 아님)
+- 네트워크 timeout → 캐시 fallback (없으면 503)
+
+### 현재 상태
+활성
+
+---
+
 ## 6. 기능 간 의존성
 
 | 선행 기능 | 후행 기능 | 설명 |
@@ -443,6 +485,7 @@ reserved
 | F-06 | F-07 | canonicalization 결과가 있어야 candidate 생성이 가능하다. |
 | F-07 | F-03 | candidate row가 recommendation core의 주요 입력이 된다. |
 | F-08 / F-09 | F-03 | 후속 일정/링크 기능은 추천 결과와 결합된다. |
+| F-03 | F-11 | 추천 카드에서 자격증을 선택해야 관련 동영상 조회가 가능하다. |
 
 ---
 
