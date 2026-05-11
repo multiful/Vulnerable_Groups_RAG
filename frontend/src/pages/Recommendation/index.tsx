@@ -155,19 +155,25 @@ interface DagState {
   fetched: boolean;
 }
 
-/* ── Memoized cert card: evidence/dag 상태 변경 시 재렌더 방지 ── */
+/* ── Memoized cert card: 카드 전체 클릭으로 상세 정보 표시 ── */
 const CertCard = memo(({
-  cert, onEvidence, onDag, onRoadmap,
+  cert, onEvidence, onDag, onRoadmap, isSelected,
 }: {
   cert: CertCandidate;
   onEvidence: (id: string) => void;
   onDag: (id: string) => void;
   onRoadmap: (id: string) => void;
+  isSelected?: boolean;
 }) => {
   const summary = buildCertSummary(cert);
-  const color   = gradeColor(cert.cert_grade_tier);
   return (
-    <div className="card cert-card">
+    <div
+      className={`card cert-card${isSelected ? ' cert-card-selected' : ''}`}
+      onClick={() => { onEvidence(cert.cert_id); onDag(cert.cert_id); }}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { onEvidence(cert.cert_id); onDag(cert.cert_id); } }}
+    >
       <div className="cert-top">
         <div className="cert-top-row">
           <span className={`badge ${gradeBadgeClass(cert.cert_grade_tier)}`}>
@@ -179,12 +185,11 @@ const CertCard = memo(({
         <p className="cert-summary">{summary}</p>
       </div>
       <div className="cert-actions">
-        <button className="text-btn evidence-btn"
-          onClick={() => { onEvidence(cert.cert_id); onDag(cert.cert_id); }}
-          style={{ color }}>
-          <FileText size={13} /> 추천 이유
-        </button>
-        <button className="text-btn roadmap-btn" onClick={() => onRoadmap(cert.cert_id)}>
+        <span className="cert-click-hint"><FileText size={11} /> 클릭하여 상세 보기</span>
+        <button
+          className="text-btn roadmap-btn"
+          onClick={(e) => { e.stopPropagation(); onRoadmap(cert.cert_id); }}
+        >
           <Map size={13} /> 로드맵 <ArrowRight size={12} />
         </button>
       </div>
@@ -314,7 +319,13 @@ const Recommendation: React.FC = () => {
       </div>
 
       {featuredCert && (
-        <div className="featured-cert card" style={{ borderLeftColor: gradeColor(featuredCert.cert_grade_tier) }}>
+        <div
+          className={`featured-cert card${evidence.certId === featuredCert.cert_id && showEvidence ? ' featured-cert-active' : ''}`}
+          style={{ borderLeftColor: gradeColor(featuredCert.cert_grade_tier), cursor: 'pointer' }}
+          onClick={() => { fetchEvidence(featuredCert.cert_id); fetchDag(featuredCert.cert_id); }}
+          role="button" tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter') { fetchEvidence(featuredCert.cert_id); fetchDag(featuredCert.cert_id); } }}
+        >
           <div className="featured-tag-row"><span className="featured-tag">로드맵에서 선택</span></div>
           <div className="featured-body">
             <span className={`badge ${gradeBadgeClass(featuredCert.cert_grade_tier)}`}>
@@ -325,10 +336,10 @@ const Recommendation: React.FC = () => {
             <p className="featured-summary">{buildCertSummary(featuredCert)}</p>
           </div>
           <div className="featured-actions">
-            <button className="btn-primary" onClick={() => { fetchEvidence(featuredCert.cert_id); fetchDag(featuredCert.cert_id); }}>
+            <button className="btn-primary" onClick={(e) => { e.stopPropagation(); fetchEvidence(featuredCert.cert_id); fetchDag(featuredCert.cert_id); }}>
               <FileText size={15} /> 왜 추천됐나요
             </button>
-            <button className="btn-ghost" onClick={() => goToRoadmap(featuredCert.cert_id)}>
+            <button className="btn-ghost" onClick={(e) => { e.stopPropagation(); goToRoadmap(featuredCert.cert_id); }}>
               <Map size={15} /> 로드맵 보기
             </button>
           </div>
@@ -375,35 +386,99 @@ const Recommendation: React.FC = () => {
           )}
           {!evidence.loading && evidence.rows.length > 0 && (
             <div className="ev-list">
-              <p className="ev-intro">공식 문서에서 가져온 자료입니다. 이 내용을 바탕으로 추천했습니다.</p>
-              {evidence.rows.map((row, i) => {
-                const pct = row.similarity != null ? Math.round(row.similarity * 100) : null;
-                const isLocal = row.source_type === 'candidate' || row.source_type === 'local_candidates';
-                const isCatalog = row.source_type === 'private_cert_catalog' || row.source_type === 'national_cert_catalog';
+              {[...evidence.rows].sort((a, b) => {
+                const pri = (s: string) => {
+                  if (s === '도입목적') return 0;
+                  if (s === '직무 · 역할') return 1;
+                  if (s === '시험 정보' || s.includes('합격률') || s.includes('난이도')) return 2;
+                  if (s === '진로(자격활용)' || s === '자격 활용 현황') return 3;
+                  if (s === '응시료') return 4;
+                  if (s === '시험 과목') return 5;
+                  return 6;
+                };
+                return pri(a.section_path?.[0] ?? '') - pri(b.section_path?.[0] ?? '');
+              }).map((row, i) => {
+                const sec = row.section_path?.[0] ?? '';
                 const isNational = row.source_type === 'national_cert_catalog';
-                const snippetLines = isCatalog
+                const isPrivate  = row.source_type === 'private_cert_catalog';
+                const isCatalog  = isNational || isPrivate;
+                const isCareer   = sec === '진로(자격활용)' || sec === '자격 활용 현황';
+                const isIntro    = sec === '도입목적';
+                const isExamInfo = sec === '시험 정보' || sec.includes('합격률') || sec.includes('난이도');
+                const snippetLines = (isPrivate && row.snippet.includes('\n'))
                   ? row.snippet.split('\n').filter(Boolean)
                   : null;
+                // 자격증 소개 — 도입목적 → 전용 intro 박스
+                if (isIntro) {
+                  return (
+                    <div key={row.chunk_id || i} className="ev-intro-box">
+                      <span className="ev-intro-label">자격증 소개</span>
+                      <p className="ev-intro-text">{row.snippet}</p>
+                    </div>
+                  );
+                }
+                // 자격 활용 — 진로(자격활용) / 자격 활용 현황
+                if (isCareer) {
+                  const careerText = row.snippet.replace(/^진로\(자격활용\):\s*/, '');
+                  return (
+                    <div key={row.chunk_id || i} className="ev-career-box">
+                      <span className="ev-career-label">자격 활용</span>
+                      {snippetLines && snippetLines.length > 1 ? (
+                        <ul className="ev-catalog-list">
+                          {snippetLines.map((line, li) => (
+                            <li key={li}>{line.replace(/^\+\s*/, '')}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="ev-career-text">{careerText}</p>
+                      )}
+                    </div>
+                  );
+                }
+                // 시험 정보 — pill 배지 방식
+                if (isExamInfo) {
+                  // 정규화된 형식("A · B · C") vs 구형식("시험 난이도: 3.0. ...")
+                  let pills: string[];
+                  if (row.snippet.includes(' · ')) {
+                    pills = row.snippet.split(' · ').filter(Boolean);
+                  } else {
+                    // 구형 Supabase 데이터: 필드별 파싱
+                    const rawPills: string[] = [];
+                    const dm2 = row.snippet.match(/시험 난이도:\s*([0-9.]+)/);
+                    if (dm2) {
+                      const diffLabels: Record<string, string> = {
+                        '1':'하 (쉬움)','1.0':'하 (쉬움)','1.5':'중하','2':'중하','2.0':'중하',
+                        '2.5':'중','3':'중 (보통)','3.0':'중 (보통)','3.5':'중상',
+                        '4':'중상','4.0':'중상','4.5':'상','5':'상 (어려움)','5.0':'상 (어려움)',
+                      };
+                      rawPills.push(`난이도: ${diffLabels[dm2[1]] ?? dm2[1]}`);
+                    }
+                    const pm2 = row.snippet.match(/3년 평균 합격률:\s*([\d.]+)/);
+                    if (pm2) rawPills.push(`합격률: ${Math.round(parseFloat(pm2[1]))}%`);
+                    const fm2 = row.snippet.match(/연간 검정 횟수:\s*([^.]+)/);
+                    if (fm2) rawPills.push(`연간 시험: ${fm2[1].trim()}`);
+                    pills = rawPills.length ? rawPills : [row.snippet];
+                  }
+                  return (
+                    <div key={row.chunk_id || i} className="ev-exam-row">
+                      {pills.map((p, pi) => (
+                        <span key={pi} className="ev-exam-pill">{p}</span>
+                      ))}
+                    </div>
+                  );
+                }
+                // 나머지 섹션 (직무·역할, 시험 과목, 응시료 등)
                 return (
                   <div key={row.chunk_id || i} className={`ev-row${isCatalog ? ' ev-row-catalog' : ''}`}>
                     <div className="ev-row-header">
-                      {row.section_path?.length > 0 && (
-                        <span className="ev-section-label">{row.section_path.join(' › ')}</span>
+                      {sec && (
+                        <span className="ev-section-label">{sec}</span>
                       )}
                       {isCatalog && (
                         <span className={`ev-src-tag ${isNational ? 'ev-src-national' : 'ev-src-catalog'}`}>
                           {isNational ? '국가자격' : '공인민간자격'}
                         </span>
                       )}
-                      {!isCatalog && pct != null && (
-                        <div className="ev-score-wrap">
-                          <div className="ev-score-track">
-                            <div className="ev-score-fill" style={{ width: `${pct}%` }} />
-                          </div>
-                          <span className="ev-score-pct">관련도 {pct}%</span>
-                        </div>
-                      )}
-                      {!isCatalog && isLocal && <span className="ev-src-tag ev-src-local">후보 데이터</span>}
                       {row.source_url && (
                         <a href={row.source_url} target="_blank" rel="noreferrer" className="ev-link">
                           <ExternalLink size={11} /> 원문 보기
@@ -466,7 +541,12 @@ const Recommendation: React.FC = () => {
           </div>
         ) : (
           <>
-            <p className="result-count">추천 자격증 <span className="count-num">{filtered.length}</span>건</p>
+            <div className="result-count-row">
+              <p className="result-count">추천 자격증 <span className="count-num">{filtered.length}</span>건</p>
+              {filtered.length > 60 && (
+                <span className="result-cap-hint">상위 60건 표시 · 검색어나 등급 필터로 좁히세요</span>
+              )}
+            </div>
             <div className="cert-grid-scroll">
               <div className="cert-grid">
                 {filtered.slice(0, 60).map(cert => (
@@ -476,6 +556,7 @@ const Recommendation: React.FC = () => {
                     onEvidence={fetchEvidence}
                     onDag={fetchDag}
                     onRoadmap={goToRoadmap}
+                    isSelected={evidence.certId === cert.cert_id && showEvidence}
                   />
                 ))}
                 {filtered.length === 0 && (
@@ -561,8 +642,10 @@ const Recommendation: React.FC = () => {
         .rec-loading{display:flex;flex-direction:column;align-items:center;gap:.75rem;padding:3rem 1rem;color:var(--text-muted);font-size:.9rem}
         .rec-spin{animation:spin 1s linear infinite;color:var(--primary)}
         .rec-error{display:flex;align-items:center;gap:.75rem;padding:1.25rem;color:var(--danger);flex-wrap:wrap}
-        .result-count{margin-bottom:.875rem;font-size:.9rem;color:var(--text-muted)}
+        .result-count-row{display:flex;align-items:baseline;gap:.75rem;margin-bottom:.875rem;flex-wrap:wrap}
+        .result-count{font-size:.9rem;color:var(--text-muted);margin:0}
         .count-num{color:var(--primary);font-size:1.2rem;font-weight:800}
+        .result-cap-hint{font-size:.75rem;color:var(--text-light);padding:.15rem .6rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-full)}
         .cert-grid-scroll{max-height:72vh;overflow-y:auto;padding-right:4px;scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent}
         .cert-grid-scroll::-webkit-scrollbar{width:5px}
         .cert-grid-scroll::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:99px}
@@ -582,6 +665,17 @@ const Recommendation: React.FC = () => {
         .no-results{grid-column:1/-1;text-align:center;padding:2.5rem 1.25rem;line-height:1.8;display:flex;flex-direction:column;gap:.5rem}
         .no-results-title{font-size:.95rem;font-weight:700;color:var(--text)}
         .no-results-sub{font-size:.85rem;color:var(--text-muted);line-height:1.65}
+        .cert-card-selected{border-color:var(--primary)!important;box-shadow:0 0 0 2px rgba(99,102,241,.18),var(--shadow-md)!important;background:#f5f3ff}
+        .cert-click-hint{display:inline-flex;align-items:center;gap:.25rem;font-size:.72rem;color:var(--text-light)}
+        .featured-cert-active{border-left-color:var(--primary)!important;background:#f5f3ff}
+        .ev-intro-box{padding:.875rem 1rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.4rem}
+        .ev-intro-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:#1d4ed8;text-transform:uppercase}
+        .ev-intro-text{font-size:.875rem;color:#1e3a5f;line-height:1.7;margin:0}
+        .ev-career-box{padding:.875rem 1rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.4rem}
+        .ev-career-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:#15803d;text-transform:uppercase}
+        .ev-career-text{font-size:.855rem;color:#14532d;line-height:1.7;margin:0}
+        .ev-exam-row{display:flex;flex-wrap:wrap;gap:.5rem;padding:.625rem 0}
+        .ev-exam-pill{display:inline-flex;align-items:center;padding:.25rem .75rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-full);font-size:.8rem;font-weight:600;color:var(--text-muted);white-space:nowrap}
       `}</style>
     </div>
   );

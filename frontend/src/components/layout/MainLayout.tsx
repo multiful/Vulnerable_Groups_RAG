@@ -60,14 +60,14 @@ const FLOW_STEPS = [
 function StepIndicator({ pathname }: { pathname: string }) {
   const [searchParams] = useSearchParams();
   const stageParam = searchParams.get('stage');
-  const certParam  = searchParams.get('cert');
 
   const currentIdx = FLOW_STEPS.findIndex(s => pathname.startsWith(s.path));
   if (currentIdx === -1) return null;
 
   const isDone = (idx: number) => {
     if (idx === 0) return currentIdx > 0 && !!stageParam;
-    if (idx === 1) return currentIdx > 1 && !!certParam;
+    if (idx === 1) return currentIdx > 1;
+    if (idx === 2) return currentIdx > 2;
     return false;
   };
 
@@ -109,41 +109,6 @@ const MainLayout: React.FC = () => {
   return (
     <div className="app-root">
 
-      {/* ── 청년지원제도 배너 ── */}
-      <div className="support-banner">
-        <div className="support-banner-inner">
-          <span className="support-banner-label">청년지원제도</span>
-          <div className="support-banner-links">
-            {SUPPORT_LINKS.map(item => (
-              <div key={item.url} className="support-dropdown-wrap">
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="support-banner-link"
-                >
-                  {item.label} <span className="support-arrow">▾</span>
-                </a>
-                <div className="support-dropdown">
-                  <div className="support-dropdown-title">{item.label}</div>
-                  {item.subLinks.map(sub => (
-                    <a
-                      key={sub.url}
-                      href={sub.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="support-dropdown-item"
-                    >
-                      {sub.label}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* ── Header ── */}
       <header className="app-header">
         <div className="container header-inner">
@@ -164,6 +129,40 @@ const MainLayout: React.FC = () => {
                 {item.label}
               </Link>
             ))}
+
+            {/* 청년지원제도 드롭다운 탭 */}
+            <div className="support-nav-wrap">
+              <button type="button" className="header-nav-link support-nav-btn" aria-haspopup="true">
+                청년지원제도 <span className="support-nav-arrow">▾</span>
+              </button>
+              <div className="support-mega-panel" role="menu">
+                {SUPPORT_LINKS.map(item => (
+                  <div key={item.url} className="support-mega-group">
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="support-mega-title"
+                      role="menuitem"
+                    >
+                      {item.label}
+                    </a>
+                    {item.subLinks.map(sub => (
+                      <a
+                        key={sub.url}
+                        href={sub.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="support-mega-item"
+                        role="menuitem"
+                      >
+                        {sub.label}
+                      </a>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
           </nav>
 
           <Link to="/risk-assessment" className="btn-primary header-cta">
@@ -196,123 +195,98 @@ const MainLayout: React.FC = () => {
       </nav>
 
       <style>{`
-        /* ── 청년지원제도 배너 ── */
-        .support-banner {
-          background: linear-gradient(90deg, #f0f7ff 0%, #e8f4fd 100%);
-          border-bottom: 1px solid #c8e0f7;
-          padding: 0.45rem 0;
+        /* ── 청년지원제도 드롭다운 (헤더 내 탭) ── */
+        .support-nav-wrap {
           position: relative;
-          z-index: 200;
         }
-        .support-banner-inner {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 0 1.5rem;
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-        .support-banner-label {
-          font-size: 0.72rem;
-          font-weight: 700;
-          color: #2563eb;
-          white-space: nowrap;
-          background: #dbeafe;
-          padding: 0.2rem 0.6rem;
-          border-radius: 99px;
-          flex-shrink: 0;
-        }
-        .support-banner-links {
+        .support-nav-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-family: inherit;
           display: flex;
           align-items: center;
           gap: 0.25rem;
-          flex-wrap: wrap;
+          color: var(--text-muted);
+          transition: var(--transition);
         }
-        /* 드롭다운 래퍼 */
-        .support-dropdown-wrap {
-          position: relative;
+        .support-nav-btn:hover {
+          color: #2563eb;
+          background: #eff6ff;
         }
-        .support-banner-link {
-          font-size: 0.75rem;
-          font-weight: 500;
-          color: #374151;
-          text-decoration: none;
-          padding: 0.2rem 0.7rem;
-          border-radius: 99px;
-          border: 1px solid #d1d5db;
-          background: #fff;
-          transition: all 0.15s ease;
-          white-space: nowrap;
-          display: flex;
-          align-items: center;
-          gap: 0.2rem;
-        }
-        .support-arrow {
+        .support-nav-arrow {
           font-size: 0.6rem;
-          color: #9ca3af;
+          transition: transform 0.2s ease;
         }
-        .support-banner-link:hover {
-          background: #2563eb;
-          color: #fff;
-          border-color: #2563eb;
+        .support-nav-wrap:hover .support-nav-arrow {
+          transform: rotate(180deg);
         }
-        .support-banner-link:hover .support-arrow {
-          color: #fff;
-        }
-        /* 드롭다운 메뉴 */
-        .support-dropdown {
+        /* 메가 패널 */
+        .support-mega-panel {
           display: none;
           position: absolute;
-          top: 100%;
-          left: 0;
-          min-width: 160px;
+          top: calc(100% + 8px);
+          left: 50%;
+          transform: translateX(-50%);
+          min-width: 640px;
           background: #fff;
           border: 1px solid #e5e7eb;
-          border-radius: 10px;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-          padding: 0.5rem 0;
-          padding-top: 14px;
-          margin-top: 0;
-          z-index: 300;
+          border-radius: 14px;
+          box-shadow: 0 12px 40px rgba(15,23,42,0.13);
+          padding: 1.25rem;
+          z-index: 500;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 1rem;
         }
-        /* 갭을 메워주는 가상 브릿지 */
-        .support-dropdown::before {
+        .support-nav-wrap:hover .support-mega-panel {
+          display: grid;
+        }
+        /* hover 갭 브릿지 */
+        .support-mega-panel::before {
           content: '';
           position: absolute;
           top: -10px;
-          left: 0;
-          right: 0;
+          left: 0; right: 0;
           height: 10px;
         }
-        .support-dropdown-wrap:hover .support-dropdown {
-          display: block;
+        .support-mega-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.15rem;
         }
-        .support-dropdown-title {
-          font-size: 0.7rem;
+        .support-mega-title {
+          display: block;
+          font-size: 0.8rem;
           font-weight: 700;
           color: #2563eb;
-          padding: 0.4rem 1rem 0.3rem;
-          border-bottom: 1px solid #f3f4f6;
-          margin-bottom: 0.25rem;
-        }
-        .support-dropdown-item {
-          display: block;
-          font-size: 0.78rem;
-          color: #374151;
           text-decoration: none;
-          padding: 0.45rem 1rem;
+          padding: 0.35rem 0.6rem;
+          border-radius: 6px;
+          margin-bottom: 0.2rem;
+          background: #eff6ff;
+          white-space: nowrap;
+          transition: background 0.12s;
+        }
+        .support-mega-title:hover {
+          background: #dbeafe;
+        }
+        .support-mega-item {
+          display: block;
+          font-size: 0.76rem;
+          color: #4b5563;
+          text-decoration: none;
+          padding: 0.3rem 0.6rem;
+          border-radius: 6px;
           transition: all 0.12s ease;
           white-space: nowrap;
         }
-        .support-dropdown-item:hover {
-          background: #eff6ff;
+        .support-mega-item:hover {
+          background: #f0f9ff;
           color: #2563eb;
-          padding-left: 1.2rem;
+          padding-left: 0.85rem;
         }
         @media (max-width: 768px) {
-          .support-banner-inner { gap: 0.6rem; }
-          .support-banner-links { gap: 0.2rem; }
-          .support-banner-link { font-size: 0.68rem; padding: 0.15rem 0.5rem; }
+          .support-nav-wrap { display: none; }
         }
 
         /* ── Root ── */

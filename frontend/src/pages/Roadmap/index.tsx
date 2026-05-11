@@ -101,8 +101,8 @@ const STARTING_STAGE_MAP: Record<number, string> = {
 };
 
 function extractPassRate(text: string): number | null {
-  const m = text.match(/합격률:\s*([\d.]+)%/);
-  return m ? parseFloat(m[1]) : null;
+  const m = text.match(/(?:3년 평균 합격률|합격률):\s*([\d.]+)/);
+  return m ? Math.round(parseFloat(m[1])) : null;
 }
 
 function calcAchievability(tier: string, riskNum: number): string {
@@ -427,7 +427,7 @@ const Roadmap: React.FC = () => {
       </div>
 
       {/* 탭 */}
-      {(riskId && domainParam) && (
+      {(domainParam && data) && (
         <div className="rm-tabs">
           <button
             className={`rm-tab${activeTab === 'base' ? ' rm-tab-active' : ''}`}
@@ -475,10 +475,10 @@ const Roadmap: React.FC = () => {
       )}
 
       {/* AI 탭 안내 */}
-      {activeTab === 'ai' && llmData && (
+      {activeTab === 'ai' && llmData && llmData.llm_generated && (
         <div className="fallback-notice llm-notice">
           <Info size={13} />
-          <span><strong>[AI]</strong> {llmData.fallback_note}</span>
+          <span>✦ AI 맞춤 분석이 완료되었습니다. 각 자격증 카드에서 추천 이유를 확인하세요.</span>
         </div>
       )}
 
@@ -583,6 +583,7 @@ const Roadmap: React.FC = () => {
                                   className="tl-cert-main"
                                   onClick={() => goToCert(cert.cert_id, cert.cert_name)}
                                   type="button"
+                                  title="자격증 상세 확인 페이지로 이동"
                                 >
                                   <div className="tl-cert-top-row">
                                     <span
@@ -595,7 +596,7 @@ const Roadmap: React.FC = () => {
                                     <div className="tl-cert-meta">
                                       {cert.avg_pass_rate !== null && (
                                         <span className={`tl-pass-rate ${cert.is_bottleneck ? 'tl-bottleneck' : ''}`}>
-                                          합격률 {cert.avg_pass_rate}%
+                                          합격률 {Math.round(cert.avg_pass_rate)}%
                                           {cert.is_bottleneck && ' ⚠'}
                                         </span>
                                       )}
@@ -613,7 +614,7 @@ const Roadmap: React.FC = () => {
                                   className={`tl-drawer-btn${isActive ? ' tl-drawer-btn-active' : ''}`}
                                   onClick={() => openCertDrawer(cert.cert_id, cert.cert_name)}
                                   type="button"
-                                  title="추천 이유 보기"
+                                  title={isActive ? '닫기' : '자격증 소개 · 자격활용 보기'}
                                 >
                                   {isActive ? <X size={13} /> : <FileText size={13} />}
                                 </button>
@@ -644,38 +645,89 @@ const Roadmap: React.FC = () => {
                                       {evRows.length > 0 && (
                                         <div className="rm-ev-section">
                                           <p className="rm-dag-title">왜 이 자격증인가요</p>
-                                          <p className="rm-ev-intro">공식 문서에서 찾아낸 이 자격증 관련 내용입니다. 이 자료를 바탕으로 추천이 이루어졌습니다.</p>
-                                          {evRows.map((ev, i) => {
-                                            const pct = ev.similarity != null ? Math.round(ev.similarity * 100) : null;
-                                            const isLocal = ev.source_type === 'candidate' || ev.source_type === 'local_candidates';
-                                            const isCatalog = ev.source_type === 'private_cert_catalog' || ev.source_type === 'national_cert_catalog';
+                                          {[...evRows].sort((a, b) => {
+                                            const pri = (s: string) => {
+                                              if (s === '도입목적') return 0;
+                                              if (s === '직무 · 역할') return 1;
+                                              if (s === '시험 정보' || s.includes('합격률') || s.includes('난이도')) return 2;
+                                              if (s === '진로(자격활용)' || s === '자격 활용 현황') return 3;
+                                              if (s === '응시료') return 4;
+                                              if (s === '시험 과목') return 5;
+                                              return 6;
+                                            };
+                                            return pri(a.section_path?.[0] ?? '') - pri(b.section_path?.[0] ?? '');
+                                          }).map((ev, i) => {
+                                            const sec = ev.section_path?.[0] ?? '';
                                             const isNational = ev.source_type === 'national_cert_catalog';
-                                            const snippetLines = isCatalog
+                                            const isPrivate  = ev.source_type === 'private_cert_catalog';
+                                            const isCatalog  = isNational || isPrivate;
+                                            const isIntro    = sec === '도입목적';
+                                            const isCareer   = sec === '진로(자격활용)' || sec === '자격 활용 현황';
+                                            const isExamInfo = sec === '시험 정보' || sec.includes('합격률') || sec.includes('난이도');
+                                            const snippetLines = (isPrivate && ev.snippet.includes('\n'))
                                               ? ev.snippet.split('\n').filter(Boolean)
                                               : null;
+                                            if (isIntro) {
+                                              return (
+                                                <div key={ev.chunk_id ?? i} className="rm-ev-intro-box">
+                                                  <span className="rm-ev-intro-label">자격증 소개</span>
+                                                  <p className="rm-ev-intro-text">{ev.snippet}</p>
+                                                </div>
+                                              );
+                                            }
+                                            if (isCareer) {
+                                              const careerText = ev.snippet.replace(/^진로\(자격활용\):\s*/, '');
+                                              return (
+                                                <div key={ev.chunk_id ?? i} className="rm-ev-career-box">
+                                                  <span className="rm-ev-career-label">자격 활용</span>
+                                                  {snippetLines && snippetLines.length > 1 ? (
+                                                    <ul className="rm-ev-catalog-list">
+                                                      {snippetLines.map((line, li) => (
+                                                        <li key={li}>{line.replace(/^\+\s*/, '')}</li>
+                                                      ))}
+                                                    </ul>
+                                                  ) : (
+                                                    <p className="rm-ev-career-text">{careerText}</p>
+                                                  )}
+                                                </div>
+                                              );
+                                            }
+                                            if (isExamInfo) {
+                                              let pills: string[];
+                                              if (ev.snippet.includes(' · ')) {
+                                                pills = ev.snippet.split(' · ').filter(Boolean);
+                                              } else {
+                                                const rawPills: string[] = [];
+                                                const diffLabels: Record<string, string> = {
+                                                  '1':'하 (쉬움)','1.0':'하 (쉬움)','1.5':'중하','2':'중하','2.0':'중하',
+                                                  '2.5':'중','3':'중 (보통)','3.0':'중 (보통)','3.5':'중상',
+                                                  '4':'중상','4.0':'중상','4.5':'상','5':'상 (어려움)','5.0':'상 (어려움)',
+                                                };
+                                                const dm2 = ev.snippet.match(/시험 난이도:\s*([0-9.]+)/);
+                                                if (dm2) rawPills.push(`난이도: ${diffLabels[dm2[1]] ?? dm2[1]}`);
+                                                const pm2 = ev.snippet.match(/3년 평균 합격률:\s*([\d.]+)/);
+                                                if (pm2) rawPills.push(`합격률: ${Math.round(parseFloat(pm2[1]))}%`);
+                                                const fm2 = ev.snippet.match(/연간 검정 횟수:\s*([^.]+)/);
+                                                if (fm2) rawPills.push(`연간 시험: ${fm2[1].trim()}`);
+                                                pills = rawPills.length ? rawPills : [ev.snippet];
+                                              }
+                                              return (
+                                                <div key={ev.chunk_id ?? i} className="rm-ev-exam-row">
+                                                  {pills.map((p, pi) => (
+                                                    <span key={pi} className="rm-ev-exam-pill">{p}</span>
+                                                  ))}
+                                                </div>
+                                              );
+                                            }
                                             return (
                                               <div key={ev.chunk_id ?? i} className={`rm-ev-card${isCatalog ? ' rm-ev-card-catalog' : ''}`}>
                                                 <div className="rm-ev-card-hdr">
                                                   {isCatalog ? (
                                                     <span className={`rm-ev-src ${isNational ? 'rm-ev-src-national' : 'rm-ev-src-catalog'}`}>
-                                                      {isNational ? '국가' : '공인'}
+                                                      {isNational ? '국가자격' : '공인민간자격'}
                                                     </span>
-                                                  ) : (
-                                                    <span className={`rm-ev-src ${isLocal ? 'rm-ev-src-local' : 'rm-ev-src-db'}`}>
-                                                      {isLocal ? '로컬' : 'DB'}
-                                                    </span>
-                                                  )}
-                                                  {(ev.section_path?.length ?? 0) > 0 && (
-                                                    <span className="rm-ev-sec-path">{ev.section_path[0]}</span>
-                                                  )}
-                                                  {!isCatalog && pct != null && (
-                                                    <div className="rm-ev-score">
-                                                      <div className="rm-ev-score-track">
-                                                        <div className="rm-ev-score-fill" style={{ width: `${pct}%` }} />
-                                                      </div>
-                                                      <span className="rm-ev-score-pct">{pct}%</span>
-                                                    </div>
-                                                  )}
+                                                  ) : null}
+                                                  {sec && <span className="rm-ev-sec-path">{sec}</span>}
                                                 </div>
                                                 {snippetLines && snippetLines.length > 1 ? (
                                                   <ul className="rm-ev-catalog-list">
@@ -885,8 +937,8 @@ const Roadmap: React.FC = () => {
           border: 1px solid var(--border); background: var(--surface);
           transition: all .18s; width: 100%; overflow: hidden;
         }
-        .tl-cert-row:hover { border-color: var(--primary); transform: translateX(3px); }
-        .tl-cert-row-active { border-color: var(--primary); background: var(--primary-light); }
+        .tl-cert-row:hover { border-color: rgba(99,102,241,.35); transform: translateX(2px); box-shadow: 2px 0 0 0 var(--primary); }
+        .tl-cert-row-active { border-color: var(--primary); box-shadow: 2px 0 0 0 var(--primary); background: #f5f3ff; }
         .tl-cert-main {
           flex: 1; display: flex; flex-direction: column; gap: .3rem; min-width: 0;
           padding: .55rem .75rem; text-align: left; background: none; border: none;
@@ -894,13 +946,15 @@ const Roadmap: React.FC = () => {
         }
         .tl-cert-row:hover .tl-cert-main { background: var(--primary-light); }
         .tl-cert-row-active .tl-cert-main { background: transparent; }
+        .tl-locked .tl-cert-row { opacity: .6; }
         .tl-drawer-btn {
-          flex-shrink: 0; width: 34px; display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0; width: 36px; display: flex; align-items: center; justify-content: center;
           background: none; border: none; border-left: 1px solid var(--border);
           color: var(--text-light); cursor: pointer; transition: all .15s;
+          font-size: .64rem; font-weight: 700; flex-direction: column; gap: .1rem;
         }
         .tl-drawer-btn:hover { background: rgba(99,102,241,.08); color: var(--primary); }
-        .tl-drawer-btn-active { color: var(--primary); background: rgba(99,102,241,.1); }
+        .tl-drawer-btn-active { color: var(--primary); background: rgba(99,102,241,.12); border-left-color: var(--primary); }
         .tl-cert-top-row { display: flex; align-items: center; gap: .625rem; width: 100%; }
 
         /* Inline evidence/DAG drawer */
@@ -918,10 +972,6 @@ const Roadmap: React.FC = () => {
         .rm-dag-title {
           font-size: .69rem; font-weight: 700; color: var(--text-light);
           letter-spacing: .04em; text-transform: uppercase; margin-bottom: .15rem;
-        }
-        .rm-ev-intro {
-          font-size: .78rem; color: var(--text-muted); line-height: 1.6;
-          margin-bottom: .35rem;
         }
         .rm-flow-scroll { overflow-x: auto; padding-bottom: .25rem; }
         .rm-ev-card {
@@ -949,6 +999,14 @@ const Roadmap: React.FC = () => {
         .rm-ev-score-pct { font-size: .65rem; font-weight: 700; color: var(--primary); white-space: nowrap; }
         .rm-ev-snippet { font-size: .79rem; color: var(--text-muted); line-height: 1.55; margin: 0; }
         .rm-drawer-empty { font-size: .8rem; color: var(--text-light); font-style: italic; margin: 0; }
+        .rm-ev-intro-box { padding: .625rem .75rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-xs); display: flex; flex-direction: column; gap: .3rem; }
+        .rm-ev-intro-label { font-size: .62rem; font-weight: 800; letter-spacing: .07em; color: #1d4ed8; text-transform: uppercase; }
+        .rm-ev-intro-text { font-size: .8rem; color: #1e3a5f; line-height: 1.65; margin: 0; }
+        .rm-ev-career-box { padding: .625rem .75rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-xs); display: flex; flex-direction: column; gap: .3rem; }
+        .rm-ev-career-label { font-size: .62rem; font-weight: 800; letter-spacing: .07em; color: #15803d; text-transform: uppercase; }
+        .rm-ev-career-text { font-size: .79rem; color: #14532d; line-height: 1.65; margin: 0; }
+        .rm-ev-exam-row { display: flex; flex-wrap: wrap; gap: .4rem; padding: .4rem 0; }
+        .rm-ev-exam-pill { display: inline-flex; align-items: center; padding: .2rem .6rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: .74rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
         .tl-cert-reason {
           font-size: .76rem; color: var(--text-muted); line-height: 1.55;
           font-style: italic; padding-left: .25rem;

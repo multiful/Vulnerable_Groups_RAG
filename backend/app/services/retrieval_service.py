@@ -55,24 +55,78 @@ def _load_cert_names() -> dict[str, str]:
     return out
 
 
+_DIFF_LABEL: dict[str, str] = {
+    "1.0": "하 (쉬움)", "1": "하 (쉬움)",
+    "1.5": "중하",
+    "2.0": "중하", "2": "중하",
+    "2.5": "중",
+    "3.0": "중 (보통)", "3": "중 (보통)",
+    "3.5": "중상",
+    "4.0": "중상", "4": "중상",
+    "4.5": "상",
+    "5.0": "상 (어려움)", "5": "상 (어려움)",
+}
+
+
 def _parse_dense_sections(text: str) -> list[dict]:
-    """text_for_dense를 섹션별로 분리해 evidence 목록으로 반환."""
-    import re
-    sections = [
-        ("직무 · 역할", r"관련 직무:\s*([^\.]+)"),
-        ("합격률 · 난이도", r"(?:3년 평균 합격률|시험 난이도|연간 검정 횟수)[^\n]{0,200}"),
-        ("시험 과목", r"시험 과목:\s*([^\.]+)"),
-        ("관련 학과", r"관련 학과:\s*([^\.]+)"),
-    ]
+    """text_for_dense를 섹션별로 분리해 evidence 목록으로 반환.
+
+    합격률은 이미 UI에서 표시되므로 evidence에서 제외.
+    난이도는 숫자 대신 라벨로 변환해서 표시.
+    """
     results = []
-    for label, pattern in sections:
-        m = re.search(pattern, text)
-        if m:
-            snippet = m.group(0).strip()[:400]
-            results.append({"label": label, "snippet": snippet})
+
+    # 직무 · 역할
+    m = re.search(r"관련 직무:\s*([^\.]+)", text)
+    if m:
+        results.append({"label": "직무 · 역할", "snippet": m.group(1).strip()[:300]})
+
+    # 시험 정보: 난이도 라벨 + 합격률 + 연간 검정 횟수
+    info_parts: list[str] = []
+    dm = re.search(r"시험 난이도:\s*([0-9.]+)", text)
+    if dm:
+        raw = dm.group(1).rstrip(".")
+        label = _DIFF_LABEL.get(raw, raw)
+        info_parts.append(f"난이도: {label}")
+    pm = re.search(r"3년 평균 합격률:\s*([0-9.]+)", text)
+    if pm:
+        info_parts.append(f"합격률: {int(round(float(pm.group(1))))}%")
+    fm = re.search(r"연간 검정 횟수:\s*([^\.]+)", text)
+    if fm:
+        info_parts.append(f"연간 시험: {fm.group(1).strip()}")
+    if info_parts:
+        results.append({"label": "시험 정보", "snippet": " · ".join(info_parts)})
+
+    # 시험 과목
+    m = re.search(r"시험 과목:\s*([^\.]+)", text)
+    if m:
+        results.append({"label": "시험 과목", "snippet": m.group(1).strip()[:300]})
+
     if not results:
         results.append({"label": "자격증 개요", "snippet": text[:600]})
     return results
+
+
+def _normalize_exam_row(row: dict) -> dict:
+    """Supabase에서 온 '합격률·난이도' 섹션을 '시험 정보' 형식으로 정규화."""
+    sec = (row.get("section_path") or [""])[0]
+    if "합격률" not in sec and "난이도" not in sec:
+        return row
+    text = row.get("snippet", "")
+    info_parts: list[str] = []
+    dm = re.search(r"시험 난이도:\s*([0-9.]+)", text)
+    if dm:
+        raw = dm.group(1).rstrip(".")
+        info_parts.append(f"난이도: {_DIFF_LABEL.get(raw, raw)}")
+    pm = re.search(r"3년 평균 합격률:\s*([0-9.]+)", text)
+    if pm:
+        info_parts.append(f"합격률: {int(round(float(pm.group(1))))}%")
+    fm = re.search(r"연간 검정 횟수:\s*([^\.]+)", text)
+    if fm:
+        info_parts.append(f"연간 시험: {fm.group(1).strip()}")
+    if not info_parts:
+        return row
+    return {**row, "section_path": ["시험 정보"], "snippet": " · ".join(info_parts)}
 
 
 def _candidate_fallback(cert_id: str) -> list[dict]:
@@ -330,6 +384,7 @@ def search_evidence(body: dict[str, Any], settings: Settings) -> dict[str, Any]:
     # 1. Supabase certificates_vectors (match_certificates RPC)
     db_rows = _search_supabase(cert_name, query_text, settings)
     if db_rows:
+        db_rows = [_normalize_exam_row(r) for r in db_rows]
         combined = local_catalog_rows + db_rows
         return ok_envelope({"cert_id": cert_id, "evidence": combined, "source": "supabase"})
 

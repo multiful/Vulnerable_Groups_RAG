@@ -350,9 +350,9 @@ def _build_roadmap_data(
         "cert_paths": [],
         "fallback_used": False,
         "fallback_note": (
-            "AI가 각 자격증 추천 이유를 분석한 맞춤 로드맵입니다. (GPT-4o-mini)"
+            "AI가 각 자격증 추천 이유를 분석한 맞춤 로드맵입니다."
             if llm_generated
-            else "단계별 자격증 경로를 구성했습니다. (AI 설명 없음)"
+            else "단계별 자격증 경로를 구성했습니다."
         ),
         "total_certs_in_roadmap": len(sequence),
         "llm_generated": llm_generated,
