@@ -1,7 +1,7 @@
 # File: config.py
-# Last Updated: 2026-04-03
-# Content Hash: SHA256:d4e65f69b3ab34729a0a12bb99a0c336822916a50148284d4ceb443b3e1dc635
-# Role: Pydantic Settings — CORS, Supabase, 임베딩, RAG 경로
+# Last Updated: 2026-05-12
+# Content Hash: SHA256:TBD
+# Role: Pydantic Settings — CORS, Supabase, 임베딩, RAG 경로, YouTube API
 from __future__ import annotations
 
 from functools import lru_cache
@@ -43,7 +43,17 @@ class Settings(BaseSettings):
     # --- 오프라인 산출물 경로 (저장소 루트 기준 상대 경로 권장) ---
     chunks_jsonl_relative: str = "data/index_ready/chunks/chunks.jsonl"
 
-    @field_validator("supabase_url", "openai_api_key", mode="before")
+    # --- YouTube Data API v3 (F-11 관련 동영상 추천) ---
+    youtube_api_key: str | None = Field(
+        default=None,
+        description="YouTube Data API v3 키. 백엔드에서만 사용. 클라이언트 노출 금지.",
+    )
+    youtube_video_cache_table: str = "cert_video_cache"
+    youtube_video_cache_ttl_days: int = 30
+    youtube_video_max_results: int = 5
+    youtube_query_version: int = 2  # v2: 숏츠 제외 + medium duration 필터
+
+    @field_validator("supabase_url", "openai_api_key", "youtube_api_key", mode="before")
     @classmethod
     def strip_blank(cls, v: object) -> object:
         if isinstance(v, str) and not v.strip():

@@ -1,11 +1,12 @@
 // Content Hash: SHA256:TBD
-import React, { useState, useMemo, useEffect, useCallback, useDeferredValue, memo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useDeferredValue, memo, useRef } from 'react';
 import { CertFlowDiagram } from '../../components/charts/CertFlowDiagram';
 import { getCertCandidates } from '../../api/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, Map, FileText, ChevronDown, AlertCircle,
   Loader2, ArrowLeft, ArrowRight, X, BookOpen, ExternalLink,
+  Video, Play,
 } from 'lucide-react';
 import type { CertCandidate } from '../../types/cert';
 
@@ -155,14 +156,33 @@ interface DagState {
   fetched: boolean;
 }
 
+interface VideoItem {
+  video_id: string;
+  title: string;
+  channel: string;
+  thumbnail_url: string;
+  url: string;
+}
+interface VideosState {
+  loading: boolean;
+  videos: VideoItem[];
+  error: string | null;
+  warning: string | null;
+  fetched: boolean;
+  certId: string;
+  certName: string;
+  cacheHit: boolean;
+}
+
 /* ── Memoized cert card: evidence/dag 상태 변경 시 재렌더 방지 ── */
 const CertCard = memo(({
-  cert, onEvidence, onDag, onRoadmap,
+  cert, onEvidence, onDag, onRoadmap, onVideos,
 }: {
   cert: CertCandidate;
   onEvidence: (id: string) => void;
   onDag: (id: string) => void;
   onRoadmap: (id: string) => void;
+  onVideos: (id: string, name: string) => void;
 }) => {
   const summary = buildCertSummary(cert);
   const color   = gradeColor(cert.cert_grade_tier);
@@ -186,6 +206,11 @@ const CertCard = memo(({
         </button>
         <button className="text-btn roadmap-btn" onClick={() => onRoadmap(cert.cert_id)}>
           <Map size={13} /> 로드맵 <ArrowRight size={12} />
+        </button>
+        <button className="text-btn videos-btn"
+          onClick={() => onVideos(cert.cert_id, cert.cert_name)}
+          title="관련 강의 동영상 보기">
+          <Video size={13} /> 관련 동영상
         </button>
       </div>
     </div>
@@ -216,6 +241,19 @@ const Recommendation: React.FC = () => {
   const [dag, setDag] = useState<DagState>({
     loading: false, predecessors: [], successors: [], certId: '', fetched: false,
   });
+  const [videos, setVideos] = useState<VideosState>({
+    loading: false, videos: [], error: null, warning: null, fetched: false,
+    certId: '', certName: '', cacheHit: false,
+  });
+  const [showVideos, setShowVideos] = useState(false);
+  const videosPanelRef = useRef<HTMLDivElement | null>(null);
+
+  // 영상 패널이 열리거나 cert가 바뀔 때 자동으로 그 위치로 스크롤
+  useEffect(() => {
+    if (showVideos && videosPanelRef.current) {
+      videosPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [showVideos, videos.certId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -286,6 +324,42 @@ const Recommendation: React.FC = () => {
     }
   }, []);
 
+  const fetchVideos = useCallback(async (certId: string, certName: string) => {
+    setVideos({
+      loading: true, videos: [], error: null, warning: null, fetched: false,
+      certId, certName, cacheHit: false,
+    });
+    setShowVideos(true);
+    try {
+      const res = await fetch(`/api/v1/certs/${encodeURIComponent(certId)}/videos`);
+      const json = await res.json();
+      if (json.success) {
+        setVideos({
+          loading: false,
+          videos: json.data?.videos ?? [],
+          error: null,
+          warning: json.data?.warning ?? null,
+          fetched: true,
+          certId,
+          certName: json.data?.cert_name ?? certName,
+          cacheHit: !!json.data?.cache_hit,
+        });
+      } else {
+        setVideos({
+          loading: false, videos: [],
+          error: json.error?.message ?? '동영상을 불러올 수 없습니다.',
+          warning: null, fetched: true, certId, certName, cacheHit: false,
+        });
+      }
+    } catch {
+      setVideos({
+        loading: false, videos: [],
+        error: '서버에 연결할 수 없습니다.',
+        warning: null, fetched: true, certId, certName, cacheHit: false,
+      });
+    }
+  }, []);
+
   const goToRoadmap = useCallback((certId: string) => {
     const p = new URLSearchParams();
     if (stageParam)  p.set('stage', stageParam);
@@ -330,6 +404,10 @@ const Recommendation: React.FC = () => {
             </button>
             <button className="btn-ghost" onClick={() => goToRoadmap(featuredCert.cert_id)}>
               <Map size={15} /> 로드맵 보기
+            </button>
+            <button className="btn-ghost btn-videos"
+              onClick={() => fetchVideos(featuredCert.cert_id, featuredCert.cert_name)}>
+              <Video size={15} /> 관련 동영상
             </button>
           </div>
         </div>
@@ -409,6 +487,68 @@ const Recommendation: React.FC = () => {
         </div>
       )}
 
+      {showVideos && (
+        <div className="videos-panel card" ref={videosPanelRef}>
+          <div className="ev-header">
+            <div className="ev-header-left">
+              <Video size={16} style={{ color: '#ef4444', flexShrink: 0 }} />
+              <span className="ev-title">{videos.certName} 관련 강의 동영상</span>
+              {videos.cacheHit && <span className="cache-badge" title="캐시된 결과">캐시</span>}
+            </div>
+            <button className="ev-close" onClick={() => setShowVideos(false)}><X size={15} /></button>
+          </div>
+
+          {videos.loading && (
+            <div className="ev-loading"><Loader2 size={18} className="ev-spin" /><span>YouTube에서 강의 영상을 찾는 중…</span></div>
+          )}
+
+          {!videos.loading && videos.error && (
+            <div className="ev-empty">
+              <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              <span>{videos.error}</span>
+            </div>
+          )}
+
+          {!videos.loading && videos.warning && videos.videos.length > 0 && (
+            <div className="ev-empty" style={{ color: '#b45309', background: '#fef3c7', padding: '.5rem .75rem', borderRadius: '6px' }}>
+              <AlertCircle size={14} style={{ flexShrink: 0 }} />
+              <span>
+                {videos.warning === 'quota_exceeded_using_stale_cache'
+                  ? '일일 검색 한도 초과 — 이전 결과를 보여드립니다.'
+                  : '최신 결과를 불러오지 못해 이전 결과를 보여드립니다.'}
+              </span>
+            </div>
+          )}
+
+          {!videos.loading && videos.fetched && videos.videos.length === 0 && !videos.error && (
+            <div className="ev-empty">
+              <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              <span>관련 동영상을 찾지 못했습니다.</span>
+            </div>
+          )}
+
+          {!videos.loading && videos.videos.length > 0 && (
+            <div className="videos-grid">
+              {videos.videos.map(v => (
+                <a key={v.video_id} href={v.url} target="_blank" rel="noreferrer" className="video-card">
+                  <div className="video-thumb">
+                    {v.thumbnail_url
+                      ? <img src={v.thumbnail_url} alt={v.title} loading="lazy" />
+                      : <div className="video-thumb-fallback"><Play size={32} /></div>
+                    }
+                    <div className="video-play-overlay"><Play size={28} /></div>
+                  </div>
+                  <div className="video-meta">
+                    <p className="video-title">{v.title}</p>
+                    <p className="video-channel">{v.channel}</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="card filter-card">
         <div className="search-wrapper">
           <Search size={16} className="search-icon" />
@@ -458,6 +598,7 @@ const Recommendation: React.FC = () => {
                     onEvidence={fetchEvidence}
                     onDag={fetchDag}
                     onRoadmap={goToRoadmap}
+                    onVideos={fetchVideos}
                   />
                 ))}
                 {filtered.length === 0 && (
@@ -556,9 +697,27 @@ const Recommendation: React.FC = () => {
         .text-btn:hover{opacity:.75}
         .evidence-btn{color:var(--primary)}
         .roadmap-btn{color:var(--secondary);margin-left:auto}
+        .videos-btn{color:#ef4444}
+        .cert-actions{flex-wrap:wrap;row-gap:.4rem}
+        .btn-videos{display:inline-flex;align-items:center;gap:.4rem}
         .no-results{grid-column:1/-1;text-align:center;padding:2.5rem 1.25rem;line-height:1.8;display:flex;flex-direction:column;gap:.5rem}
         .no-results-title{font-size:.95rem;font-weight:700;color:var(--text)}
         .no-results-sub{font-size:.85rem;color:var(--text-muted);line-height:1.65}
+
+        /* F-11: 관련 동영상 패널 */
+        .videos-panel{padding:1.25rem;display:flex;flex-direction:column;gap:.875rem;border-left:3px solid #ef4444}
+        .cache-badge{padding:.1rem .4rem;background:#f1f5f9;color:#64748b;border-radius:3px;font-size:.62rem;font-weight:700;letter-spacing:.05em;flex-shrink:0}
+        .videos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.875rem}
+        .video-card{display:flex;flex-direction:column;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;text-decoration:none;color:inherit;transition:transform .2s,box-shadow .2s,border-color .2s}
+        .video-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.08);border-color:rgba(239,68,68,.3)}
+        .video-thumb{position:relative;aspect-ratio:16/9;background:#0f172a;display:flex;align-items:center;justify-content:center;overflow:hidden}
+        .video-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+        .video-thumb-fallback{color:#475569}
+        .video-play-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25);color:#fff;opacity:0;transition:opacity .2s}
+        .video-card:hover .video-play-overlay{opacity:1}
+        .video-meta{padding:.625rem .75rem;display:flex;flex-direction:column;gap:.25rem}
+        .video-title{font-size:.82rem;font-weight:600;color:var(--text);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .video-channel{font-size:.72rem;color:var(--text-light)}
       `}</style>
     </div>
   );
