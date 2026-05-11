@@ -125,13 +125,14 @@ interface RawCert {
   text_for_dense: string;
 }
 
-async function buildLocalRoadmap(riskId: string, domainId: string, riskNum: number): Promise<RoadmapData> {
+async function buildLocalRoadmap(riskId: string, domainId: string, riskNum: number, jobId?: string): Promise<RoadmapData> {
   const all = await getCertCandidates() as unknown as RawCert[];
 
   const filtered = all.filter(c => {
     const domainOk = !domainId || (c.related_domains ?? []).includes(domainId) || c.primary_domain === domainId;
     const riskOk   = !riskId   || (c.recommended_risk_stages ?? []).includes(riskId);
-    return domainOk && riskOk;
+    const jobOk    = !jobId    || (c.related_jobs ?? []).includes(jobId);
+    return domainOk && riskOk && jobOk;
   });
 
   const byStage: Record<string, RawCert[]> = {};
@@ -186,6 +187,8 @@ const Roadmap: React.FC = () => {
   const stageParam  = searchParams.get('stage') ?? '';
   const domainParam = searchParams.get('domain') ?? '';
   const domainName  = searchParams.get('domainName') ?? domainParam;
+  const jobParam    = searchParams.get('job') ?? '';
+  const jobName     = searchParams.get('jobName') ?? '';
 
   const [data, setData]       = useState<RoadmapData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -221,6 +224,7 @@ const Roadmap: React.FC = () => {
       const body: Record<string, unknown> = { top_n_per_stage: 6 };
       if (riskId)      body.risk_stage_id = riskId;
       if (domainParam) body.domain_ids    = [domainParam];
+      if (jobParam)    body.job_ids       = [jobParam];
       const res  = await fetch('/api/v1/recommendations', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -238,7 +242,7 @@ const Roadmap: React.FC = () => {
     /* ── 2. 로컬 fallback (DB 실패 시) ── */
     if (!showed) {
       try {
-        const local = await buildLocalRoadmap(riskId, domainParam, riskNum);
+        const local = await buildLocalRoadmap(riskId, domainParam, riskNum, jobParam || undefined);
         setData(local);
       } catch {
         setError('데이터를 불러오지 못했습니다. 새로고침 해주세요.');
@@ -259,7 +263,7 @@ const Roadmap: React.FC = () => {
       const tid = setTimeout(() => ctrl.abort(), 12000);
       const res = await fetch('/api/v1/recommendations/llm', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ risk_stage_id: riskId, domain_ids: [domainParam], domain_name: domainName }),
+        body: JSON.stringify({ risk_stage_id: riskId, domain_ids: [domainParam], domain_name: domainName, job_ids: jobParam ? [jobParam] : undefined }),
         signal: ctrl.signal,
       });
       clearTimeout(tid);
@@ -317,6 +321,8 @@ const Roadmap: React.FC = () => {
     if (stageParam)  p.set('stage', stageParam);
     if (domainParam) p.set('domain', domainParam);
     if (domainName)  p.set('domainName', domainName);
+    if (jobParam)    p.set('job', jobParam);
+    if (jobName)     p.set('jobName', jobName);
     p.set('cert', certId);
     p.set('certName', certName);
     navigate(`/recommendation?${p.toString()}`);
@@ -327,6 +333,8 @@ const Roadmap: React.FC = () => {
     if (stageParam)  p.set('stage', stageParam);
     if (domainParam) p.set('domain', domainParam);
     if (domainName)  p.set('domainName', domainName);
+    if (jobParam)    p.set('job', jobParam);
+    if (jobName)     p.set('jobName', jobName);
     navigate(`/recommendation?${p.toString()}`);
   }
 
@@ -380,6 +388,7 @@ const Roadmap: React.FC = () => {
           <div className="rm-chips">
             {riskLabel && <span className="rm-chip rm-chip-risk">{riskLabel}</span>}
             {domainName && <span className="rm-chip rm-chip-domain">{domainName}</span>}
+            {jobName && <span className="rm-chip rm-chip-job">{jobName}</span>}
           </div>
         </div>
         <p className="page-desc">
@@ -712,6 +721,10 @@ const Roadmap: React.FC = () => {
         .rm-chip-domain {
           background: var(--secondary-light); color: var(--secondary);
           border-color: rgba(14,165,233,.25);
+        }
+        .rm-chip-job {
+          background: #f0fdf4; color: #065f46;
+          border-color: rgba(16,185,129,.25);
         }
 
         .fallback-notice {

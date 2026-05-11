@@ -75,6 +75,8 @@ const Recommendation: React.FC = () => {
   const stageParam  = searchParams.get('stage') ?? '';
   const domainParam = searchParams.get('domain') ?? '';
   const domainName  = searchParams.get('domainName') ?? '';
+  const jobParam    = searchParams.get('job') ?? '';
+  const jobName     = searchParams.get('jobName') ?? '';
   const certIdParam = searchParams.get('cert') ?? '';
 
   const [allCerts, setAllCerts] = useState<CertCandidate[]>([]);
@@ -107,12 +109,13 @@ const Recommendation: React.FC = () => {
     return allCerts.filter(cert => {
       if (riskId      && !cert.recommended_risk_stages.includes(riskId))  return false;
       if (domainParam && !cert.related_domains.includes(domainParam))      return false;
+      if (jobParam    && !cert.related_jobs.includes(jobParam))            return false;
       if (selectedGrade && cert.cert_grade_tier !== selectedGrade)         return false;
       const q = deferredQuery;
       if (q && !cert.cert_name.includes(q)) return false;
       return true;
     });
-  }, [allCerts, riskId, domainParam, selectedGrade, deferredQuery]);
+  }, [allCerts, riskId, domainParam, jobParam, selectedGrade, deferredQuery]);
 
   const featuredCert = useMemo(
     () => allCerts.find(c => c.cert_id === certIdParam) ?? null,
@@ -180,9 +183,9 @@ const Recommendation: React.FC = () => {
         <h1 className="page-title">자격증 확인</h1>
         <p className="page-desc">
           {domainName && riskLabel
-            ? <><strong>{domainName}</strong> 분야에서 <strong>{riskLabel}</strong>에 맞는 자격증을 골랐습니다.</>
+            ? <><strong>{domainName}</strong>{jobName ? <> + <strong>{jobName}</strong></> : ''} 분야에서 <strong>{riskLabel}</strong>에 맞는 자격증을 골랐습니다.</>
             : domainName
-              ? <><strong>{domainName}</strong> 분야 추천 자격증입니다.</>
+              ? <><strong>{domainName}</strong>{jobName ? <> + <strong>{jobName}</strong></> : ''} 분야 추천 자격증입니다.</>
               : '추천 자격증을 확인하세요.'}
         </p>
       </div>
@@ -309,6 +312,7 @@ const Recommendation: React.FC = () => {
           <div className="active-filters">
             {domainName && <span className="filter-chip">{domainName}</span>}
             {riskLabel  && <span className="filter-chip">{riskLabel}</span>}
+            {jobName    && <span className="filter-chip filter-chip-job">{jobName}</span>}
           </div>
         </div>
       </div>
@@ -409,6 +413,7 @@ const Recommendation: React.FC = () => {
         .select-arrow{position:absolute;right:.75rem;color:var(--text-light);pointer-events:none}
         .active-filters{display:flex;gap:.375rem;flex-wrap:wrap;align-items:center;margin-left:auto}
         .filter-chip{padding:.25rem .75rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-full);font-size:.75rem;color:var(--text-muted)}
+        .filter-chip-job{background:#f0fdf4;border-color:rgba(16,185,129,.25);color:#065f46}
         .rec-loading{display:flex;flex-direction:column;align-items:center;gap:.75rem;padding:3rem 1rem;color:var(--text-muted);font-size:.9rem}
         .rec-spin{animation:spin 1s linear infinite;color:var(--primary)}
         .rec-error{display:flex;align-items:center;gap:.75rem;padding:1.25rem;color:var(--danger);flex-wrap:wrap}
