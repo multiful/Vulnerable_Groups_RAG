@@ -25,11 +25,23 @@ npm run dev
 - 기본 포트 `5173`
 - `vite.config.ts` 에서 `/api` 를 `http://127.0.0.1:8000` 으로 **프록시**하므로, 로컬에서는 `VITE_API_BASE_URL` 없이도 `/api/v1/health` 호출 가능
 
-## 프로덕션 (Vercel)
+## 🚀 배포 현황 (2026-05-11 기준)
 
-- `npm run build` 산출물 배포
-- API가 별 도메인이면 `VITE_API_BASE_URL=https://your-api.example.com` 설정 후 빌드 (프록시 없음)
-- 백엔드 `CORS_ORIGINS` 에 Vercel 도메인 추가
+| 구분 | URL |
+|------|-----|
+| **프론트엔드** | https://guileless-gumption-24a361.netlify.app/ |
+| **백엔드 API** | https://vulnerable-groups-rag.onrender.com |
+| **API 문서** | https://vulnerable-groups-rag.onrender.com/docs |
+
+- 프론트: **Netlify** 정적 배포 (`dist` drag-and-drop)
+- 백엔드: **Render** 무료 플랜 (비활성 시 슬립, UptimeRobot으로 5분마다 헬스체크)
+- Netlify `public/_redirects` 로 `/api/*` → 백엔드 프록시 처리
+
+## 프로덕션 (Netlify)
+
+- `npm run build` 후 `dist` 폴더를 Netlify에 drag-and-drop 배포
+- `public/_redirects` 파일이 `/api/*` 요청을 백엔드로 자동 프록시
+- 별도 환경변수 설정 불필요 (상대경로 프록시 방식 사용)
 
 ---
 
