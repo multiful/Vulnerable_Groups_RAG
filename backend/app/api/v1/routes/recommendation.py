@@ -35,6 +35,12 @@ def post_recommendations_evidence(
     return recommendation_service.recommendations_evidence(body or {}, settings)
 
 
+@router.post("/recommendations/cert_explain")
+def post_cert_explain(body: dict[str, Any] | None, settings: SettingsDep) -> dict:
+    """단일 자격증 AI 추천 이유 생성 (2문장, 사용자 도메인·위험군 맥락 기반)."""
+    return llm_roadmap_service.explain_cert(body or {}, settings)
+
+
 @router.get("/recommendations/related")
 def get_related_certs(cert_id: str = Query(..., description="cert_id")) -> dict:
     """DAG 기반 선행/후행 자격증 조회."""

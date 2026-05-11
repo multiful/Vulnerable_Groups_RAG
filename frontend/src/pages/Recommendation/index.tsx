@@ -252,6 +252,9 @@ const Recommendation: React.FC = () => {
   });
   const [showVideos, setShowVideos] = useState(false);
   const videosPanelRef = useRef<HTMLDivElement | null>(null);
+  const [certExplain, setCertExplain] = useState<{
+    loading: boolean; text: string | null; certId: string; error: string | null;
+  }>({ loading: false, text: null, certId: '', error: null });
 
   // 영상 패널이 열리거나 cert가 바뀔 때 자동으로 그 위치로 스크롤
   useEffect(() => {
@@ -278,7 +281,16 @@ const Recommendation: React.FC = () => {
       if (jobParam    && !cert.related_jobs.includes(jobParam))            return false;
       if (selectedGrade && cert.cert_grade_tier !== selectedGrade)         return false;
       const q = deferredQuery;
-      if (q && !cert.cert_name.includes(q)) return false;
+      if (q) {
+        const ql = q.toLowerCase();
+        const hit =
+          cert.cert_name.toLowerCase().includes(ql) ||
+          (cert.issuer ?? '').toLowerCase().includes(ql) ||
+          (DOMAIN_NAMES[cert.primary_domain] ?? '').toLowerCase().includes(ql) ||
+          cert.related_domains.some(d => (DOMAIN_NAMES[d] ?? '').toLowerCase().includes(ql)) ||
+          cert.related_jobs.some(j => (JOB_NAMES[j] ?? '').toLowerCase().includes(ql));
+        if (!hit) return false;
+      }
       return true;
     });
   }, [allCerts, riskId, domainParam, jobParam, selectedGrade, deferredQuery]);
@@ -291,6 +303,27 @@ const Recommendation: React.FC = () => {
   const fetchEvidence = useCallback(async (certId: string) => {
     setEvidence({ loading: true, rows: [], error: null, fetched: false, certId });
     setShowEvidence(true);
+
+    // Fire AI explanation in parallel (silently suppressed on error)
+    setCertExplain({ loading: true, text: null, certId, error: null });
+    fetch('/api/v1/recommendations/cert_explain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cert_id: certId,
+        domain_id: domainParam || '',
+        risk_stage_id: RISK_IDS[stageParam] || '',
+      }),
+    }).then(r => r.json()).then(json => {
+      if (json.success) {
+        setCertExplain({ loading: false, text: json.data?.explanation ?? null, certId, error: null });
+      } else {
+        setCertExplain({ loading: false, text: null, certId, error: null });
+      }
+    }).catch(() => {
+      setCertExplain({ loading: false, text: null, certId, error: null });
+    });
+
     try {
       const res = await fetch('/api/v1/recommendations/evidence', {
         method: 'POST',
@@ -306,7 +339,7 @@ const Recommendation: React.FC = () => {
     } catch {
       setEvidence({ loading: false, rows: [], error: '서버에 연결할 수 없습니다.', fetched: true, certId });
     }
-  }, []);
+  }, [stageParam, domainParam]);
 
   const fetchDag = useCallback(async (certId: string) => {
     setDag({ loading: true, predecessors: [], successors: [], certId, fetched: false });
@@ -433,6 +466,23 @@ const Recommendation: React.FC = () => {
             </div>
             <button className="ev-close" onClick={() => setShowEvidence(false)}><X size={15} /></button>
           </div>
+
+          {/* AI 추천 이유 */}
+          {certExplain.certId === evidence.certId && (certExplain.loading || certExplain.text) && (
+            <div className="ev-ai-explain">
+              {certExplain.loading ? (
+                <div className="ev-loading">
+                  <Loader2 size={14} className="ev-spin" />
+                  <span>AI 추천 이유 분석 중…</span>
+                </div>
+              ) : (
+                <>
+                  <span className="ev-ai-label">✦ AI 추천 이유</span>
+                  <p className="ev-ai-text">{certExplain.text}</p>
+                </>
+              )}
+            </div>
+          )}
 
           {/* DAG 경로 */}
           {dag.fetched && (dag.predecessors.length > 0 || dag.successors.length > 0) && (
@@ -836,6 +886,9 @@ const Recommendation: React.FC = () => {
         .video-meta{padding:.625rem .75rem;display:flex;flex-direction:column;gap:.25rem}
         .video-title{font-size:.82rem;font-weight:600;color:var(--text);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
         .video-channel{font-size:.72rem;color:var(--text-light)}
+        .ev-ai-explain{padding:.875rem 1rem;background:linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%);border:1px solid rgba(99,102,241,.25);border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.4rem}
+        .ev-ai-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:var(--primary);text-transform:uppercase}
+        .ev-ai-text{font-size:.875rem;color:#3730a3;line-height:1.75;margin:0}
       `}</style>
     </div>
   );

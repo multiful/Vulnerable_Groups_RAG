@@ -416,3 +416,55 @@ def llm_recommendations(body: dict[str, Any], settings: Settings) -> dict:
 
     result = _build_roadmap_data(buckets, reasons, risk_id, starting_stage_id, llm_generated=llm_generated)
     return ok_envelope(result)
+
+
+def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
+    """POST /api/v1/recommendations/cert_explain
+    단일 자격증에 대한 AI 추천 이유 2문장 생성.
+    evidence API가 원문 스니펫을 보여주는 것과 달리 사용자 맥락(도메인·위험군) 기반 설명을 생성한다.
+    OpenAI 키가 없으면 NOT_CONFIGURED를 반환한다.
+    """
+    cert_id: str = body.get("cert_id") or ""
+    domain_id: str = body.get("domain_id") or ""
+    risk_stage_id: str = body.get("risk_stage_id") or ""
+
+    if not cert_id:
+        return err_envelope("MISSING_REQUIRED_FIELD", "cert_id가 필요합니다.")
+
+    if not settings.openai_api_key:
+        return err_envelope("NOT_CONFIGURED", "OpenAI API 키가 설정되지 않아 AI 설명을 생성할 수 없습니다.")
+
+    candidates = _load_candidates()
+    cert = next((c for c in candidates if c.get("cert_id") == cert_id), None)
+    if not cert:
+        return err_envelope("NOT_FOUND", f"cert_id={cert_id}를 찾을 수 없습니다.")
+
+    domain_names = _load_domain_names()
+    risk_stages = _load_risk_stages()
+    domain_name = domain_names.get(domain_id, domain_id) if domain_id else "해당 분야"
+    risk_info = risk_stages.get(risk_stage_id, {})
+    risk_name = risk_info.get("name", "해당 단계") if risk_stage_id else "해당 단계"
+
+    cert_line = _format_cert_line(cert)
+    prompt = (
+        f"당신은 청년 취업 진로 상담 전문가입니다.\n"
+        f"사용자 관심 분야: {domain_name} / 위험군: {risk_name}\n\n"
+        f"아래 자격증이 이 사용자에게 왜 적합한지 한국어 2문장 이내로 설명하세요.\n"
+        f"규칙: 첫 문장에 자격증 이름을 반드시 포함. 합격률·관련 직무·활용처 등 구체적 근거 사용. "
+        f"'도움이 됩니다'처럼 모호한 표현 금지. 격려하는 톤.\n\n"
+        f"{cert_line}"
+    )
+
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=settings.openai_api_key)
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=200,
+            temperature=0.5,
+        )
+        explanation = (resp.choices[0].message.content or "").strip()
+        return ok_envelope({"cert_id": cert_id, "explanation": explanation})
+    except Exception as exc:
+        return err_envelope("AI_ERROR", f"AI 설명 생성 실패: {str(exc)[:120]}")
