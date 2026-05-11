@@ -1,7 +1,7 @@
 // Content Hash: SHA256:TBD
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, AlertTriangle, Phone } from 'lucide-react';
+import { ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react';
 
 /* ─────────────────────────────────────────────
    기획서 F-01 기반 12문항
@@ -246,12 +246,12 @@ const RiskAssessment: React.FC = () => {
 
         {safetyFlag && (
           <div className="safety-banner">
-            <AlertTriangle size={18} />
-            <div>
-              <p className="safety-title">정서적 어려움이 감지됐습니다</p>
-              <p className="safety-sub">필요하다면 아래 기관에 연락해보세요.</p>
+            <div className="safety-banner-icon"><AlertTriangle size={17} /></div>
+            <div className="safety-banner-body">
+              <p className="safety-title">정서적으로 힘드신 것 같아요</p>
+              <p className="safety-sub">지금 많이 힘드시다면 전문 상담을 받아보시는 게 도움이 될 수 있습니다.</p>
+              <a href="tel:1393" className="safety-cta">1393 자살예방상담전화에 전화하기</a>
             </div>
-            <a href="tel:1393" className="safety-cta"><Phone size={14} /> 1393 자살예방상담전화</a>
           </div>
         )}
 
@@ -522,19 +522,21 @@ const RiskAssessment: React.FC = () => {
           display:flex; gap:.75rem; align-items:center; justify-content:space-between;
         }
         .safety-banner {
-          display:flex; align-items:center; gap:.875rem;
+          display:flex; gap:.75rem; align-items:flex-start;
           padding:1rem 1.25rem; background:var(--danger-light);
           border:1px solid rgba(244,63,94,.25);
-          border-radius:var(--radius-sm); flex-wrap:wrap;
-          color:var(--danger);
+          border-radius:var(--radius-sm);
         }
+        .safety-banner-icon { flex-shrink:0; color:var(--danger); padding-top:.1rem; }
+        .safety-banner-body { display:flex; flex-direction:column; gap:.3rem; flex:1; }
         .safety-title { font-weight:700; font-size:.9rem; color:#9f1239; }
-        .safety-sub { font-size:.8rem; color:#be123c; margin-top:.1rem; }
+        .safety-sub { font-size:.82rem; color:#be123c; line-height:1.55; }
         .safety-cta {
-          margin-left:auto; display:inline-flex; align-items:center; gap:.4rem;
-          padding:.5rem 1rem; background:var(--danger); color:#fff;
-          border-radius:var(--radius-sm); font-size:.85rem; font-weight:700;
-          text-decoration:none; flex-shrink:0;
+          display:inline-block; width:fit-content;
+          margin-top:.35rem; padding:.45rem .875rem;
+          background:var(--danger); color:#fff;
+          border-radius:var(--radius-sm); font-size:.82rem; font-weight:700;
+          text-decoration:none;
         }
       `}</style>
     </div>

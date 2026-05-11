@@ -107,10 +107,14 @@ function extractPassRate(text: string): number | null {
 
 function calcAchievability(tier: string, riskNum: number): string {
   const t = parseInt(tier.charAt(0)) || 3;
-  if (t <= 1) return riskNum >= 4 ? 'immediate' : 'near_term';
-  if (t <= 2) return riskNum >= 3 ? 'immediate' : 'near_term';
-  if (t <= 3) return riskNum <= 2 ? 'near_term' : 'long_term';
-  return 'long_term';
+  // 기능사(1): 위험군 무관 항상 바로 도전 가능
+  if (t <= 1) return 'immediate';
+  // 산업기사(2): 위험군 4~5단계는 단기 목표, 1~3단계는 바로 도전
+  if (t <= 2) return riskNum >= 4 ? 'near_term' : 'immediate';
+  // 기사(3): 위험군 1~2단계만 바로 도전, 나머지는 단기 목표
+  if (t <= 3) return riskNum <= 2 ? 'immediate' : 'near_term';
+  // 기술사/기능장(4~5): 위험군 1~2단계는 단기, 나머지는 장기
+  return riskNum <= 2 ? 'near_term' : 'long_term';
 }
 
 interface RawCert {
@@ -458,13 +462,25 @@ const Roadmap: React.FC = () => {
       {!(activeTab === 'ai' && (llmLoading || (!llmData && llmFetched))) &&
         displayData.total_certs_in_roadmap === 0 && (
         <div className="fallback-notice rm-empty-notice">
-          <Info size={13} />
-          <span>
-            선택한 조건에 해당하는 자격증이 없습니다.
-            {domainName ? ` "${domainName}" 도메인과 위험군 조합 결과가 없을 수 있습니다. ` : ' '}
-            다른 도메인을 선택하거나 전체 추천 탭을 확인해보세요.
-          </span>
-          <button className="rm-retry-btn" onClick={() => navigate(-1)} type="button">도메인 변경</button>
+          <Info size={14} style={{ flexShrink: 0, marginTop: '.1rem' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem', flex: 1 }}>
+            {jobName && domainName ? (
+              <>
+                <span style={{ fontWeight: 600 }}>
+                  "{domainName}" 분야와 "{jobName}" 직무를 동시에 만족하는 자격증이 없습니다.
+                </span>
+                <span style={{ fontSize: '.82rem', color: 'var(--text-light)', lineHeight: 1.55 }}>
+                  선택한 도메인과 직무가 서로 다른 분야에 속해 있을 수 있습니다.
+                  직무 선택을 해제하거나 다른 도메인으로 변경해 보세요.
+                </span>
+              </>
+            ) : (
+              <span>
+                선택한 조건에 맞는 자격증이 없습니다. 도메인이나 위험군을 변경해보세요.
+              </span>
+            )}
+          </div>
+          <button className="rm-retry-btn" onClick={() => navigate(-1)} type="button">조건 변경</button>
         </div>
       )}
 

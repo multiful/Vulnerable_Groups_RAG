@@ -439,7 +439,22 @@ const Recommendation: React.FC = () => {
                   </div>
                 ))}
                 {filtered.length === 0 && (
-                  <div className="no-results"><p>조건에 맞는 자격증이 없습니다.</p><p>검색어나 필터를 변경해보세요.</p></div>
+                  <div className="no-results">
+                    {jobParam && domainParam ? (
+                      <>
+                        <p className="no-results-title">"{domainName}" 분야와 "{jobName}" 직무가 겹치는 자격증이 없습니다.</p>
+                        <p className="no-results-sub">
+                          선택한 도메인과 직무가 서로 다른 분야에 속해 있을 수 있습니다.<br />
+                          직무 선택 없이 도메인만으로 다시 검색해보세요.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="no-results-title">조건에 맞는 자격증이 없습니다.</p>
+                        <p className="no-results-sub">검색어나 등급 필터를 바꿔보세요.</p>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -519,7 +534,9 @@ const Recommendation: React.FC = () => {
         .text-btn:hover{opacity:.75}
         .evidence-btn{color:var(--primary)}
         .roadmap-btn{color:var(--secondary);margin-left:auto}
-        .no-results{grid-column:1/-1;text-align:center;padding:3rem 1rem;color:var(--text-muted);line-height:1.8}
+        .no-results{grid-column:1/-1;text-align:center;padding:2.5rem 1.25rem;line-height:1.8;display:flex;flex-direction:column;gap:.5rem}
+        .no-results-title{font-size:.95rem;font-weight:700;color:var(--text)}
+        .no-results-sub{font-size:.85rem;color:var(--text-muted);line-height:1.65}
       `}</style>
     </div>
   );
