@@ -1,11 +1,11 @@
 # README.md
 
 > **파일명**: README.md  
-> **최종 수정일**: 2026-05-07  
+> **최종 수정일**: 2026-05-12  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 프로젝트 최상위 안내 문서 / 관문 문서  
 > **문서 우선순위**: 0  
-> **연관 문서**: CHANGE_CONTROL.md, PRD.md, SYSTEM_ARCHITECTURE.md, DIRECTORY_SPEC.md, PROJECT_SUMMARY.md, RAG_PIPELINE.md, Indexing_Architecture.txt  
+> **연관 문서**: CHANGE_CONTROL.md, PRD.md, SYSTEM_ARCHITECTURE.md, DIRECTORY_SPEC.md, PROJECT_SUMMARY.md, SUMMARY.md, RAG_PIPELINE.md, Indexing_Architecture.txt  
 > **참조 규칙**: 작업 시작 전 본 문서와 `CHANGE_CONTROL.md`를 먼저 읽고, 이후 관련 상세 문서를 확인한다.
 
 ---
@@ -19,20 +19,25 @@
 
 ## 1. 프로젝트 요약
 
-### 핵심 사용자 흐름 (3단계)
+### 핵심 사용자 흐름 (4단계)
 
 ```
-[1단계] 설문으로 위험군 진단
+[1단계] 위험군 진단
    12문항 설문(관계망·활동·노동경제·정신건강·자기관리) → 1~5단계 위험군 판정
+   Safety Override: 자해·자살 관련 항목 "일주일 이상" 응답 시 최소 4단계 조정
         ↓
-[2단계] 관심 직무 + 도메인 선택
-   허용된 taxonomy 안에서 관심 도메인(및 직무) 선택
+[2단계] 관심 분야 선택
+   허용된 taxonomy 안에서 관심 도메인(필수) + 희망 직무(선택) 선택
         ↓
-[3단계] 로드맵 + 자격증 추천 확인
-   위험군 단계 × 선택 도메인 기반으로 단계형 로드맵과 추천 자격증 제공
+[3단계] 성장 로드맵 확인
+   위험군 × 도메인 기반 단계형 로드맵 + 자격증별 AI 맞춤 분석
+        ↓
+[4단계] 자격증 상세 확인
+   자격증 클릭 → 자격 활용 현황·추천 근거·연결 경로·관련 동영상 확인
 ```
 
-이 프로젝트는 위 3단계 흐름을 안정적으로 구현하는 것을 현재 최우선 목표로 한다.
+각 단계의 선택 상태는 세션에 저장되어, 네비게이션으로 이탈 후 복귀해도 컨텍스트가 유지된다.  
+로드맵 이후 단계는 이전 진단 없이 직접 진입할 수 없도록 파이프라인 guard가 적용되어 있다.
 
 ---
 
@@ -75,22 +80,25 @@
 
 ## 3. 현재 범위
 
-현재 프로젝트는 아래 범위를 우선 대상으로 한다.
+### 구현 완료
+- 위험군 진단 (12문항 설문 + Safety Override)
+- 관심 도메인·직무 선택 (taxonomy 기반, 43개 도메인 / 142개 직무)
+- 위험군 × 도메인 기반 단계형 로드맵 (5단계 경로, 전체 추천 + ✦ AI 맞춤 추천 탭)
+- 자격증 상세 evidence 패널 (자격 활용 현황·자격증 소개·시험 정보·연결 경로·AI 추천 이유)
+- 자격증 검색·등급 필터·자격증 목록 페이지
+- 관련 YouTube 강의 영상 검색·캐싱
+- 자격증 DAG (선수·후속 자격증 경로 다이어그램)
+- 파이프라인 상태 sessionStorage 저장 + Roadmap 단계 강제 guard
+- 공인민간자격 정보집(140종) + 국가자격 정보집(138종) 로컬 카탈로그 매핑
+- Supabase pgvector RAG evidence 검색
+- 청년지원제도 외부 링크 메가 메뉴
 
-- PDF / HTML / CSV 소스 구조 정리
-- CSV canonicalization 및 entity / relation 구축
-- recommendation candidate row 설계
-- RAG 파이프라인 기반 설명 근거 검색 구조 설계
-- 위험군 맞춤 추천 + 로드맵 제안 흐름 고정
-- 루트 문서 기준선 정리
-
-### 현재 제외 범위
-- 일정 API 실연동
-- 시험일정 / 접수일정 실데이터 연결
-- reranker 학습
-- hybrid 가중치 최적화
-- generation prompt 고도화
-- 위험군 2~4단계 세부 의미 확정
+### Reserved (미구현)
+- 시험 일정·접수 일정 실연동 API
+- 지원 링크 실연동
+- reranker / sparse BM25 상시 사용
+- parent-child chunk 고도화
+- 상담형 대화 에이전트
 
 제품 목표와 범위의 상세 정의는 `PRD.md`를 따른다.
 
@@ -102,10 +110,10 @@
 
 | 단계 | 페이지 | 역할 |
 |:---:|---|---|
-| 1 | RiskAssessment | 12문항 설문 → 위험군 단계(1~5) 판정 |
-| 2 | InterestSelection | 관심 도메인 + 직무 선택 (taxonomy 기준) |
-| 3 | Roadmap | 위험군 × 도메인 기반 단계형 로드맵 제공 |
-| 심화 | Recommendation | 자격증 상세·설명 근거 검색 |
+| 1 | RiskAssessment | 12문항 설문 → 위험군 단계(1~5) 판정, 결과 레이더 차트 |
+| 2 | InterestSelection | 관심 도메인(필수) + 희망 직무(선택) — taxonomy 기준 |
+| 3 | Roadmap | 위험군 × 도메인 단계형 로드맵, 전체/AI 탭, 인라인 evidence 드로어 |
+| 4 | Recommendation | 자격증 목록·검색·필터, evidence 패널, DAG, 관련 동영상 |
 
 ### 4.1 PDF / HTML Lane
 - HTML Direct Path
@@ -135,6 +143,7 @@
 | 문서명 | 역할 |
 |---|---|
 | `README.md` | 프로젝트 입구 문서 |
+| `SUMMARY.md` | 구현된 기능·데이터·API·스택 핵심 요약 (빠른 파악용) |
 | `PROJECT_SUMMARY.md` | 저장소 한눈에 보기 — 목적·두 레인·스택·청킹 개요·긴 기법 문서 보관 위치 |
 | `CHANGE_CONTROL.md` | 문서 수정 규칙, 메타데이터 갱신 원칙, 작업 절차 |
 | `DIRECTORY_SPEC.md` | 디렉토리 구조와 파일/폴더 책임 |
@@ -254,9 +263,12 @@ project-root/
 |------|------|
 | 프론트 | React 19 + Vite 6 (`frontend/`) |
 | API | FastAPI (`backend/`) |
-| RAG 런타임 | LangChain (LlamaIndex 대안은 `backend/rag/llamaindex/` 자리만) |
-| 벡터 DB | Supabase pgvector (URL·키는 환경변수, `docs/architecture/supabase_langchain.sql` 참고) |
-| 임베딩 | OpenAI 또는 HuggingFace (`EMBEDDING_PROVIDER`) |
-| 배포 | 프론트 Vercel / API Railway·Render (예시) |
+| RAG 런타임 | Supabase pgvector + 로컬 카탈로그 JSON 직접 매핑 |
+| 벡터 DB | Supabase pgvector (`match_certificates` RPC) |
+| 임베딩 | OpenAI `text-embedding-3-small` |
+| LLM | OpenAI GPT (로드맵 AI 분석, 자격증 추천 이유) |
+| YouTube | YouTube Data API v3 (관련 강의 영상 검색·캐시) |
+| 배포 | 프론트 Vite dev / API Render.com (`https://vulnerable-groups-rag.onrender.com`) |
 
-로컬 실행 요약은 `backend/README.md`, `frontend/README.md`, `infra/env/.env.example` 를 본다.
+API 프록시 타겟은 `frontend/.env.local`의 `VITE_API_PROXY_TARGET`으로 제어한다.  
+미설정 시 Render.com 배포 서버로 자동 연결된다.
