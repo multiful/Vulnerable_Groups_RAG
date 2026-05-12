@@ -56,7 +56,7 @@ const Home: React.FC = () => {
           <div className="mascot-figure" onClick={handleMascotClick}>
             <div className="mascot-wrap">
               <img
-                src="/didimi.png"
+                src={happy ? '/didimi_smile.png' : '/didimi.png'}
                 alt="디딤이"
                 className={`mascot-img${happy ? ' mascot-happy' : ''}`}
               />
