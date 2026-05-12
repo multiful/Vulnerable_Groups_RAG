@@ -51,23 +51,8 @@ const Home: React.FC = () => (
           </div>
         </div>
         <div className="hero-visual">
-          <div className="stage-card card">
-            <p className="stage-card-title">위험군 단계별 바로가기</p>
-            <div className="stage-list">
-              {STAGES.map(s => (
-                <Link key={s.id} to={`/interests?stage=${s.id}`} className="stage-row">
-                  <div className="sr-label">
-                    <span className="sr-num">{s.label}</span>
-                    <span className="sr-sub">{s.sub}</span>
-                  </div>
-                  <div className="sr-track">
-                    <div className="sr-fill" style={{width:s.width, background:s.color}}/>
-                  </div>
-                  <ArrowRight size={11} style={{color:s.color, opacity:.6, flexShrink:0}}/>
-                </Link>
-              ))}
-            </div>
-            <p className="stage-card-hint">단계 클릭 시 관심 도메인 선택으로 이동</p>
+          <div className="mascot-figure">
+            <img src="/didimi.png" alt="디딤이" className="mascot-img" />
           </div>
         </div>
       </div>
@@ -129,7 +114,9 @@ const Home: React.FC = () => (
       .hero-actions{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center}
       .hero-main-btn{padding:.75rem 1.5rem;font-size:.975rem}
       .hero-visual{display:flex;justify-content:center}
-      .stage-card{padding:1.5rem;width:100%;max-width:360px;display:flex;flex-direction:column;gap:.875rem}
+      .mascot-figure{display:flex;justify-content:center;align-items:center;width:100%}
+      .mascot-img{width:260px;height:260px;object-fit:contain;filter:drop-shadow(0 12px 32px rgba(99,102,241,.25));animation:mascot-float 3s ease-in-out infinite}
+      @keyframes mascot-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
       .stage-card-title{font-size:.72rem;font-weight:700;letter-spacing:.07em;color:var(--text-light);text-transform:uppercase}
       .stage-list{display:flex;flex-direction:column;gap:.5rem}
       .stage-row{display:flex;align-items:center;gap:.625rem;padding:.35rem .5rem;border-radius:var(--radius-xs);text-decoration:none;transition:background .15s}
