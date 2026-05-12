@@ -177,10 +177,12 @@ def _catalog_lookup(cert_name: str) -> list[dict]:
 
     rec = index.get(cert_name)
     if not rec:
-        # 공백·특수문자 정규화 후 부분 일치 탐색
+        # 공백·특수문자 정규화 후 양방향 부분 일치 탐색
+        # cert_name이 key를 포함(예: "ITQ C급" ⊃ "ITQ") 또는 key가 cert_name을 포함
         norm = re.sub(r'[\s\(\)\[\]（）]', '', cert_name).lower()
         for key, val in index.items():
-            if norm and norm in re.sub(r'[\s\(\)\[\]（）]', '', key).lower():
+            key_norm = re.sub(r'[\s\(\)\[\]（）]', '', key).lower()
+            if norm and key_norm and (norm in key_norm or key_norm in norm):
                 rec = val
                 break
 
@@ -263,9 +265,11 @@ def _national_catalog_lookup(cert_name: str) -> list[dict]:
 
     rec = index.get(cert_name)
     if not rec:
+        # 양방향 부분 일치: cert_name이 key를 포함하거나 key가 cert_name을 포함
         norm = re.sub(r'[\s\(\)\[\]（）]', '', cert_name).lower()
         for key, val in index.items():
-            if norm and norm in re.sub(r'[\s\(\)\[\]（）]', '', key).lower():
+            key_norm = re.sub(r'[\s\(\)\[\]（）]', '', key).lower()
+            if norm and key_norm and (norm in key_norm or key_norm in norm):
                 rec = val
                 break
 

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, ChevronDown, ChevronUp, Briefcase } from 'lucide-react';
+import { loadPipeline, savePipeline } from '../../utils/pipelineState';
 
 /* ── 도메인 taxonomy (domain_master.csv 기반) ── */
 interface DomainItem { id: string; name: string; }
@@ -250,7 +251,9 @@ const RISK_STAGE_LABELS: Record<string, string> = {
 const InterestSelection: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const stage = searchParams.get('stage') ?? '';
+  // URL에 stage가 없으면 세션에서 복원 (헤더 내비게이션 등으로 파라미터 손실 시)
+  const [pSession] = useState(() => loadPipeline());
+  const stage = searchParams.get('stage') || pSession.stage || '';
 
   const [selectedDomain, setSelectedDomain] = useState<DomainItem | null>(null);
   const [selectedJob, setSelectedJob] = useState<JobItem | null>(null);
@@ -282,6 +285,13 @@ const InterestSelection: React.FC = () => {
       params.set('job', selectedJob.id);
       params.set('jobName', selectedJob.name);
     }
+    savePipeline({
+      stage: stage || undefined,
+      domain: selectedDomain.id,
+      domainName: selectedDomain.name,
+      job: selectedJob?.id,
+      jobName: selectedJob?.name,
+    });
     navigate(`/roadmap?${params.toString()}`);
   }
 

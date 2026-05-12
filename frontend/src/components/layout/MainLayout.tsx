@@ -2,6 +2,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Outlet, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
+import { loadPipeline } from '../../utils/pipelineState';
 
 const SUPPORT_LINKS = [
   {
@@ -60,13 +61,17 @@ const FLOW_STEPS = [
 function StepIndicator({ pathname }: { pathname: string }) {
   const [searchParams] = useSearchParams();
   const stageParam = searchParams.get('stage');
+  // URL에 stage가 없어도 세션에서 복원하여 done 상태를 올바르게 표시
+  const session = loadPipeline();
+  const effectiveStage = stageParam || session.stage || '';
+  const effectiveDomain = searchParams.get('domain') || session.domain || '';
 
   const currentIdx = FLOW_STEPS.findIndex(s => pathname.startsWith(s.path));
   if (currentIdx === -1) return null;
 
   const isDone = (idx: number) => {
-    if (idx === 0) return currentIdx > 0 && !!stageParam;
-    if (idx === 1) return currentIdx > 1;
+    if (idx === 0) return currentIdx > 0 && !!effectiveStage;
+    if (idx === 1) return currentIdx > 1 && !!effectiveDomain;
     if (idx === 2) return currentIdx > 2;
     return false;
   };

@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect, useCallback, useDeferredValue, mem
 import { CertFlowDiagram } from '../../components/charts/CertFlowDiagram';
 import { getCertCandidates } from '../../api/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { loadPipeline } from '../../utils/pipelineState';
 import {
   Search, Map, FileText, ChevronDown, AlertCircle,
   Loader2, ArrowLeft, ArrowRight, X, BookOpen, ExternalLink,
@@ -225,11 +226,13 @@ const CertCard = memo(({
 const Recommendation: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const stageParam  = searchParams.get('stage') ?? '';
-  const domainParam = searchParams.get('domain') ?? '';
-  const domainName  = searchParams.get('domainName') ?? '';
-  const jobParam    = searchParams.get('job') ?? '';
-  const jobName     = searchParams.get('jobName') ?? '';
+  // URL 파라미터가 없을 때 세션에서 복원 (헤더 내비게이션 등으로 컨텍스트 손실 시)
+  const [pSession] = useState(() => loadPipeline());
+  const stageParam  = searchParams.get('stage')      || pSession.stage     || '';
+  const domainParam = searchParams.get('domain')     || pSession.domain    || '';
+  const domainName  = searchParams.get('domainName') || pSession.domainName || domainParam;
+  const jobParam    = searchParams.get('job')        || pSession.job       || '';
+  const jobName     = searchParams.get('jobName')    || pSession.jobName   || '';
   const certIdParam = searchParams.get('cert') ?? '';
 
   const [allCerts, setAllCerts] = useState<CertCandidate[]>([]);

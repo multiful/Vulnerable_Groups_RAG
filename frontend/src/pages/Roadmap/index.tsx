@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { CertFlowDiagram } from '../../components/charts/CertFlowDiagram';
 import { getCertCandidates } from '../../api/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { loadPipeline, savePipeline } from '../../utils/pipelineState';
 import {
   ArrowLeft, ArrowRight, Loader2, AlertTriangle,
   CheckCircle2, Clock, Lock, ChevronDown, ChevronUp,
@@ -219,7 +220,42 @@ const Roadmap: React.FC = () => {
   const riskNum   = parseInt(stageParam) || 0;
   const riskLabel = RISK_LABELS[stageParam] ?? '';
 
+  // ── 파이프라인 guard & 세션 저장/복원 ──────────────────────────────
+  useEffect(() => {
+    if (stageParam && domainParam) {
+      // URL에 파라미터가 있으면 세션에 저장
+      savePipeline({
+        stage: stageParam,
+        domain: domainParam,
+        domainName: domainName || undefined,
+        job: jobParam || undefined,
+        jobName: jobName || undefined,
+      });
+      return;
+    }
+    // URL에 파라미터가 없으면 세션에서 복원 또는 이전 단계로 리디렉션
+    const s = loadPipeline();
+    if (s.stage && s.domain) {
+      const p = new URLSearchParams({ stage: s.stage, domain: s.domain });
+      if (s.domainName) p.set('domainName', s.domainName);
+      if (s.job)        p.set('job', s.job);
+      if (s.jobName)    p.set('jobName', s.jobName);
+      navigate(`/roadmap?${p.toString()}`, { replace: true });
+      return;
+    }
+    // stage만 있으면 관심 선택으로
+    if (s.stage) {
+      navigate(`/interests?stage=${s.stage}`, { replace: true });
+      return;
+    }
+    // 아무것도 없으면 위험군 진단으로
+    navigate('/risk-assessment', { replace: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const fetchRoadmap = useCallback(async () => {
+    // guard: 파이프라인 복원 전에는 fetch 건너뜀
+    if (!riskId || !domainParam) return;
     /* Cancel any in-flight call (fixes React StrictMode double-invocation) */
     roadmapAbortRef.current?.abort();
     const compCtrl = new AbortController();

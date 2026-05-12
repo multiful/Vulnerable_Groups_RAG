@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { clearPipeline, savePipeline } from '../../utils/pipelineState';
 
 /* ─────────────────────────────────────────────
    기획서 F-01 기반 12문항
@@ -368,7 +369,11 @@ const RiskAssessment: React.FC = () => {
           <button className="btn-ghost" onClick={() => { setStep('survey'); setCurrent(0); setAnswers({}); setSafetyFlag(false); }}>
             <ArrowLeft size={15} /> 다시 진단
           </button>
-          <button className="btn-primary" onClick={() => navigate(`/interests?stage=${stage}`)}>
+          <button className="btn-primary" onClick={() => {
+              clearPipeline();
+              savePipeline({ stage });
+              navigate(`/interests?stage=${stage}`);
+            }}>
             관심 분야 선택하기 <ArrowRight size={15} />
           </button>
         </div>
