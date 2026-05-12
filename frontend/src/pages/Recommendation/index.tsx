@@ -195,6 +195,28 @@ const CertCard = memo(({
   isSelected?: boolean;
 }) => {
   const summary = buildCertSummary(cert);
+  const passRate = cert.avg_pass_rate_3yr ?? (() => {
+    const m = cert.text_for_dense?.match(/3년 평균 합격률:\s*([\d.]+)%/);
+    return m ? parseFloat(m[1]) : null;
+  })();
+  const pct = passRate !== null ? Math.min(Math.round(passRate), 100) : null;
+  // 합격률 구간별 색상: ≤25% 어려움(빨강), 26~50% 보통(주황), 51~70% 양호(파랑), >70% 쉬움(초록)
+  const rateColor = pct === null ? '#94a3b8'
+    : pct <= 25  ? '#ef4444'
+    : pct <= 50  ? '#f59e0b'
+    : pct <= 70  ? '#3b82f6'
+    : '#10b981';
+  const rateLabel = pct === null ? null
+    : pct <= 25  ? '높은 난이도'
+    : pct <= 50  ? '보통 난이도'
+    : pct <= 70  ? '낮은 난이도'
+    : '취득 용이';
+  // 데이터 출처: issuer 기준으로 자동 분기
+  const isNational = cert.cert_grade_tier && !cert.cert_grade_tier.startsWith('priv');
+  const srcLabel = isNational
+    ? '공공데이터포털 (data.go.kr) · 서울 열린데이터광장 (data.seoul.go.kr)'
+    : '공공데이터포털 (data.go.kr) · 서울 열린데이터광장 (data.seoul.go.kr)';
+
   return (
     <div
       className={`card cert-card${isSelected ? ' cert-card-selected' : ''}`}
@@ -213,6 +235,21 @@ const CertCard = memo(({
         <h3 className="cert-name">{cert.cert_name}</h3>
         <p className="cert-summary">{summary}</p>
       </div>
+
+      {/* ── 합격률 미니 게이지 ── */}
+      {pct !== null && (
+        <div className="cert-rate-wrap">
+          <div className="cert-rate-header">
+            <span className="cert-rate-label">3년 평균 합격률</span>
+            <span className="cert-rate-pct" style={{ color: rateColor }}>{pct}%</span>
+            {rateLabel && <span className="cert-rate-tag" style={{ background: rateColor + '18', color: rateColor }}>{rateLabel}</span>}
+          </div>
+          <div className="cert-rate-track">
+            <div className="cert-rate-fill" style={{ width: `${pct}%`, background: rateColor }} />
+          </div>
+        </div>
+      )}
+
       <div className="cert-actions">
         <span className="cert-click-hint"><FileText size={11} /> 클릭하여 상세 보기</span>
         <button
@@ -222,6 +259,9 @@ const CertCard = memo(({
           <Map size={13} /> 로드맵 <ArrowRight size={12} />
         </button>
       </div>
+
+      {/* ── 데이터 출처 ── */}
+      <p className="cert-data-src">출처: {srcLabel}</p>
     </div>
   );
 });
@@ -797,6 +837,19 @@ const Recommendation: React.FC = () => {
         )}
       </section>
 
+      {/* ── 데이터 출처 푸터 ── */}
+      <div className="data-src-footer">
+        <span className="data-src-footer-label">데이터 출처</span>
+        <span className="data-src-sep">·</span>
+        <a href="https://www.data.go.kr" target="_blank" rel="noreferrer" className="data-src-link">
+          공공데이터포털 (data.go.kr) — 국가기술자격 종목별 취득 정보 (한국산업인력공단)
+        </a>
+        <span className="data-src-sep">·</span>
+        <a href="https://data.seoul.go.kr" target="_blank" rel="noreferrer" className="data-src-link">
+          서울 열린데이터광장 (data.seoul.go.kr) — 서울시 고립·은둔 청년 실태조사 2022
+        </a>
+      </div>
+
       <style>{`
         .rec-wrap{display:flex;flex-direction:column;gap:1.5rem}
         .back-btn{display:inline-flex;align-items:center;gap:.35rem;font-size:.85rem;font-weight:500;color:var(--text-muted);margin-bottom:.25rem;background:none;border:none;cursor:pointer;padding:0;transition:color .15s;width:fit-content}
@@ -920,6 +973,22 @@ const Recommendation: React.FC = () => {
         .no-results-sub{font-size:.85rem;color:var(--text-muted);line-height:1.65}
         .cert-card-selected{border-color:var(--primary)!important;box-shadow:0 0 0 2px rgba(99,102,241,.18),var(--shadow-md)!important;background:#f5f3ff}
         .cert-click-hint{display:inline-flex;align-items:center;gap:.25rem;font-size:.72rem;color:var(--text-light)}
+        /* 합격률 게이지 */
+        .cert-rate-wrap{display:flex;flex-direction:column;gap:.35rem;padding:.5rem .625rem;background:var(--surface-2);border-radius:var(--radius-xs);border:1px solid var(--border)}
+        .cert-rate-header{display:flex;align-items:center;gap:.4rem}
+        .cert-rate-label{font-size:.67rem;font-weight:600;color:var(--text-light);flex:1}
+        .cert-rate-pct{font-size:.8rem;font-weight:800;letter-spacing:-.01em}
+        .cert-rate-tag{font-size:.6rem;font-weight:700;letter-spacing:.04em;padding:.1rem .45rem;border-radius:99px}
+        .cert-rate-track{height:5px;background:var(--surface-3,#e2e8f0);border-radius:99px;overflow:hidden}
+        .cert-rate-fill{height:100%;border-radius:99px;transition:width .4s ease}
+        /* 데이터 출처 */
+        .cert-data-src{font-size:.62rem;color:var(--text-light);line-height:1.4;margin-top:auto;padding-top:.375rem;border-top:1px solid var(--border)}
+        /* 페이지 하단 데이터 출처 푸터 */
+        .data-src-footer{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;padding:.625rem .875rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm)}
+        .data-src-footer-label{font-size:.68rem;font-weight:700;color:var(--text-muted);letter-spacing:.04em;white-space:nowrap}
+        .data-src-sep{color:var(--border-strong);font-size:.75rem}
+        .data-src-link{font-size:.68rem;color:var(--text-light);text-decoration:none;transition:color .15s}
+        .data-src-link:hover{color:var(--primary);text-decoration:underline}
         .featured-cert-active{border-left-color:var(--primary)!important;background:#f5f3ff}
         .ev-intro-box{padding:.875rem 1rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.4rem}
         .ev-intro-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:#1d4ed8;text-transform:uppercase}
