@@ -1,15 +1,8 @@
 // Content Hash: SHA256:TBD
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const STAGES = [
-  { id:'1', label:'1단계', sub:'취업 안정권', color:'#10b981', width:'100%' },
-  { id:'2', label:'2단계', sub:'준비 활성',   color:'#0ea5e9', width:'80%'  },
-  { id:'3', label:'3단계', sub:'준비 정체',   color:'#6366f1', width:'60%'  },
-  { id:'4', label:'4단계', sub:'관계망 약화', color:'#f59e0b', width:'40%'  },
-  { id:'5', label:'5단계', sub:'고위험군',    color:'#f43f5e', width:'20%'  },
-];
 
 const PROMISES = [
   {
@@ -36,7 +29,16 @@ const FLOW = [
   { num:'4', label:'자격증 확인',  sub:'상세 정보·근거',    path:'/recommendation',  color:'#2563eb' },
 ];
 
-const Home: React.FC = () => (
+const Home: React.FC = () => {
+  const [happy, setHappy] = useState(false);
+
+  const handleMascotClick = useCallback(() => {
+    if (happy) return;
+    setHappy(true);
+    setTimeout(() => setHappy(false), 2000);
+  }, [happy]);
+
+  return (
   <div className="home-wrap">
 
     <section className="hero">
@@ -51,8 +53,15 @@ const Home: React.FC = () => (
           </div>
         </div>
         <div className="hero-visual">
-          <div className="mascot-figure">
-            <img src="/didimi.png" alt="디딤이" className="mascot-img" />
+          <div className="mascot-figure" onClick={handleMascotClick}>
+            <div className="mascot-wrap">
+              <img
+                src="/didimi.png"
+                alt="디딤이"
+                className={`mascot-img${happy ? ' mascot-happy' : ''}`}
+              />
+              {happy && <span className="mascot-heart">🩷</span>}
+            </div>
           </div>
         </div>
       </div>
@@ -64,14 +73,13 @@ const Home: React.FC = () => (
       <div className="flow-row">
         {FLOW.map((s, i) => (
           <React.Fragment key={s.num}>
-            <Link to={s.path} className="flow-card card">
+            <div className="flow-card card">
               <div className="flow-num-dot" style={{background:s.color}}>{s.num}</div>
               <div className="flow-info">
                 <span className="flow-label">{s.label}</span>
                 <span className="flow-sub">{s.sub}</span>
               </div>
-              <ArrowRight size={13} style={{color:s.color, opacity:.6, flexShrink:0}}/>
-            </Link>
+            </div>
             {i < FLOW.length-1 && <div className="flow-sep"><div className="flow-line"/></div>}
           </React.Fragment>
         ))}
@@ -114,9 +122,14 @@ const Home: React.FC = () => (
       .hero-actions{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center}
       .hero-main-btn{padding:.75rem 1.5rem;font-size:.975rem}
       .hero-visual{display:flex;justify-content:center}
-      .mascot-figure{display:flex;justify-content:center;align-items:center;width:100%}
+      .mascot-figure{display:flex;justify-content:center;align-items:center;width:100%;position:relative;cursor:pointer}
+      .mascot-wrap{position:relative;width:260px;height:260px;flex-shrink:0}
       .mascot-img{width:260px;height:260px;object-fit:contain;filter:drop-shadow(0 12px 32px rgba(99,102,241,.25));animation:mascot-float 3s ease-in-out infinite}
+      .mascot-img.mascot-happy{animation:mascot-bounce .4s ease forwards, mascot-float 3s ease-in-out 0.4s infinite}
+.mascot-heart{position:absolute;top:5px;left:50%;transform:translateX(-50%);font-size:1.6rem;animation:heart-pop .6s ease forwards;pointer-events:none}
       @keyframes mascot-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+      @keyframes mascot-bounce{0%{transform:scale(1)}25%{transform:scale(1.13) translateY(-12px)}55%{transform:scale(.97) translateY(0)}75%{transform:scale(1.05) translateY(-5px)}100%{transform:scale(1) translateY(0)}}
+@keyframes heart-pop{0%{opacity:0;transform:scale(0) translateY(0)}40%{opacity:1;transform:scale(1.3) translateY(-8px)}70%{opacity:1;transform:scale(1) translateY(-14px)}100%{opacity:0;transform:scale(.8) translateY(-22px)}}
       .stage-card-title{font-size:.72rem;font-weight:700;letter-spacing:.07em;color:var(--text-light);text-transform:uppercase}
       .stage-list{display:flex;flex-direction:column;gap:.5rem}
       .stage-row{display:flex;align-items:center;gap:.625rem;padding:.35rem .5rem;border-radius:var(--radius-xs);text-decoration:none;transition:background .15s}
@@ -130,8 +143,7 @@ const Home: React.FC = () => (
       .sec-title{font-size:1.45rem;font-weight:800;letter-spacing:-.025em;color:var(--text);margin-bottom:1.25rem}
       .flow-row{display:flex;align-items:stretch;gap:0;flex-wrap:wrap}
       @media(max-width:700px){.flow-row{flex-direction:column}}
-      .flow-card{flex:1;min-width:130px;display:flex;align-items:center;gap:.75rem;padding:.875rem 1rem;position:relative;text-decoration:none;transition:box-shadow .22s,border-color .22s,transform .22s}
-      .flow-card:hover{transform:translateY(-3px)}
+      .flow-card{flex:1;min-width:130px;display:flex;align-items:center;gap:.75rem;padding:.875rem 1rem;position:relative;cursor:default}
       .flow-num-dot{position:absolute;top:-8px;left:.875rem;width:18px;height:18px;border-radius:50%;color:#fff;font-size:.63rem;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.15)}
       .flow-info{flex:1;display:flex;flex-direction:column;gap:.08rem;min-width:0}
       .flow-label{font-size:.82rem;font-weight:700;color:var(--text)}
@@ -151,6 +163,7 @@ const Home: React.FC = () => (
       .cta-btn{padding:.875rem 2rem;font-size:1rem;margin-top:.375rem}
     `}</style>
   </div>
-);
+  );
+};
 
 export default Home;
