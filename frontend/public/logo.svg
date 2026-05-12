@@ -1,13 +1,6 @@
-<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#5B6CF9"/>
-      <stop offset="100%" stop-color="#A855F7"/>
-    </linearGradient>
-  </defs>
-
-  <!-- Background rounded square -->
-  <rect width="100" height="100" rx="22" fill="url(#bg)"/>
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="디딤 로고">
+  <!-- Background — gradient를 단색 Cobalt Blue로만 교체 (geometry는 원본 그대로) -->
+  <rect width="100" height="100" rx="22" fill="#2563eb"/>
 
   <!-- Arch 1: leftmost / lowest — center ~32, top ~63 -->
   <path d="M20,83 L20,66 A12,12 0 0,1 44,66 L44,83"

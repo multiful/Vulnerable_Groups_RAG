@@ -6,6 +6,7 @@ import RiskAssessment from './pages/RiskAssessment';
 import InterestSelection from './pages/InterestSelection';
 import Roadmap from './pages/Roadmap';
 import Recommendation from './pages/Recommendation';
+import AllCerts from './pages/AllCerts';
 
 const App: React.FC = () => {
   return (
@@ -17,6 +18,7 @@ const App: React.FC = () => {
           <Route path="interests" element={<InterestSelection />} />
           <Route path="roadmap" element={<Roadmap />} />
           <Route path="recommendation" element={<Recommendation />} />
+          <Route path="certs" element={<AllCerts />} />
         </Route>
       </Routes>
     </BrowserRouter>

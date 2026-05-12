@@ -44,11 +44,9 @@ const SUPPORT_LINKS = [
   },
 ];
 
+// 상단 네비 — 진단 흐름은 "진단 시작" CTA 통해서만 진입. 자유 탐색은 "전체 자격증".
 const NAV_LINKS = [
-  { label: '위험군 진단', path: '/risk-assessment' },
-  { label: '관심 선택',   path: '/interests' },
-  { label: '성장 로드맵', path: '/roadmap' },
-  { label: '자격증 확인', path: '/recommendation' },
+  { label: '전체 자격증', path: '/certs' },
 ];
 
 const FLOW_STEPS = [
@@ -119,7 +117,7 @@ const MainLayout: React.FC = () => {
         <div className="container header-inner">
           {/* Logo */}
           <Link to="/" className="logo">
-            <img src="/logo.svg" alt="디딤 로고" className="logo-img" />
+            <img src="/logo.png?v=8" alt="디딤 로고" className="logo-img" />
             <span className="logo-text">디딤</span>
             <span className="logo-en">Didim</span>
           </Link>
@@ -437,7 +435,7 @@ const MainLayout: React.FC = () => {
           min-width: 24px;
         }
         .step-conn.done {
-          background: linear-gradient(90deg, var(--success), var(--primary));
+          background: var(--primary);
         }
 
         /* ── Body (full-width, no sidebar) ── */

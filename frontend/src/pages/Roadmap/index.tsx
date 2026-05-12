@@ -944,7 +944,7 @@ const Roadmap: React.FC = () => {
           flex: 1; width: 2px; background: var(--border);
           margin: 3px 0; min-height: 24px; border-radius: 2px;
         }
-        .tl-line-active { background: linear-gradient(180deg, var(--secondary), var(--primary)); }
+        .tl-line-active { background: var(--primary); }
 
         .tl-body {
           flex: 1; padding-bottom: 2rem; display: flex;

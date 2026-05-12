@@ -1,5 +1,5 @@
 // Content Hash: SHA256:TBD
-import React, { useState, useMemo, useEffect, useCallback, useDeferredValue, memo, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useDeferredValue, memo } from 'react';
 import { CertFlowDiagram } from '../../components/charts/CertFlowDiagram';
 import { getCertCandidates } from '../../api/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -186,13 +186,12 @@ interface VideosState {
 
 /* ── Memoized cert card ── */
 const CertCard = memo(({
-  cert, onEvidence, onDag, onRoadmap, onVideos, isSelected,
+  cert, onEvidence, onDag, onRoadmap, isSelected,
 }: {
   cert: CertCandidate;
   onEvidence: (id: string) => void;
   onDag: (id: string) => void;
   onRoadmap: (id: string) => void;
-  onVideos: (id: string, name: string) => void;
   isSelected?: boolean;
 }) => {
   const summary = buildCertSummary(cert);
@@ -221,11 +220,6 @@ const CertCard = memo(({
           onClick={(e) => { e.stopPropagation(); onRoadmap(cert.cert_id); }}
         >
           <Map size={13} /> 로드맵 <ArrowRight size={12} />
-        </button>
-        <button className="text-btn videos-btn"
-          onClick={() => onVideos(cert.cert_id, cert.cert_name)}
-          title="관련 강의 동영상 보기">
-          <Video size={13} /> 관련 동영상
         </button>
       </div>
     </div>
@@ -262,18 +256,9 @@ const Recommendation: React.FC = () => {
     loading: false, videos: [], error: null, warning: null, fetched: false,
     certId: '', certName: '', cacheHit: false,
   });
-  const [showVideos, setShowVideos] = useState(false);
-  const videosPanelRef = useRef<HTMLDivElement | null>(null);
   const [certExplain, setCertExplain] = useState<{
     loading: boolean; text: string | null; certId: string; error: string | null;
   }>({ loading: false, text: null, certId: '', error: null });
-
-  // 영상 패널이 열리거나 cert가 바뀔 때 자동으로 그 위치로 스크롤
-  useEffect(() => {
-    if (showVideos && videosPanelRef.current) {
-      videosPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [showVideos, videos.certId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -282,6 +267,19 @@ const Recommendation: React.FC = () => {
       .catch((err: Error) => { if (!cancelled) { setFetchError(err.message); setCertsLoading(false); } });
     return () => { cancelled = true; };
   }, []);
+
+  // 모달 열림 동안 body 스크롤 잠금 + ESC 키로 닫기
+  useEffect(() => {
+    if (!showEvidence) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowEvidence(false); };
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [showEvidence]);
 
   const riskId    = RISK_IDS[stageParam] ?? '';
   const riskLabel = RISK_LABEL[stageParam] ?? '';
@@ -379,7 +377,6 @@ const Recommendation: React.FC = () => {
       loading: true, videos: [], error: null, warning: null, fetched: false,
       certId, certName, cacheHit: false,
     });
-    setShowVideos(true);
     try {
       const res = await fetch(`/api/v1/certs/${encodeURIComponent(certId)}/videos`);
       const json = await res.json();
@@ -461,22 +458,19 @@ const Recommendation: React.FC = () => {
             <button className="btn-ghost" onClick={(e) => { e.stopPropagation(); goToRoadmap(featuredCert.cert_id); }}>
               <Map size={15} /> 로드맵 보기
             </button>
-            <button className="btn-ghost btn-videos"
-              onClick={() => fetchVideos(featuredCert.cert_id, featuredCert.cert_name)}>
-              <Video size={15} /> 관련 동영상
-            </button>
           </div>
         </div>
       )}
 
       {showEvidence && (
-        <div className="evidence-panel card">
+        <div className="modal-backdrop" onClick={() => setShowEvidence(false)} role="presentation">
+        <div className="evidence-panel modal-card card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
           <div className="ev-header">
             <div className="ev-header-left">
               <BookOpen size={15} style={{ color: 'var(--primary)', flexShrink: 0 }} />
               <span className="ev-title">{evidenceCertName}을 추천하는 이유</span>
             </div>
-            <button className="ev-close" onClick={() => setShowEvidence(false)}><X size={15} /></button>
+            <button className="ev-close" onClick={() => setShowEvidence(false)} aria-label="닫기"><X size={15} /></button>
           </div>
 
           {/* AI 추천 이유 — 패널 최상단의 핵심 결론 */}
@@ -647,68 +641,78 @@ const Recommendation: React.FC = () => {
               })}
             </div>
           )}
-        </div>
-      )}
 
-      {showVideos && (
-        <div className="videos-panel card" ref={videosPanelRef}>
-          <div className="ev-header">
-            <div className="ev-header-left">
-              <Video size={16} style={{ color: '#ef4444', flexShrink: 0 }} />
-              <span className="ev-title">{videos.certName} 관련 강의 동영상</span>
-              {videos.cacheHit && <span className="cache-badge" title="캐시된 결과">캐시</span>}
-            </div>
-            <button className="ev-close" onClick={() => setShowVideos(false)}><X size={15} /></button>
+          {/* 관련 동영상 섹션 — 모달 하단, 버튼 클릭 시 영상 inline 펼침 */}
+          <div className="modal-videos-section">
+            {videos.certId !== evidence.certId || (!videos.fetched && !videos.loading) ? (
+              <button
+                type="button"
+                className="btn-videos-cta"
+                onClick={() => fetchVideos(evidence.certId, evidenceCertName)}
+              >
+                <Video size={15} /> 관련 동영상 보기
+                <span className="btn-videos-hint">YouTube 강의 5개</span>
+              </button>
+            ) : (
+              <>
+                <div className="modal-videos-header">
+                  <Video size={15} style={{ color: 'var(--primary)' }} />
+                  <span className="modal-videos-title">{evidenceCertName} 관련 강의 동영상</span>
+                  {videos.cacheHit && <span className="cache-badge" title="캐시된 결과">캐시</span>}
+                </div>
+
+                {videos.loading && (
+                  <div className="ev-loading"><Loader2 size={18} className="ev-spin" /><span>YouTube에서 강의 영상을 찾는 중…</span></div>
+                )}
+
+                {!videos.loading && videos.error && (
+                  <div className="ev-empty">
+                    <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                    <span>{videos.error}</span>
+                  </div>
+                )}
+
+                {!videos.loading && videos.warning && videos.videos.length > 0 && (
+                  <div className="ev-empty" style={{ color: '#b45309', background: '#fef3c7', padding: '.5rem .75rem', borderRadius: '6px' }}>
+                    <AlertCircle size={14} style={{ flexShrink: 0 }} />
+                    <span>
+                      {videos.warning === 'quota_exceeded_using_stale_cache'
+                        ? '일일 검색 한도 초과 — 이전 결과를 보여드립니다.'
+                        : '최신 결과를 불러오지 못해 이전 결과를 보여드립니다.'}
+                    </span>
+                  </div>
+                )}
+
+                {!videos.loading && videos.fetched && videos.videos.length === 0 && !videos.error && (
+                  <div className="ev-empty">
+                    <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                    <span>관련 동영상을 찾지 못했습니다.</span>
+                  </div>
+                )}
+
+                {!videos.loading && videos.videos.length > 0 && (
+                  <div className="videos-grid">
+                    {videos.videos.map(v => (
+                      <a key={v.video_id} href={v.url} target="_blank" rel="noreferrer" className="video-card">
+                        <div className="video-thumb">
+                          {v.thumbnail_url
+                            ? <img src={v.thumbnail_url} alt={v.title} loading="lazy" />
+                            : <div className="video-thumb-fallback"><Play size={32} /></div>
+                          }
+                          <div className="video-play-overlay"><Play size={28} /></div>
+                        </div>
+                        <div className="video-meta">
+                          <p className="video-title">{v.title}</p>
+                          <p className="video-channel">{v.channel}</p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </div>
-
-          {videos.loading && (
-            <div className="ev-loading"><Loader2 size={18} className="ev-spin" /><span>YouTube에서 강의 영상을 찾는 중…</span></div>
-          )}
-
-          {!videos.loading && videos.error && (
-            <div className="ev-empty">
-              <AlertCircle size={16} style={{ flexShrink: 0 }} />
-              <span>{videos.error}</span>
-            </div>
-          )}
-
-          {!videos.loading && videos.warning && videos.videos.length > 0 && (
-            <div className="ev-empty" style={{ color: '#b45309', background: '#fef3c7', padding: '.5rem .75rem', borderRadius: '6px' }}>
-              <AlertCircle size={14} style={{ flexShrink: 0 }} />
-              <span>
-                {videos.warning === 'quota_exceeded_using_stale_cache'
-                  ? '일일 검색 한도 초과 — 이전 결과를 보여드립니다.'
-                  : '최신 결과를 불러오지 못해 이전 결과를 보여드립니다.'}
-              </span>
-            </div>
-          )}
-
-          {!videos.loading && videos.fetched && videos.videos.length === 0 && !videos.error && (
-            <div className="ev-empty">
-              <AlertCircle size={16} style={{ flexShrink: 0 }} />
-              <span>관련 동영상을 찾지 못했습니다.</span>
-            </div>
-          )}
-
-          {!videos.loading && videos.videos.length > 0 && (
-            <div className="videos-grid">
-              {videos.videos.map(v => (
-                <a key={v.video_id} href={v.url} target="_blank" rel="noreferrer" className="video-card">
-                  <div className="video-thumb">
-                    {v.thumbnail_url
-                      ? <img src={v.thumbnail_url} alt={v.title} loading="lazy" />
-                      : <div className="video-thumb-fallback"><Play size={32} /></div>
-                    }
-                    <div className="video-play-overlay"><Play size={28} /></div>
-                  </div>
-                  <div className="video-meta">
-                    <p className="video-title">{v.title}</p>
-                    <p className="video-channel">{v.channel}</p>
-                  </div>
-                </a>
-              ))}
-            </div>
-          )}
+        </div>
         </div>
       )}
 
@@ -766,7 +770,6 @@ const Recommendation: React.FC = () => {
                     onEvidence={fetchEvidence}
                     onDag={fetchDag}
                     onRoadmap={goToRoadmap}
-                    onVideos={fetchVideos}
                     isSelected={evidence.certId === cert.cert_id && showEvidence}
                   />
                 ))}
@@ -806,7 +809,45 @@ const Recommendation: React.FC = () => {
         .featured-issuer{font-size:.78rem;color:var(--text-light)}
         .featured-summary{font-size:.875rem;color:var(--text-muted);line-height:1.65;margin-top:.2rem}
         .featured-actions{display:flex;gap:.75rem;flex-wrap:wrap;padding-top:.25rem}
+        /* 모달 backdrop & 카드 */
+        .modal-backdrop{
+          position:fixed;inset:0;z-index:1000;
+          background:rgba(15,23,42,.55);
+          backdrop-filter:blur(2px);
+          -webkit-backdrop-filter:blur(2px);
+          display:flex;align-items:flex-start;justify-content:center;
+          padding:4vh 1rem;
+          overflow-y:auto;
+          animation:modal-fade-in .18s ease-out;
+        }
+        @keyframes modal-fade-in{from{opacity:0}to{opacity:1}}
+        .modal-card{
+          width:100%;max-width:720px;
+          animation:modal-pop .22s ease-out;
+        }
+        @keyframes modal-pop{
+          from{opacity:0;transform:translateY(12px) scale(.98)}
+          to{opacity:1;transform:translateY(0) scale(1)}
+        }
         .evidence-panel{padding:1.25rem;display:flex;flex-direction:column;gap:.875rem;border-left:3px solid var(--primary)}
+
+        /* 모달 안 영상 섹션 */
+        .modal-videos-section{margin-top:.25rem;padding-top:1rem;border-top:1px dashed var(--border);display:flex;flex-direction:column;gap:.75rem}
+        .btn-videos-cta{
+          display:inline-flex;align-items:center;gap:.5rem;
+          padding:.7rem 1.1rem;
+          background:var(--primary-light);
+          color:var(--primary);
+          border:1.5px dashed var(--primary);
+          border-radius:var(--radius-sm);
+          font-size:.9rem;font-weight:700;
+          width:fit-content;cursor:pointer;transition:all .15s;
+        }
+        .btn-videos-cta:hover{background:var(--primary);color:#fff}
+        .btn-videos-hint{font-size:.7rem;font-weight:500;opacity:.7;margin-left:.25rem}
+        .btn-videos-cta:hover .btn-videos-hint{opacity:1}
+        .modal-videos-header{display:flex;align-items:center;gap:.45rem}
+        .modal-videos-title{font-size:.85rem;font-weight:700;color:var(--text)}
         .ev-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem}
         .ev-header-left{display:flex;align-items:center;gap:.5rem;flex:1;min-width:0}
         .ev-title{font-size:.875rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -873,9 +914,7 @@ const Recommendation: React.FC = () => {
         .text-btn:hover{opacity:.75}
         .evidence-btn{color:var(--primary)}
         .roadmap-btn{color:var(--secondary);margin-left:auto}
-        .videos-btn{color:#ef4444}
         .cert-actions{flex-wrap:wrap;row-gap:.4rem}
-        .btn-videos{display:inline-flex;align-items:center;gap:.4rem}
         .no-results{grid-column:1/-1;text-align:center;padding:2.5rem 1.25rem;line-height:1.8;display:flex;flex-direction:column;gap:.5rem}
         .no-results-title{font-size:.95rem;font-weight:700;color:var(--text)}
         .no-results-sub{font-size:.85rem;color:var(--text-muted);line-height:1.65}
@@ -908,29 +947,29 @@ const Recommendation: React.FC = () => {
         /* AI 추천 이유 (5번 — 패널 최상단 핵심 결론으로 격상) */
         .ai-reasoning-card{
           padding:1.125rem 1.25rem;
-          background:linear-gradient(135deg,#eef2ff 0%,#ede9fe 50%,#f5f3ff 100%);
-          border:1.5px solid rgba(99,102,241,.35);
+          background:#eff6ff;
+          border:1.5px solid rgba(37,99,235,.35);
           border-radius:10px;
           display:flex;flex-direction:column;gap:.6rem;
-          box-shadow:0 4px 14px rgba(99,102,241,.12);
+          box-shadow:0 4px 14px rgba(37,99,235,.10);
           position:relative;
         }
         .ai-reasoning-card::before{
           content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
-          background:linear-gradient(180deg,#6366f1 0%,#a855f7 100%);
+          background:#2563eb;
           border-radius:10px 0 0 10px;
         }
         .ai-reasoning-header{display:flex;align-items:center;gap:.5rem}
-        .ai-reasoning-icon{color:#6366f1;flex-shrink:0;animation:ai-pulse 2.4s ease-in-out infinite}
+        .ai-reasoning-icon{color:#2563eb;flex-shrink:0;animation:ai-pulse 2.4s ease-in-out infinite}
         @keyframes ai-pulse{0%,100%{opacity:.85;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
-        .ai-reasoning-label{font-size:.85rem;font-weight:800;color:#4338ca;letter-spacing:-.01em}
+        .ai-reasoning-label{font-size:.85rem;font-weight:800;color:#1d4ed8;letter-spacing:-.01em}
         .ai-reasoning-badge{
           margin-left:auto;font-size:.62rem;font-weight:700;letter-spacing:.05em;
-          padding:.15rem .5rem;background:#6366f1;color:#fff;
+          padding:.15rem .5rem;background:#2563eb;color:#fff;
           border-radius:99px;text-transform:uppercase;
         }
-        .ai-reasoning-loading{display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:#6366f1;padding-top:.2rem}
-        .ai-reasoning-text{font-size:.95rem;color:#312e81;line-height:1.75;margin:0;font-weight:500}
+        .ai-reasoning-loading{display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:#2563eb;padding-top:.2rem}
+        .ai-reasoning-text{font-size:.95rem;color:#1e3a8a;line-height:1.75;margin:0;font-weight:500}
 
         /* 보조 근거 헤더 */
         .ev-supporting-header{
