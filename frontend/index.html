@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- HTTP → HTTPS 강제 리다이렉트 (localhost 제외) -->
+    <script>
+      if (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        location.replace('https:' + location.href.slice(5));
+      }
+    </script>
     <title>디딤 · 청년 취업 자격증 로드맵</title>
     <!-- favicon 다양한 사이즈 — 브라우저가 자기 환경에 맞는 거 골라씀 -->
     <link rel="icon" type="image/png" sizes="16x16" href="/logo-16.png?v=8" />
