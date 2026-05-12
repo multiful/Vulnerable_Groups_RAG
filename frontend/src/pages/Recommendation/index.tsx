@@ -6,7 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, Map, FileText, ChevronDown, AlertCircle,
   Loader2, ArrowLeft, ArrowRight, X, BookOpen, ExternalLink,
-  Video, Play,
+  Video, Play, Sparkles,
 } from 'lucide-react';
 import type { CertCandidate } from '../../types/cert';
 
@@ -82,8 +82,15 @@ const JOB_NAMES: Record<string, string> = {
 function buildCertSummary(cert: CertCandidate): string {
   const domain = DOMAIN_NAMES[cert.primary_domain] ?? '';
   const jobs = cert.related_jobs.slice(0, 4).map(j => JOB_NAMES[j]).filter(Boolean);
-  const passM = cert.text_for_dense.match(/3년 평균 합격률:\s*([\d.]+)%/);
-  const sessM = cert.text_for_dense.match(/연간 검정 횟수:\s*(연 \d+회)/);
+  // 슬림 JSON: explicit 필드 우선, 구버전 호환을 위해 text_for_dense regex fallback
+  const passRate = cert.avg_pass_rate_3yr ?? (() => {
+    const m = cert.text_for_dense?.match(/3년 평균 합격률:\s*([\d.]+)%/);
+    return m ? parseFloat(m[1]) : null;
+  })();
+  const sessions = cert.exam_sessions_per_year ?? (() => {
+    const m = cert.text_for_dense?.match(/연간 검정 횟수:\s*연 (\d+)회/);
+    return m ? parseInt(m[1], 10) : null;
+  })();
   const parts: string[] = [];
   if (domain) parts.push(domain + ' 분야');
   if (jobs.length > 0) {
@@ -91,8 +98,10 @@ function buildCertSummary(cert: CertCandidate): string {
       ? `${jobs.slice(0, 2).join(', ')} 외 ${jobs.length - 2}개 직무`
       : jobs.join(', ') + ' 직무');
   }
-  if (sessM) parts.push(sessM[1] + ' 시험');
-  if (passM) parts.push(`합격률 ${parseFloat(passM[1]).toFixed(0)}%`);
+  if (sessions !== null) {
+    parts.push(sessions === 0 ? '상시 시험' : `연 ${sessions}회 시험`);
+  }
+  if (passRate !== null) parts.push(`합격률 ${passRate.toFixed(0)}%`);
   return parts.join(' · ');
 }
 
@@ -467,19 +476,21 @@ const Recommendation: React.FC = () => {
             <button className="ev-close" onClick={() => setShowEvidence(false)}><X size={15} /></button>
           </div>
 
-          {/* AI 추천 이유 */}
+          {/* AI 추천 이유 — 패널 최상단의 핵심 결론 */}
           {certExplain.certId === evidence.certId && (certExplain.loading || certExplain.text) && (
-            <div className="ev-ai-explain">
+            <div className="ai-reasoning-card">
+              <div className="ai-reasoning-header">
+                <Sparkles size={18} className="ai-reasoning-icon" />
+                <span className="ai-reasoning-label">AI가 분석한 추천 이유</span>
+                <span className="ai-reasoning-badge">핵심 분석</span>
+              </div>
               {certExplain.loading ? (
-                <div className="ev-loading">
-                  <Loader2 size={14} className="ev-spin" />
-                  <span>AI 추천 이유 분석 중…</span>
+                <div className="ai-reasoning-loading">
+                  <Loader2 size={15} className="ev-spin" />
+                  <span>{evidenceCertName}을 분석 중…</span>
                 </div>
               ) : (
-                <>
-                  <span className="ev-ai-label">✦ AI 추천 이유</span>
-                  <p className="ev-ai-text">{certExplain.text}</p>
-                </>
+                <p className="ai-reasoning-text">{certExplain.text}</p>
               )}
             </div>
           )}
@@ -514,6 +525,11 @@ const Recommendation: React.FC = () => {
           )}
           {!evidence.loading && evidence.rows.length > 0 && (
             <div className="ev-list">
+              <div className="ev-supporting-header">
+                <FileText size={14} />
+                <span className="ev-supporting-title">참고 자료</span>
+                <span className="ev-supporting-sub">공식 문서에서 가져온 보조 근거입니다</span>
+              </div>
               {[...evidence.rows].sort((a, b) => {
                 const pri = (s: string) => {
                   if (s === '도입목적') return 0;
@@ -886,9 +902,43 @@ const Recommendation: React.FC = () => {
         .video-meta{padding:.625rem .75rem;display:flex;flex-direction:column;gap:.25rem}
         .video-title{font-size:.82rem;font-weight:600;color:var(--text);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
         .video-channel{font-size:.72rem;color:var(--text-light)}
-        .ev-ai-explain{padding:.875rem 1rem;background:linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%);border:1px solid rgba(99,102,241,.25);border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.4rem}
-        .ev-ai-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:var(--primary);text-transform:uppercase}
-        .ev-ai-text{font-size:.875rem;color:#3730a3;line-height:1.75;margin:0}
+        /* AI 추천 이유 (5번 — 패널 최상단 핵심 결론으로 격상) */
+        .ai-reasoning-card{
+          padding:1.125rem 1.25rem;
+          background:linear-gradient(135deg,#eef2ff 0%,#ede9fe 50%,#f5f3ff 100%);
+          border:1.5px solid rgba(99,102,241,.35);
+          border-radius:10px;
+          display:flex;flex-direction:column;gap:.6rem;
+          box-shadow:0 4px 14px rgba(99,102,241,.12);
+          position:relative;
+        }
+        .ai-reasoning-card::before{
+          content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+          background:linear-gradient(180deg,#6366f1 0%,#a855f7 100%);
+          border-radius:10px 0 0 10px;
+        }
+        .ai-reasoning-header{display:flex;align-items:center;gap:.5rem}
+        .ai-reasoning-icon{color:#6366f1;flex-shrink:0;animation:ai-pulse 2.4s ease-in-out infinite}
+        @keyframes ai-pulse{0%,100%{opacity:.85;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
+        .ai-reasoning-label{font-size:.85rem;font-weight:800;color:#4338ca;letter-spacing:-.01em}
+        .ai-reasoning-badge{
+          margin-left:auto;font-size:.62rem;font-weight:700;letter-spacing:.05em;
+          padding:.15rem .5rem;background:#6366f1;color:#fff;
+          border-radius:99px;text-transform:uppercase;
+        }
+        .ai-reasoning-loading{display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:#6366f1;padding-top:.2rem}
+        .ai-reasoning-text{font-size:.95rem;color:#312e81;line-height:1.75;margin:0;font-weight:500}
+
+        /* 보조 근거 헤더 */
+        .ev-supporting-header{
+          display:flex;align-items:center;gap:.4rem;
+          padding:.5rem .25rem .25rem;
+          margin-top:.25rem;
+          border-bottom:1px solid var(--border);
+          color:var(--text-light);
+        }
+        .ev-supporting-title{font-size:.78rem;font-weight:700;color:var(--text-muted)}
+        .ev-supporting-sub{font-size:.72rem;color:var(--text-light);margin-left:.3rem}
       `}</style>
     </div>
   );

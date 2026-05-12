@@ -101,6 +101,7 @@ const STARTING_STAGE_MAP: Record<number, string> = {
 };
 
 function extractPassRate(text: string): number | null {
+  // legacy fallback (구버전 text_for_dense 호환). 슬림 빌드에서는 cert.avg_pass_rate_3yr 직접 사용.
   const m = text.match(/(?:3년 평균 합격률|합격률):\s*([\d.]+)/);
   return m ? Math.round(parseFloat(m[1])) : null;
 }
@@ -126,7 +127,8 @@ interface RawCert {
   related_jobs: string[];
   recommended_risk_stages: string[];
   roadmap_stages: string[];
-  text_for_dense: string;
+  avg_pass_rate_3yr?: number | null;  // 슬림 빌드 explicit 필드
+  text_for_dense?: string;             // legacy fallback
 }
 
 async function buildLocalRoadmap(riskId: string, domainId: string, riskNum: number, jobId?: string): Promise<RoadmapData> {
@@ -155,7 +157,7 @@ async function buildLocalRoadmap(riskId: string, domainId: string, riskNum: numb
       cert_id: c.cert_id,
       cert_name: c.cert_name,
       cert_grade_tier: c.cert_grade_tier ?? '3_기사',
-      avg_pass_rate: extractPassRate(c.text_for_dense ?? ''),
+      avg_pass_rate: c.avg_pass_rate_3yr ?? extractPassRate(c.text_for_dense ?? ''),
       is_bottleneck: false,
       bottleneck_note: null,
       is_redundant: false,
