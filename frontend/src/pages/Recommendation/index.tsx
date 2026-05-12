@@ -211,11 +211,8 @@ const CertCard = memo(({
     : pct <= 50  ? '보통 난이도'
     : pct <= 70  ? '낮은 난이도'
     : '취득 용이';
-  // 데이터 출처: issuer 기준으로 자동 분기
-  const isNational = cert.cert_grade_tier && !cert.cert_grade_tier.startsWith('priv');
-  const srcLabel = isNational
-    ? '공공데이터포털 (data.go.kr) · 서울 열린데이터광장 (data.seoul.go.kr)'
-    : '공공데이터포털 (data.go.kr) · 서울 열린데이터광장 (data.seoul.go.kr)';
+  // 데이터 출처: 자격증 정보는 Q-Net/한국산업인력공단 기반
+  const srcLabel = 'Q-Net (q-net.or.kr) · 한국산업인력공단 자격증 목록 API (data.go.kr)';
 
   return (
     <div
