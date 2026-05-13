@@ -455,6 +455,8 @@ const Recommendation: React.FC = () => {
 
   const evidenceCertName = allCerts.find(c => c.cert_id === evidence.certId)?.cert_name ?? evidence.certId;
 
+  const isSurveyIncomplete = !stageParam && !domainParam;
+
   return (
     <div className="rec-wrap">
       <div className="page-header">
@@ -470,6 +472,19 @@ const Recommendation: React.FC = () => {
               : '추천 자격증을 확인하세요.'}
         </p>
       </div>
+
+      {isSurveyIncomplete && (
+        <div className="survey-required-banner">
+          <AlertCircle size={20} className="survey-required-icon" />
+          <div className="survey-required-body">
+            <p className="survey-required-title">AI 추천을 받을 수 없습니다</p>
+            <p className="survey-required-sub">위험군 진단과 관심 분야를 먼저 설정해야 맞춤 자격증 추천을 받을 수 있습니다.</p>
+          </div>
+          <button className="btn-primary survey-required-btn" onClick={() => navigate('/risk-assessment')}>
+            진단 시작하기
+          </button>
+        </div>
+      )}
 
       {featuredCert && (
         <div
@@ -643,6 +658,80 @@ const Recommendation: React.FC = () => {
                           <span key={pi} className="ev-exam-pill">{p}</span>
                         ))}
                       </div>
+                    </div>
+                  );
+                }
+                // 검정 현황 — PDF 표 raw 데이터 → 파싱 후 테이블 카드 렌더링
+                if (sec === '검정 현황' || sec.includes('검정 현황')) {
+                  // 1) "2 0 2 2" → "2022" 연도 복원
+                  const cleaned = row.snippet
+                    .replace(/(\d)\s(\d)\s(\d)\s(\d)/g, '$1$2$3$4')
+                    .replace(/(\d)\s(\d)\s(\d)\s(\d)/g, '$1$2$3$4'); // 2회 적용으로 인접 패턴 처리
+                  // 2) 연도 추출 (2020~2029)
+                  const yearMatches = [...cleaned.matchAll(/20[2-9]\d/g)].map(m => m[0]);
+                  const years = [...new Set(yearMatches)].sort();
+                  // 3) 급수/차시 행 파싱: "준전문가", "전문가1차", "전문가2차" 등 찾기
+                  const rowPattern = /(준전문가|전문가\d차|준전문가\d차|[가-힣\d]+차시?)\s+([\d,]+)\s+([\d,]+|-)\s*([\d.]+)?/g;
+                  const parsedRows: { label: string; applicants: string; passed: string; rate: string }[] = [];
+                  let match;
+                  while ((match = rowPattern.exec(cleaned)) !== null) {
+                    parsedRows.push({
+                      label: match[1],
+                      applicants: match[2],
+                      passed: match[3],
+                      rate: match[4] ?? '-',
+                    });
+                  }
+                  return (
+                    <div key={row.chunk_id || i} className="ev-row ev-row-stats">
+                      <div className="ev-row-header">
+                        <span className="ev-section-label">{sec}</span>
+                        {isCatalog && (
+                          <span className={`ev-src-tag ${isNational ? 'ev-src-national' : 'ev-src-catalog'}`}>
+                            {isNational ? '국가자격' : '공인민간자격'}
+                          </span>
+                        )}
+                        {row.source_url && (
+                          <a href={row.source_url} target="_blank" rel="noreferrer" className="ev-link">
+                            <ExternalLink size={11} /> 원문 보기
+                          </a>
+                        )}
+                      </div>
+                      {years.length > 0 && (
+                        <div className="ev-stats-years">
+                          {years.map(y => (
+                            <span key={y} className="ev-stats-year-chip">{y}년</span>
+                          ))}
+                          <span className="ev-stats-year-label">검정 현황 데이터</span>
+                        </div>
+                      )}
+                      {parsedRows.length > 0 ? (
+                        <div className="ev-stats-table-wrap">
+                          <table className="ev-stats-table">
+                            <thead>
+                              <tr>
+                                <th>급수/차시</th>
+                                <th>응시자</th>
+                                <th>합격자</th>
+                                <th>합격률(%)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {parsedRows.map((r, ri) => (
+                                <tr key={ri}>
+                                  <td>{r.label}</td>
+                                  <td>{r.applicants}</td>
+                                  <td>{r.passed}</td>
+                                  <td>{r.rate}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <pre className="ev-stats-pre">{cleaned}</pre>
+                      )}
+                      <p className="ev-stats-disclaimer">* PDF에서 자동 추출된 데이터입니다. 정확한 수치는 원문을 확인해 주세요.</p>
                     </div>
                   );
                 }
@@ -1047,6 +1136,59 @@ const Recommendation: React.FC = () => {
         }
         .ev-supporting-title{font-size:.78rem;font-weight:700;color:var(--text-muted)}
         .ev-supporting-sub{font-size:.72rem;color:var(--text-light);margin-left:.3rem}
+
+        /* 검정 현황 — 표 렌더링 */
+        .ev-row-stats{background:#f8fafc;border-color:#e2e8f0}
+        .ev-stats-years{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;margin-bottom:.1rem}
+        .ev-stats-year-chip{
+          padding:.15rem .55rem;background:#dbeafe;color:#1e40af;
+          border-radius:99px;font-size:.68rem;font-weight:700;
+        }
+        .ev-stats-year-label{font-size:.68rem;color:#64748b;margin-left:.2rem}
+        .ev-stats-table-wrap{overflow-x:auto;border-radius:6px;border:1px solid #e2e8f0}
+        .ev-stats-table{
+          width:100%;border-collapse:collapse;font-size:.8rem;
+        }
+        .ev-stats-table thead tr{background:#f1f5f9}
+        .ev-stats-table th{
+          padding:.45rem .75rem;text-align:right;font-size:.72rem;font-weight:700;
+          color:#475569;border-bottom:1px solid #e2e8f0;white-space:nowrap;
+        }
+        .ev-stats-table th:first-child{text-align:left}
+        .ev-stats-table td{
+          padding:.4rem .75rem;text-align:right;color:#334155;
+          border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums;
+        }
+        .ev-stats-table td:first-child{text-align:left;font-weight:600;color:#1e293b}
+        .ev-stats-table tbody tr:last-child td{border-bottom:none}
+        .ev-stats-table tbody tr:hover td{background:#f8fafc}
+        .ev-stats-disclaimer{
+          font-size:.68rem;color:#94a3b8;margin:0;line-height:1.5;
+          border-top:1px solid #f1f5f9;padding-top:.4rem;
+        }
+        .ev-stats-pre{
+          font-size:.72rem;
+          font-family:'Menlo','Consolas','D2Coding',monospace;
+          color:#334155;line-height:1.75;white-space:pre-wrap;word-break:break-all;
+          background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;
+          padding:.625rem .875rem;margin:0;max-height:160px;overflow-y:auto;
+          scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;
+        }
+
+        /* 설문 미완료 배너 */
+        .survey-required-banner{
+          display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+          padding:1.125rem 1.375rem;
+          background:#fff7ed;
+          border:1.5px solid #fed7aa;
+          border-left:4px solid #f97316;
+          border-radius:var(--radius-sm);
+        }
+        .survey-required-icon{color:#f97316;flex-shrink:0}
+        .survey-required-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:.2rem}
+        .survey-required-title{font-size:.95rem;font-weight:800;color:#9a3412;margin:0}
+        .survey-required-sub{font-size:.82rem;color:#c2410c;margin:0;line-height:1.55}
+        .survey-required-btn{white-space:nowrap;flex-shrink:0}
       `}</style>
     </div>
   );

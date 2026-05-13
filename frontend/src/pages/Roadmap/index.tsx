@@ -75,8 +75,8 @@ function achievabilityColor(a: string): string {
 
 const RISK_LABELS: Record<string, string> = {
   '1': '1단계 (취업 안정권)', '2': '2단계 (준비 활성)',
-  '3': '3단계 (준비 정체)',   '4': '4단계 (관계망 약화)',
-  '5': '5단계 (고위험군)',
+  '3': '3단계 (준비 정체)',   '4': '4단계 (고위험군)',
+  '5': '5단계 (최고위험군)',
 };
 const RISK_IDS: Record<string, string> = {
   '1': 'risk_0001', '2': 'risk_0002', '3': 'risk_0003',

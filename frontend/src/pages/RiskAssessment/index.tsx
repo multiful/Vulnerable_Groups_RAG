@@ -183,8 +183,8 @@ const STAGE_LABELS: Record<string, { label: string; sub: string; color: string }
   '1': { label: '1단계', sub: '취업 안정권', color: '#10b981' },
   '2': { label: '2단계', sub: '준비 활성',   color: '#0ea5e9' },
   '3': { label: '3단계', sub: '준비 정체',   color: '#6366f1' },
-  '4': { label: '4단계', sub: '관계망 약화', color: '#f59e0b' },
-  '5': { label: '5단계', sub: '고위험군',    color: '#f43f5e' },
+  '4': { label: '4단계', sub: '고위험군',    color: '#f59e0b' },
+  '5': { label: '5단계', sub: '최고위험군',  color: '#f43f5e' },
 };
 
 const RiskAssessment: React.FC = () => {
