@@ -207,6 +207,24 @@ const Roadmap: React.FC = () => {
   const [llmData, setLlmData]     = useState<RoadmapData | null>(null);
   const [llmLoading, setLlmLoading] = useState(false);
   const [llmFetched, setLlmFetched] = useState(false);
+  const [llmLoadStep, setLlmLoadStep] = useState(0);
+
+  const LLM_LOAD_MESSAGES = [
+    '위험군 단계와 관심 분야를 분석하는 중…',
+    '적합한 자격증 후보를 탐색하는 중…',
+    '최적 학습 순서를 설계하는 중…',
+    '로드맵 단계별 경로를 조합하는 중…',
+    '거의 다 됐어요! 마무리 중…',
+  ];
+
+  useEffect(() => {
+    if (!llmLoading) { setLlmLoadStep(0); return; }
+    const iv = setInterval(() => {
+      setLlmLoadStep(s => Math.min(s + 1, LLM_LOAD_MESSAGES.length - 1));
+    }, 5000);
+    return () => clearInterval(iv);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [llmLoading]);
 
   // 인라인 evidence/DAG 드로어
   const [activeCert, setActiveCert] = useState<{ id: string; name: string } | null>(null);
@@ -491,7 +509,20 @@ const Roadmap: React.FC = () => {
         <div className="rm-ai-loading">
           <Loader2 size={22} className="rm-spin" />
           <p className="rm-state-title">AI가 맞춤 로드맵을 구성하는 중…</p>
-          <p className="rm-state-sub">위험군과 도메인을 분석해 최적 경로를 선별합니다 (20~30초 소요)</p>
+          <p className="rm-state-sub">{LLM_LOAD_MESSAGES[llmLoadStep]}</p>
+          <div className="rm-ai-steps">
+            {LLM_LOAD_MESSAGES.map((msg, i) => (
+              <div key={i} className={`rm-ai-step ${i < llmLoadStep ? 'done' : i === llmLoadStep ? 'active' : 'pending'}`}>
+                <span className="rm-ai-step-dot" />
+                <span className="rm-ai-step-label">
+                  {i < llmLoadStep
+                    ? msg.replace(/…$/, '').replace(/중$/, '완료').trim() + ' ✓'
+                    : msg.replace(/…$/, '').trim()}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="rm-state-sub rm-ai-time-note">20~30초 소요됩니다</p>
         </div>
       )}
 
@@ -845,11 +876,28 @@ const Roadmap: React.FC = () => {
         /* AI loading */
         .rm-ai-loading {
           display: flex; flex-direction: column; align-items: center;
-          justify-content: center; min-height: 260px; gap: .875rem;
+          justify-content: center; min-height: 300px; gap: .875rem;
           text-align: center; color: var(--text-muted);
           background: var(--surface); border: 1px solid var(--border);
           border-radius: var(--radius-sm); padding: 2rem;
         }
+        .rm-ai-steps {
+          display: flex; flex-direction: column; gap: .45rem;
+          margin-top: .25rem; width: 100%; max-width: 320px; text-align: left;
+        }
+        .rm-ai-step { display: flex; align-items: center; gap: .6rem; }
+        .rm-ai-step-dot {
+          width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+          background: var(--border); transition: background .3s;
+        }
+        .rm-ai-step.done .rm-ai-step-dot { background: var(--success); }
+        .rm-ai-step.active .rm-ai-step-dot { background: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+        .rm-ai-step-label {
+          font-size: .78rem; color: var(--text-light); transition: color .3s;
+        }
+        .rm-ai-step.done .rm-ai-step-label { color: var(--success); }
+        .rm-ai-step.active .rm-ai-step-label { color: var(--primary); font-weight: 600; }
+        .rm-ai-time-note { font-size: .73rem; margin-top: .25rem; opacity: .7; }
 
         .back-btn {
           display: inline-flex; align-items: center; gap: .35rem;

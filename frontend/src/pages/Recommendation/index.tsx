@@ -107,7 +107,8 @@ function buildCertSummary(cert: CertCandidate): string {
 }
 
 const RISK_LABEL: Record<string, string> = {
-  '1': '1단계', '2': '2단계', '3': '3단계', '4': '4단계', '5': '5단계',
+  '1': '1단계 (취업 안정권)', '2': '2단계 (준비 활성)', '3': '3단계 (준비 정체)',
+  '4': '4단계 (고위험군)', '5': '5단계 (최고위험군)',
 };
 const RISK_IDS: Record<string, string> = {
   '1': 'risk_0001', '2': 'risk_0002', '3': 'risk_0003',
@@ -663,74 +664,215 @@ const Recommendation: React.FC = () => {
                 }
                 // 검정 현황 — PDF 표 raw 데이터 → 파싱 후 테이블 카드 렌더링
                 if (sec === '검정 현황' || sec.includes('검정 현황')) {
-                  // 1) "2 0 2 2" → "2022" 연도 복원
+                  // ── Step 1: 연도 붙여쓰기 복원 ──
                   const cleaned = row.snippet
                     .replace(/(\d)\s(\d)\s(\d)\s(\d)/g, '$1$2$3$4')
-                    .replace(/(\d)\s(\d)\s(\d)\s(\d)/g, '$1$2$3$4'); // 2회 적용으로 인접 패턴 처리
-                  // 2) 연도 추출 (2020~2029)
+                    .replace(/(\d)\s(\d)\s(\d)\s(\d)/g, '$1$2$3$4');
+
+                  // ── Step 2: 연도 추출 ──
                   const yearMatches = [...cleaned.matchAll(/20[2-9]\d/g)].map(m => m[0]);
                   const years = [...new Set(yearMatches)].sort();
-                  // 3) 급수/차시 행 파싱: "준전문가", "전문가1차", "전문가2차" 등 찾기
-                  const rowPattern = /(준전문가|전문가\d차|준전문가\d차|[가-힣\d]+차시?)\s+([\d,]+)\s+([\d,]+|-)\s*([\d.]+)?/g;
-                  const parsedRows: { label: string; applicants: string; passed: string; rate: string }[] = [];
-                  let match;
-                  while ((match = rowPattern.exec(cleaned)) !== null) {
-                    parsedRows.push({
-                      label: match[1],
-                      applicants: match[2],
-                      passed: match[3],
-                      rate: match[4] ?? '-',
-                    });
+
+                  // ── Step 3: 급수/레벨 라벨 추출 ──
+                  const LEVEL_RE = /(기술사|기능장|기사|산업기사|기능사|전문가|개발자|준전문가|특급|고급|중급|초급|1급|2급|3급|A급|B급|C급|필기|실기)/g;
+                  const allLvl = [...cleaned.matchAll(LEVEL_RE)].map(m => m[0]);
+                  const seenL = new Set<string>();
+                  const levels: string[] = [];
+                  for (const l of allLvl) { if (!seenL.has(l)) { seenL.add(l); levels.push(l); } }
+
+                  // ── Step 4: 합격률 소수 추출 (≤100만 유효) ──
+                  const rates: string[] = [...cleaned.matchAll(/\b(\d{1,2}\.\d+)\b/g)]
+                    .map(m => m[1]).filter(n => parseFloat(n) <= 100);
+
+                  // ── Step 5: "응시자" 이후 텍스트에서만 정수 추출 (설명문 오염 방지) ──
+                  // 설명문에 "75점", "40%" 같은 숫자가 섞여 allCounts가 오염되는 버그 수정
+                  const tblMarkers = ['응시자 합격자', '응시자', '합격자'];
+                  let tblSection = cleaned;
+                  for (const mk of tblMarkers) {
+                    const idx = cleaned.indexOf(mk);
+                    if (idx >= 0) { tblSection = cleaned.slice(idx + mk.length); break; }
                   }
+                  const tblCounts: string[] = [];
+                  const tcRe = /\b([\d,]+)\b/g;
+                  let tc: RegExpExecArray | null;
+                  while ((tc = tcRe.exec(tblSection)) !== null) {
+                    const raw = tc[1].replace(/,/g, '');
+                    const n = parseInt(raw, 10);
+                    if (!isNaN(n) && raw.length >= 2 && !(raw.length === 4 && n >= 2020 && n <= 2030)) {
+                      tblCounts.push(tc[1]);
+                    }
+                  }
+
+                  // ── 헬퍼: sanity check (합격자 ≤ 응시자, 합격률 ≤ 100) ──
+                  type ExamRow = { year: string; level: string; applicants: string; passed: string; rate: string };
+                  type StatRow = { label: string; applicants: string; passed: string; rate: string };
+                  const isValidRow = (app: string, pass: string, rate: string) => {
+                    const a = parseInt(app.replace(/,/g, ''), 10);
+                    const p = parseInt(pass.replace(/,/g, ''), 10);
+                    const r = parseFloat(rate);
+                    if (!isNaN(a) && !isNaN(p) && p > a) return false;
+                    if (!isNaN(r) && r > 100) return false;
+                    return true;
+                  };
+
+                  // ── Step 6: 열 방향(column-major) 파싱 — 최우선 시도 ──
+                  // 구조: (응시자×nC) → (합격자×nC) → (합격률×nC)  (nC = nYears × nLevels)
+                  let colMajorRows: ExamRow[] = [];
+                  if (years.length > 0 && levels.length > 0 && rates.length > 0) {
+                    const nC = rates.length;                          // 연도×급수 조합 수
+                    const nLevels = nC / years.length;                // 급수 수 추론
+                    if (Number.isInteger(nLevels) && nLevels <= levels.length
+                        && tblCounts.length === nC * 2) {
+                      const usedLevels = levels.slice(0, nLevels);
+                      const candidate: ExamRow[] = [];
+                      for (let ci = 0; ci < nC; ci++) {
+                        candidate.push({
+                          year:       years[Math.floor(ci / nLevels)],
+                          level:      usedLevels[ci % nLevels],
+                          applicants: tblCounts[ci]        ?? '-',
+                          passed:     tblCounts[nC + ci]   ?? '-',
+                          rate:       parseFloat(rates[ci]).toFixed(1),
+                        });
+                      }
+                      // 전체 행 sanity check 통과 시만 채택
+                      if (candidate.every(r => isValidRow(r.applicants, r.passed, r.rate))) {
+                        colMajorRows = candidate;
+                      }
+                    }
+                  }
+
+                  // ── Step 7: 연도별 1행 형식 (단일 급수, 연도=행 라벨) ──
+                  let yearRows: StatRow[] = [];
+                  if (colMajorRows.length === 0 && years.length > 0
+                      && rates.length === years.length
+                      && tblCounts.length === years.length * 2) {
+                    const candidate = years.map((yr, yi) => ({
+                      label:      `${yr}년`,
+                      applicants: tblCounts[yi]               ?? '-',
+                      passed:     tblCounts[years.length + yi] ?? '-',
+                      rate:       parseFloat(rates[yi]).toFixed(1),
+                    }));
+                    if (candidate.every(r => isValidRow(r.applicants, r.passed, r.rate))) {
+                      yearRows = candidate;
+                    }
+                  }
+
+                  // ── Step 8: 행 방향(row-major) 파싱 — sanity check 포함 ──
+                  let rowMajorRows: StatRow[] = [];
+                  if (colMajorRows.length === 0 && yearRows.length === 0) {
+                    const rowPat = /(기술사|기능장|기사|산업기사|기능사|전문가|개발자|준전문가|특급|고급|중급|초급|1급|2급|3급|A급|B급|C급|필기|실기|[가-힣\d]+차시?)\s+([\d,]+)\s+([\d,]+|-)\s*([\d.]+)?/g;
+                    let rm: RegExpExecArray | null;
+                    while ((rm = rowPat.exec(cleaned)) !== null) {
+                      const rateStr = rm[4] ?? '-';
+                      if (!isValidRow(rm[2], rm[3], rateStr === '-' ? '0' : rateStr)) continue;
+                      rowMajorRows.push({ label: rm[1], applicants: rm[2], passed: rm[3], rate: rateStr });
+                    }
+                  }
+
+                  // ── 공통 헤더 렌더 ──
+                  const statsHeader = (
+                    <div className="ev-row-header">
+                      <span className="ev-section-label">{sec}</span>
+                      {isCatalog && (
+                        <span className={`ev-src-tag ${isNational ? 'ev-src-national' : 'ev-src-catalog'}`}>
+                          {isNational ? '국가자격' : '공인민간자격'}
+                        </span>
+                      )}
+                      {row.source_url && (
+                        <a href={row.source_url} target="_blank" rel="noreferrer" className="ev-link">
+                          <ExternalLink size={11} /> 원문 보기
+                        </a>
+                      )}
+                    </div>
+                  );
+
                   return (
                     <div key={row.chunk_id || i} className="ev-row ev-row-stats">
-                      <div className="ev-row-header">
-                        <span className="ev-section-label">{sec}</span>
-                        {isCatalog && (
-                          <span className={`ev-src-tag ${isNational ? 'ev-src-national' : 'ev-src-catalog'}`}>
-                            {isNational ? '국가자격' : '공인민간자격'}
-                          </span>
-                        )}
-                        {row.source_url && (
-                          <a href={row.source_url} target="_blank" rel="noreferrer" className="ev-link">
-                            <ExternalLink size={11} /> 원문 보기
-                          </a>
-                        )}
-                      </div>
-                      {years.length > 0 && (
-                        <div className="ev-stats-years">
-                          {years.map(y => (
-                            <span key={y} className="ev-stats-year-chip">{y}년</span>
-                          ))}
-                          <span className="ev-stats-year-label">검정 현황 데이터</span>
+                      {statsHeader}
+
+                      {/* 열 방향 (year × level 조합) */}
+                      {colMajorRows.length > 0 && (
+                        <div className="ev-stats-table-wrap">
+                          {years.map(yr => {
+                            const yRows = colMajorRows.filter(r => r.year === yr);
+                            return (
+                              <div key={yr} className="ev-stats-year-block">
+                                <div className="ev-stats-year-head">{yr}년</div>
+                                <table className="ev-stats-table">
+                                  <thead><tr><th>급수</th><th>응시자</th><th>합격자</th><th>합격률(%)</th></tr></thead>
+                                  <tbody>
+                                    {yRows.map((r, ri) => (
+                                      <tr key={ri}>
+                                        <td className="ev-td-label">{r.level}</td>
+                                        <td>{r.applicants}</td>
+                                        <td>{r.passed}</td>
+                                        <td className="ev-td-rate">{r.rate}%</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
-                      {parsedRows.length > 0 ? (
+
+                      {/* 연도별 1행 형식 */}
+                      {colMajorRows.length === 0 && yearRows.length > 0 && (
                         <div className="ev-stats-table-wrap">
                           <table className="ev-stats-table">
-                            <thead>
-                              <tr>
-                                <th>급수/차시</th>
-                                <th>응시자</th>
-                                <th>합격자</th>
-                                <th>합격률(%)</th>
-                              </tr>
-                            </thead>
+                            <thead><tr><th>연도</th><th>응시자</th><th>합격자</th><th>합격률(%)</th></tr></thead>
                             <tbody>
-                              {parsedRows.map((r, ri) => (
+                              {yearRows.map((r, ri) => (
                                 <tr key={ri}>
-                                  <td>{r.label}</td>
+                                  <td className="ev-td-label">{r.label}</td>
                                   <td>{r.applicants}</td>
                                   <td>{r.passed}</td>
-                                  <td>{r.rate}</td>
+                                  <td className="ev-td-rate">{r.rate}%</td>
                                 </tr>
                               ))}
                             </tbody>
                           </table>
                         </div>
-                      ) : (
-                        <pre className="ev-stats-pre">{cleaned}</pre>
                       )}
+
+                      {/* 행 방향 (급수 라벨 inline) */}
+                      {colMajorRows.length === 0 && yearRows.length === 0 && rowMajorRows.length > 0 && (
+                        <div className="ev-stats-table-wrap">
+                          {years.length > 0 && (
+                            <div className="ev-stats-years">
+                              {years.map(y => <span key={y} className="ev-stats-year-chip">{y}년</span>)}
+                            </div>
+                          )}
+                          <table className="ev-stats-table">
+                            <thead><tr><th>급수/차시</th><th>응시자</th><th>합격자</th><th>합격률(%)</th></tr></thead>
+                            <tbody>
+                              {rowMajorRows.map((r, ri) => (
+                                <tr key={ri}>
+                                  <td className="ev-td-label">{r.label}</td>
+                                  <td>{r.applicants}</td>
+                                  <td>{r.passed}</td>
+                                  <td className="ev-td-rate">{r.rate !== '-' ? `${r.rate}%` : '-'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      {/* 파싱 실패 fallback — 정제된 텍스트 */}
+                      {colMajorRows.length === 0 && yearRows.length === 0 && rowMajorRows.length === 0 && (
+                        <div className="ev-stats-fallback">
+                          {years.length > 0 && (
+                            <div className="ev-stats-years">
+                              {years.map(y => <span key={y} className="ev-stats-year-chip">{y}년</span>)}
+                              <span className="ev-stats-year-label">검정 현황 데이터</span>
+                            </div>
+                          )}
+                          <p className="ev-stats-raw-text">{cleaned}</p>
+                        </div>
+                      )}
+
                       <p className="ev-stats-disclaimer">* PDF에서 자동 추출된 데이터입니다. 정확한 수치는 원문을 확인해 주세요.</p>
                     </div>
                   );
@@ -1173,6 +1315,25 @@ const Recommendation: React.FC = () => {
           background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;
           padding:.625rem .875rem;margin:0;max-height:160px;overflow-y:auto;
           scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;
+        }
+        /* 연도별 블록 (column-major) */
+        .ev-stats-year-block { margin-bottom: .75rem; }
+        .ev-stats-year-block:last-child { margin-bottom: 0; }
+        .ev-stats-year-head {
+          font-size:.75rem;font-weight:800;color:#1e40af;
+          background:#eff6ff;padding:.3rem .75rem;border-radius:4px 4px 0 0;
+          border:1px solid #bfdbfe;border-bottom:none;
+        }
+        .ev-stats-year-block .ev-stats-table { border-top:none; border-radius:0 0 6px 6px; }
+        .ev-td-label { font-weight:700 !important; color:#0f172a !important; }
+        .ev-td-rate { color:#0369a1 !important; font-weight:600 !important; }
+        /* fallback: 파싱 실패 시 정제된 텍스트 */
+        .ev-stats-fallback { display:flex; flex-direction:column; gap:.5rem; }
+        .ev-stats-raw-text {
+          font-size:.78rem;color:#475569;line-height:1.8;
+          white-space:normal;word-break:keep-all;
+          background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;
+          padding:.625rem .875rem;margin:0;
         }
 
         /* 설문 미완료 배너 */

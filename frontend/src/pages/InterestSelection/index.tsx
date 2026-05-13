@@ -1,7 +1,7 @@
 // Content Hash: SHA256:TBD
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, ChevronDown, ChevronUp, Briefcase } from 'lucide-react';
+import { ArrowRight, ArrowLeft, ChevronDown, ChevronUp, Briefcase, AlertTriangle } from 'lucide-react';
 import { loadPipeline, savePipeline } from '../../utils/pipelineState';
 
 /* ── 도메인 taxonomy (domain_master.csv 기반) ── */
@@ -240,6 +240,39 @@ const JOB_GROUPS: JobGroup[] = [
   },
 ];
 
+/* ── 도메인 그룹 → 호환 직무 그룹 매핑 (불일치 경고용) ── */
+const DOMAIN_JOB_COMPAT: Record<string, string[]> = {
+  'IT/디지털':        ['IT/데이터', '소프트웨어/플랫폼', '인프라/운영/보안'],
+  '엔지니어링/산업기술': ['엔지니어링/산업기술', '건설/공간/인프라'],
+  '경영/비즈니스':    ['경영/회계/금융'],
+  '보건/복지':        ['보건/복지'],
+  '교육/생활서비스':  ['교육/생활서비스'],
+  '크리에이티브/미디어': ['콘텐츠/디자인/예술'],
+  '1차산업/자원':     ['1차산업/자원'],
+  '모빌리티/운송':    ['모빌리티/운송'],
+  '국방/특수':        ['국방/특수'],
+};
+
+function getDomainGroup(domainId: string | null): string | null {
+  if (!domainId) return null;
+  return DOMAIN_GROUPS.find(g => g.items.some(i => i.id === domainId))?.top ?? null;
+}
+
+function getJobGroup(jobId: string | null): string | null {
+  if (!jobId) return null;
+  return JOB_GROUPS.find(g => g.items.some(i => i.id === jobId))?.top ?? null;
+}
+
+function isMismatch(domainId: string | null, jobId: string | null): boolean {
+  if (!domainId || !jobId) return false;
+  const dg = getDomainGroup(domainId);
+  const jg = getJobGroup(jobId);
+  if (!dg || !jg) return false;
+  const compatible = DOMAIN_JOB_COMPAT[dg];
+  if (!compatible) return false;
+  return !compatible.includes(jg);
+}
+
 const RISK_STAGE_LABELS: Record<string, string> = {
   '1': '1단계 (취업 안정권)',
   '2': '2단계 (준비 활성)',
@@ -428,6 +461,21 @@ const InterestSelection: React.FC = () => {
         </div>
       )}
 
+      {/* 도메인·직무 불일치 경고 */}
+      {isMismatch(selectedDomain?.id ?? null, selectedJob?.id ?? null) && (
+        <div className="mismatch-warn">
+          <AlertTriangle size={15} className="mismatch-icon" />
+          <div className="mismatch-body">
+            <strong>선택한 분야와 직무가 잘 맞지 않을 수 있어요.</strong>
+            <span className="mismatch-desc">
+              &nbsp;예를 들어 <em>{getDomainGroup(selectedDomain?.id ?? null)}</em> 분야에서는
+              주로 <em>{DOMAIN_JOB_COMPAT[getDomainGroup(selectedDomain?.id ?? null) ?? '']?.join(' · ')}</em> 직무 계열이 추천됩니다.
+              그래도 현재 선택을 유지하고 계속 진행하셔도 됩니다.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Footer CTA */}
       <div className="interest-footer">
         <button className="btn-ghost" onClick={() => navigate(-1)}>
@@ -567,6 +615,17 @@ const InterestSelection: React.FC = () => {
           box-shadow: 0 2px 8px rgba(14,165,233,.25);
         }
         .chip-check { font-size: .8rem; }
+
+        .mismatch-warn {
+          display: flex; align-items: flex-start; gap: .625rem;
+          padding: .875rem 1rem;
+          background: #fefce8; border: 1px solid #fde68a; border-radius: var(--radius-sm);
+          animation: fade-in .2s ease;
+        }
+        .mismatch-icon { color: #d97706; flex-shrink: 0; margin-top: .15rem; }
+        .mismatch-body { font-size: .82rem; color: #78350f; line-height: 1.6; }
+        .mismatch-desc { color: #92400e; }
+        .mismatch-body em { font-style: normal; font-weight: 700; }
 
         .interest-footer {
           display: flex; gap: .75rem; align-items: center; justify-content: space-between;

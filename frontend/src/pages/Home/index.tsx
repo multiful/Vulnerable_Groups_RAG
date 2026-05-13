@@ -1,6 +1,6 @@
 // Content Hash: SHA256:TBD
 import React, { useState, useCallback } from 'react';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Database } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 
@@ -101,6 +101,35 @@ const Home: React.FC = () => {
       </div>
     </section>
 
+    <section className="data-source-section">
+      <div className="data-source-inner">
+        <Database size={14} className="ds-icon" />
+        <span className="ds-label">데이터 출처</span>
+        <span className="ds-divider">|</span>
+        <span className="ds-item">서울시 고립·은둔 청년 실태조사 2022 (서울 열린데이터광장)</span>
+        <span className="ds-dot">·</span>
+        <span className="ds-item">국가기술자격 정보 (공공데이터포털 Q-Net)</span>
+      </div>
+      <div className="data-stats-row">
+        <div className="ds-stat">
+          <span className="ds-stat-num">5,513명</span>
+          <span className="ds-stat-desc">서울 청년 조사 샘플</span>
+        </div>
+        <div className="ds-stat">
+          <span className="ds-stat-num">9.4%</span>
+          <span className="ds-stat-desc">고립·은둔 경험 청년 비율</span>
+        </div>
+        <div className="ds-stat">
+          <span className="ds-stat-num">12문항</span>
+          <span className="ds-stat-desc">Cohen's h 효과 크기 선별</span>
+        </div>
+        <div className="ds-stat">
+          <span className="ds-stat-num">RAG</span>
+          <span className="ds-stat-desc">자격증 근거 검색 기술</span>
+        </div>
+      </div>
+    </section>
+
     <section className="cta-section">
       <div className="cta-inner">
         <CheckCircle2 size={32} style={{color:'var(--success)'}}/>
@@ -156,6 +185,18 @@ const Home: React.FC = () => {
       .promise-kw{font-size:.63rem;font-weight:700;letter-spacing:.12em;color:var(--text-light)}
       .promise-title{font-size:1rem;font-weight:700;color:var(--text);line-height:1.3}
       .promise-desc{font-size:.865rem;color:var(--text-muted);line-height:1.65;flex:1}
+      .data-source-section{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.875rem}
+      .data-source-inner{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+      .ds-icon{color:var(--text-light);flex-shrink:0}
+      .ds-label{font-size:.72rem;font-weight:700;letter-spacing:.08em;color:var(--text-light);text-transform:uppercase;flex-shrink:0}
+      .ds-divider{color:var(--border);font-size:.85rem;flex-shrink:0}
+      .ds-item{font-size:.78rem;color:var(--text-muted)}
+      .ds-dot{color:var(--text-light);font-size:.85rem}
+      .data-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
+      @media(max-width:600px){.data-stats-row{grid-template-columns:repeat(2,1fr)}}
+      .ds-stat{display:flex;flex-direction:column;gap:.18rem;padding:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center}
+      .ds-stat-num{font-size:1.1rem;font-weight:800;color:var(--primary);letter-spacing:-.02em}
+      .ds-stat-desc{font-size:.7rem;color:var(--text-light);line-height:1.4}
       .cta-section{background:var(--primary-light);border:1px solid rgba(37,99,235,.14);border-radius:var(--radius-lg);padding:2.75rem 2rem;text-align:center}
       .cta-inner{display:flex;flex-direction:column;align-items:center;gap:.875rem;max-width:520px;margin:0 auto}
       .cta-title{font-size:1.4rem;font-weight:800;letter-spacing:-.025em;color:var(--text);line-height:1.3}

@@ -1,7 +1,7 @@
 // Content Hash: SHA256:TBD
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowRight, ArrowLeft, AlertTriangle, Info } from 'lucide-react';
 import { clearPipeline, savePipeline } from '../../utils/pipelineState';
 
 /* ─────────────────────────────────────────────
@@ -196,7 +196,7 @@ const RiskAssessment: React.FC = () => {
   const [safetyFlag, setSafetyFlag] = useState(false);
 
   const q = QUESTIONS[current];
-  const progress = ((current) / QUESTIONS.length) * 100;
+  const progress = ((current + 1) / QUESTIONS.length) * 100;
   const answered = answers[q.id] !== undefined;
 
   function select(score: number) {
@@ -365,6 +365,15 @@ const RiskAssessment: React.FC = () => {
           </div>
         </div>
 
+        <div className="result-data-note card">
+          <p className="rdn-title"><Info size={13} style={{display:'inline',verticalAlign:'middle',marginRight:'5px'}}/>서울 청년 실태조사 기반 진단</p>
+          <p className="rdn-body">
+            이 진단은 <strong>서울시 고립·은둔 청년 실태조사 2022</strong>(응답자 5,513명) 데이터에서
+            고립군(486명)과 미해당군(5,027명)을 가장 잘 구별하는 문항을 Cohen's h 효과 크기 분석으로 선별한 12문항으로 구성됩니다.
+            서울 청년의 <strong>9.4%</strong>가 고립·은둔을 경험한 것으로 나타났습니다.
+          </p>
+        </div>
+
         <div className="result-actions">
           <button className="btn-ghost" onClick={() => { setStep('survey'); setCurrent(0); setAnswers({}); setSafetyFlag(false); }}>
             <ArrowLeft size={15} /> 다시 진단
@@ -402,6 +411,9 @@ const RiskAssessment: React.FC = () => {
           .result-radar-svg {
             width:100%; max-width:240px; height:auto; overflow:visible;
           }
+          .result-data-note { padding:1rem 1.25rem; background:var(--surface-2); border-left:3px solid var(--primary); }
+          .rdn-title { font-size:.8rem; font-weight:700; color:var(--primary); margin-bottom:.4rem; }
+          .rdn-body { font-size:.82rem; color:var(--text-muted); line-height:1.7; }
           .result-actions { display:flex; gap:.75rem; flex-wrap:wrap; }
         `}</style>
       </div>
