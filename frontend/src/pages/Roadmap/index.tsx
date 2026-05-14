@@ -54,6 +54,21 @@ interface ApiResponse {
   error?: { code: string; message: string };
 }
 
+interface TodayActionData {
+  risk_stage_id: string | null;
+  cert_name: string;
+  region: string;
+  action: {
+    action_type: string;
+    title: string;
+    description: string;
+    cta: string;
+    cta_path: string;
+    effort_minutes: number;
+  };
+  motivation: string;
+}
+
 /* ── Grade helpers ── */
 const GRADE_LABEL: Record<string, string> = {
   '5_기능장': '기능장', '4_기술사': '기술사', '3_기사': '기사',
@@ -81,6 +96,17 @@ const RISK_LABELS: Record<string, string> = {
 const RISK_IDS: Record<string, string> = {
   '1': 'risk_0001', '2': 'risk_0002', '3': 'risk_0003',
   '4': 'risk_0004', '5': 'risk_0005',
+};
+
+const ACTION_TYPE_EMOJI: Record<string, string> = {
+  apply:        '💼',
+  study:        '📖',
+  training:     '🎓',
+  space:        '📍',
+  process_eval: '✅',
+  reservation:  '📅',
+  micro:        '⚡',
+  wellness:     '💚',
 };
 
 /* ── Local fallback helpers ── */
@@ -196,11 +222,15 @@ const Roadmap: React.FC = () => {
   const domainName  = searchParams.get('domainName') ?? domainParam;
   const jobParam    = searchParams.get('job') ?? '';
   const jobName     = searchParams.get('jobName') ?? '';
+  const majorParam  = searchParams.get('major') ?? '';
 
   const [data, setData]       = useState<RoadmapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const [todayAction, setTodayAction]           = useState<TodayActionData | null>(null);
+  const [todayActionLoading, setTodayActionLoading] = useState(false);
 
   // 탭: 'base' | 'ai'
   const [activeTab, setActiveTab] = useState<'base' | 'ai'>('base');
@@ -250,6 +280,7 @@ const Roadmap: React.FC = () => {
         domainName: domainName || undefined,
         job: jobParam || undefined,
         jobName: jobName || undefined,
+        major: majorParam || undefined,
       });
       return;
     }
@@ -260,6 +291,7 @@ const Roadmap: React.FC = () => {
       if (s.domainName) p.set('domainName', s.domainName);
       if (s.job)        p.set('job', s.job);
       if (s.jobName)    p.set('jobName', s.jobName);
+      if (s.major)      p.set('major', s.major);
       navigate(`/roadmap?${p.toString()}`, { replace: true });
       return;
     }
@@ -293,6 +325,7 @@ const Roadmap: React.FC = () => {
       if (riskId)      body.risk_stage_id = riskId;
       if (domainParam) body.domain_ids    = [domainParam];
       if (jobParam)    body.job_ids       = [jobParam];
+      if (majorParam)  body.major_name    = majorParam;
       const res = await fetch('/api/v1/recommendations', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -323,7 +356,7 @@ const Roadmap: React.FC = () => {
         if (!compCtrl.signal.aborted) setLoading(false);
       }
     }
-  }, [riskId, domainParam, riskNum, jobParam]);
+  }, [riskId, domainParam, riskNum, jobParam, majorParam]);
 
   // AI 탭 클릭 시 호출 (실패 후 재시도 가능)
   const fetchLlm = useCallback(async () => {
@@ -356,10 +389,31 @@ const Roadmap: React.FC = () => {
     }
   }, [riskId, domainParam, domainName]);
 
+  const fetchTodayAction = useCallback(async (certIds: string[]) => {
+    if (!riskId) return;
+    setTodayActionLoading(true);
+    try {
+      const params = new URLSearchParams({ risk_stage_id: riskId });
+      if (certIds.length > 0) params.set('cert_ids', certIds.slice(0, 3).join(','));
+      const res = await fetch(`/api/v1/actions/today?${params.toString()}`);
+      const json = await res.json();
+      if (json.success && json.data) setTodayAction(json.data);
+    } catch { /* silent */ } finally {
+      setTodayActionLoading(false);
+    }
+  }, [riskId]);
+
   useEffect(() => {
     fetchRoadmap();
     return () => { roadmapAbortRef.current?.abort(); };
   }, [fetchRoadmap]);
+
+  useEffect(() => {
+    if (!data || !riskId) return;
+    const certIds = (data.roadmap_sequence ?? []).slice(0, 3).map(c => c.cert_id);
+    fetchTodayAction(certIds);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, riskId]);
 
   const openCertDrawer = useCallback(async (certId: string, certName: string) => {
     if (activeCert?.id === certId) {
@@ -481,6 +535,40 @@ const Roadmap: React.FC = () => {
             : '단계별 자격증 학습 경로를 확인하세요.'}
         </p>
       </div>
+
+      {/* 오늘의 한 행동 */}
+      {(todayActionLoading || todayAction) && (
+        <div className="rm-today-wrap">
+          {todayActionLoading ? (
+            <div className="rm-today-skeleton">
+              <Loader2 size={14} className="rm-spin" />
+              <span>오늘의 행동을 추천하는 중…</span>
+            </div>
+          ) : todayAction && (
+            <div className="rm-today-card">
+              <div className="rm-today-header">
+                <span className="rm-today-label">오늘의 한 가지 행동</span>
+                <span className="rm-today-effort">{todayAction.action.effort_minutes}분</span>
+              </div>
+              <p className="rm-today-title">
+                {ACTION_TYPE_EMOJI[todayAction.action.action_type] ?? '⚡'} {todayAction.action.title}
+              </p>
+              <p className="rm-today-desc">{todayAction.action.description}</p>
+              <p className="rm-today-motivation">{todayAction.motivation}</p>
+              <div className="rm-today-footer">
+                <button
+                  className="rm-today-cta"
+                  onClick={() => fetchTodayAction((data?.roadmap_sequence ?? []).slice(0, 3).map(c => c.cert_id))}
+                  type="button"
+                  title="다른 행동 추천받기"
+                >
+                  다른 행동 보기
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 탭 */}
       {(domainParam && data) && (
@@ -1149,6 +1237,51 @@ const Roadmap: React.FC = () => {
           display: flex; gap: .75rem; align-items: center;
           flex-wrap: wrap; padding-top: .5rem; justify-content: space-between;
         }
+
+        /* Today's one action */
+        .rm-today-wrap { width: 100%; }
+        .rm-today-skeleton {
+          display: flex; align-items: center; gap: .5rem;
+          padding: .75rem 1rem; font-size: .8rem; color: var(--text-muted);
+          background: var(--surface); border: 1px solid var(--border);
+          border-radius: var(--radius-sm);
+        }
+        .rm-today-card {
+          background: linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%);
+          border: 1px solid rgba(16,185,129,.25);
+          border-radius: var(--radius-sm); padding: 1rem 1.25rem;
+          display: flex; flex-direction: column; gap: .5rem;
+        }
+        .rm-today-header {
+          display: flex; align-items: center; justify-content: space-between;
+        }
+        .rm-today-label {
+          font-size: .67rem; font-weight: 800; letter-spacing: .08em;
+          color: #15803d; text-transform: uppercase;
+        }
+        .rm-today-effort {
+          font-size: .72rem; font-weight: 700; color: #15803d;
+          background: rgba(16,185,129,.12); padding: .1rem .5rem;
+          border-radius: var(--radius-full);
+        }
+        .rm-today-title {
+          font-size: .95rem; font-weight: 700; color: var(--text); margin: 0;
+        }
+        .rm-today-desc {
+          font-size: .83rem; color: var(--text-muted); line-height: 1.6; margin: 0;
+        }
+        .rm-today-motivation {
+          font-size: .77rem; color: #15803d; font-style: italic;
+          border-left: 2px solid rgba(16,185,129,.35); padding-left: .6rem; margin: 0;
+        }
+        .rm-today-footer { display: flex; justify-content: flex-end; margin-top: .25rem; }
+        .rm-today-cta {
+          font-size: .75rem; font-weight: 600; color: var(--primary);
+          background: none; border: 1px solid rgba(99,102,241,.3);
+          border-radius: var(--radius-xs); padding: .2rem .7rem;
+          cursor: pointer; transition: all .15s;
+        }
+        .rm-today-cta:hover { background: var(--primary-light); border-color: var(--primary); }
       `}</style>
     </div>
   );

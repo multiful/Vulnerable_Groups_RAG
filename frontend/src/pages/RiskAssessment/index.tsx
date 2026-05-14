@@ -365,6 +365,28 @@ const RiskAssessment: React.FC = () => {
           </div>
         </div>
 
+        {/* 고위험군 청년 지원 안내 (4~5단계) */}
+        {(stage === '4' || stage === '5') && (
+          <div className="wellness-card">
+            <div className="wellness-card-top">
+              <span className="wellness-icon">🌱</span>
+              <span className="wellness-title">혼자 하지 않아도 괜찮아요</span>
+            </div>
+            <p className="wellness-body">
+              지금 상황이 쉽지 않으시겠지만, 서울시에는 청년을 위한 무료 공간과 상담 지원이 마련돼 있어요.
+              가까운 일자리카페나 청년 건강 지원 공간을 편하게 방문해 보세요.
+            </p>
+            <div className="wellness-links">
+              <a href="https://job.seoul.go.kr/main" target="_blank" rel="noopener noreferrer" className="wellness-link">
+                서울시 청년일자리카페 →
+              </a>
+              <a href="https://www.suicide.or.kr/m/index.php" target="_blank" rel="noopener noreferrer" className="wellness-link wellness-link-soft">
+                마음이 힘들다면 1393 상담 →
+              </a>
+            </div>
+          </div>
+        )}
+
         <div className="result-data-note card">
           <p className="rdn-title"><Info size={13} style={{display:'inline',verticalAlign:'middle',marginRight:'5px'}}/>서울 청년 실태조사 기반 진단</p>
           <p className="rdn-body">
@@ -411,6 +433,26 @@ const RiskAssessment: React.FC = () => {
           .result-radar-svg {
             width:100%; max-width:240px; height:auto; overflow:visible;
           }
+          .wellness-card {
+            padding:1rem 1.25rem;
+            background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+            border: 1px solid #bbf7d0;
+            border-left: 3px solid #10b981;
+            border-radius: var(--radius-sm);
+            display: flex; flex-direction: column; gap: .625rem;
+          }
+          .wellness-card-top { display: flex; align-items: center; gap: .5rem; }
+          .wellness-icon { font-size: 1.1rem; }
+          .wellness-title { font-size: .9rem; font-weight: 700; color: #065f46; }
+          .wellness-body { font-size: .82rem; color: #047857; line-height: 1.65; margin: 0; }
+          .wellness-links { display: flex; gap: .75rem; flex-wrap: wrap; }
+          .wellness-link {
+            font-size: .78rem; color: #059669; text-decoration: none; font-weight: 600;
+            padding: .25rem .6rem; border: 1px solid #6ee7b7; border-radius: var(--radius-sm);
+            background: rgba(255,255,255,.6); transition: background .15s;
+          }
+          .wellness-link:hover { background: rgba(255,255,255,.9); }
+          .wellness-link-soft { color: #7c3aed; border-color: #c4b5fd; }
           .result-data-note { padding:1rem 1.25rem; background:var(--surface-2); border-left:3px solid var(--primary); }
           .rdn-title { font-size:.8rem; font-weight:700; color:var(--primary); margin-bottom:.4rem; }
           .rdn-body { font-size:.82rem; color:var(--text-muted); line-height:1.7; }

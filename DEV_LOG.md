@@ -1,7 +1,7 @@
 # DEV_LOG.md
 
 > **파일명**: DEV_LOG.md  
-> **최종 수정일**: 2026-05-09  
+> **최종 수정일**: 2026-05-14  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 날짜별 진행 로그, 변경 요약, 해결 이력  
 > **문서 우선순위**: 14  
@@ -13,6 +13,59 @@
 ## 1. 문서 목적
 
 구현과 문서 정렬 작업의 **타임라인**을 남겨, 이후 기여자가 맥락을 잃지 않게 한다.
+
+---
+
+## 2026-05-14 — Execution Layer 전면 활성화 + 루트 문서 정렬
+
+### 수행
+
+**신규 서비스 구현 (모두 `backend/app/services/`)**
+
+- `cert_lookup_service.py` — cert_id → NCS → WorkNet/Work24 파라미터 파생 중심 서비스
+  - `NCS_TO_WORKNET_OCCUPATION` 매핑 테이블 (NCS 대직무코드 → WorkNet 직종코드)
+  - `_get_ncs_level1_frequency()`: cert_id의 NCS 매핑에서 대직무코드 빈도 Counter 기반 정렬 (가장 연관성 높은 코드 우선)
+  - `get_worknet_search_params()`, `get_training_search_params()` — 각 API 파라미터 세트 자동 생성
+  - `get_cert_summary()` — cert + NCS + 직무 + API 파라미터 종합 요약
+- `exam_schedule_service.py` — Q-Net 시험·접수 일정 조회, D-Day 계산
+- `jobs_service.py` — WorkNet 채용정보 (XML), 고용24 직업정보 CSV 조회
+- `training_service.py` — Work24 훈련과정 (XML), 과정평가형 자격 (Q-Net JSON)
+- `seoul_service.py` — 서울시 공공데이터 (일자리카페·건강증진센터·공공예약)
+- `action_service.py` — 위험군 단계별 오늘의 한 가지 행동 제안 (5단계 × 다유형 템플릿)
+
+**신규 라우트 등록 (`backend/app/api/v1/routes/`)**
+
+- `jobs.py`: `GET /jobs/hiring`, `GET /jobs/hiring/by-cert/{cert_id}`, `GET /jobs/cert-summary/{cert_id}`, `GET /jobs/detail`
+- `training.py`: `GET /training/courses`, `GET /training/courses/by-cert/{cert_id}`, `GET /training/process-eval`
+- `seoul.py`: `GET /seoul/job-cafes`, `GET /seoul/health-centers`, `GET /seoul/reservations`
+- `action.py`: `GET /actions/today`
+- `schedule.py` — 501 stub → Q-Net API 실연동으로 전환
+
+**설정 변경 (`backend/app/core/config.py`)**
+
+- 신규 API 키 필드 추가: `hrdkorea_api_key_in/de`, `get_job_api_key`, `get_training_api_key`, `seoul_api_key/2/3`, `career_net_api_key`
+- 각 외부 API별 timeout 설정 필드 추가
+
+**버그 수정**
+
+- `cert_lookup_service.py` NCS 우선순위 버그: `정보처리기사`에서 `정보통신(20)`이 아닌 `법률(05)`가 반환되던 문제
+  - 원인: `get_cert_ncs_rows()`가 35개 중복 NCS 행을 반환하고, Counter 없이 첫 번째 코드를 사용
+  - 수정: Counter 기반 빈도 분석 → 가장 많이 매핑된 대직무코드를 1순위로
+
+**문서 갱신**
+
+- `API_SPEC.md`: 11 → 24+ 엔드포인트, F-12~F-19 추가, §9 reserved 섹션 삭제
+- `SYSTEM_ARCHITECTURE.md`: Execution Layer 섹션 추가, §7 서비스 목록 갱신, §14 활성/reserved 범위 갱신, §19 최종 요약 4개 계층으로 업데이트
+- `PRD.md`: §9.1~9.2 완료 표시, §10 비범위에서 완료 항목 제거, §18 최종 요약 갱신
+- `FEATURE_SPEC.md`: F-08/F-09 reserved→활성, F-12~F-16 신규 추가, §3/§4/§8/§10 갱신
+- `backend/app/services/FOLDER.md`: 신규 서비스 6개 추가
+- `backend/app/api/v1/routes/FOLDER.md`: 신규 라우트 4개 추가, schedule.py 활성 상태로 갱신
+
+### 핵심 아키텍처 결정
+
+- cert_id → NCS → API 파라미터 데이터 체인을 `cert_lookup_service`가 단일 진입점으로 관리
+- WorkNet/Work24는 직접 문자열 매칭 금지 — canonical CSV 관계만 사용
+- NCS 대직무코드 빈도 기반 우선순위: 한 cert에 여러 NCS가 매핑된 경우 가장 빈도 높은 대직무코드를 API 파라미터 1순위로 사용
 
 ---
 

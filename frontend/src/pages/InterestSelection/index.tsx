@@ -290,6 +290,7 @@ const InterestSelection: React.FC = () => {
 
   const [selectedDomain, setSelectedDomain] = useState<DomainItem | null>(null);
   const [selectedJob, setSelectedJob] = useState<JobItem | null>(null);
+  const [majorInput, setMajorInput] = useState(pSession.major ?? '');
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ 'IT/디지털': true });
   const [openJobGroups, setOpenJobGroups] = useState<Record<string, boolean>>({});
   const [jobSectionOpen, setJobSectionOpen] = useState(false);
@@ -318,12 +319,15 @@ const InterestSelection: React.FC = () => {
       params.set('job', selectedJob.id);
       params.set('jobName', selectedJob.name);
     }
+    const trimmedMajor = majorInput.trim();
+    if (trimmedMajor) params.set('major', trimmedMajor);
     savePipeline({
       stage: stage || undefined,
       domain: selectedDomain.id,
       domainName: selectedDomain.name,
       job: selectedJob?.id,
       jobName: selectedJob?.name,
+      major: trimmedMajor || undefined,
     });
     navigate(`/roadmap?${params.toString()}`);
   }
@@ -476,6 +480,23 @@ const InterestSelection: React.FC = () => {
         </div>
       )}
 
+      {/* 전공 입력 (선택) */}
+      <div className="major-input-section">
+        <div className="section-header-row">
+          <span className="section-num">3</span>
+          <span className="section-label">전공 입력 <span className="section-optional">선택</span></span>
+        </div>
+        <p className="major-input-desc">전공을 입력하면 해당 전공 취득자 사례 기반 자격증을 우선 추천합니다.</p>
+        <input
+          className="major-text-input"
+          type="text"
+          placeholder="예: 컴퓨터공학, 전기공학, 경영학, 사회복지학…"
+          value={majorInput}
+          onChange={e => setMajorInput(e.target.value)}
+          maxLength={40}
+        />
+      </div>
+
       {/* Footer CTA */}
       <div className="interest-footer">
         <button className="btn-ghost" onClick={() => navigate(-1)}>
@@ -626,6 +647,16 @@ const InterestSelection: React.FC = () => {
         .mismatch-body { font-size: .82rem; color: #78350f; line-height: 1.6; }
         .mismatch-desc { color: #92400e; }
         .mismatch-body em { font-style: normal; font-weight: 700; }
+
+        .major-input-section { display: flex; flex-direction: column; gap: .5rem; padding: .875rem 1rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+        .major-input-desc { font-size: .8rem; color: var(--text-muted); margin: 0; line-height: 1.55; }
+        .major-text-input {
+          width: 100%; padding: .6rem .875rem; font-size: .88rem; color: var(--text);
+          background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+          outline: none; transition: border-color .15s; box-sizing: border-box;
+        }
+        .major-text-input:focus { border-color: var(--primary); }
+        .major-text-input::placeholder { color: var(--text-light); }
 
         .interest-footer {
           display: flex; gap: .75rem; align-items: center; justify-content: space-between;

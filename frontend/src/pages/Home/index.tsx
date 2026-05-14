@@ -1,8 +1,43 @@
 // Content Hash: SHA256:TBD
 import React, { useState, useCallback } from 'react';
-import { ArrowRight, CheckCircle2, Database } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Database, Calendar, Briefcase, BookOpen, Map, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+
+const SERVICES = [
+  {
+    icon: Calendar,
+    title: '시험 일정',
+    desc: 'Q-Net 실시간 D-Day',
+    path: '/schedule',
+    color: '#6366f1',
+    bg: '#eef2ff',
+  },
+  {
+    icon: Briefcase,
+    title: '채용 정보',
+    desc: 'WorkNet 실시간 공고',
+    path: '/jobs',
+    color: '#0ea5e9',
+    bg: '#e0f2fe',
+  },
+  {
+    icon: BookOpen,
+    title: '직업·학과 탐색',
+    desc: '커리어넷 직업·학과 정보',
+    path: '/explore',
+    color: '#10b981',
+    bg: '#ecfdf5',
+  },
+  {
+    icon: Map,
+    title: '주변 인프라',
+    desc: '일자리카페·훈련기관',
+    path: '/recommendation',
+    color: '#f59e0b',
+    bg: '#fef3c7',
+  },
+];
 
 const PROMISES = [
   {
@@ -64,6 +99,26 @@ const Home: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
+    </section>
+
+    {/* 서비스 빠른 접근 */}
+    <section>
+      <p className="eyebrow">공공데이터 실시간 연동</p>
+      <h2 className="sec-title">자격증 추천 이후도 함께합니다</h2>
+      <div className="service-grid">
+        {SERVICES.map(s => (
+          <Link key={s.path} to={s.path} className="service-card card" style={{'--sc': s.color, '--sc-bg': s.bg} as React.CSSProperties}>
+            <div className="service-icon-wrap" style={{background: s.bg}}>
+              <s.icon size={20} style={{color: s.color}} />
+            </div>
+            <div className="service-info">
+              <span className="service-title">{s.title}</span>
+              <span className="service-desc">{s.desc}</span>
+            </div>
+            <ArrowRight size={14} className="service-arrow" />
+          </Link>
+        ))}
       </div>
     </section>
 
@@ -130,6 +185,29 @@ const Home: React.FC = () => {
       </div>
     </section>
 
+    {/* 오늘의 행동 티저 */}
+    <section className="today-section">
+      <div className="today-inner">
+        <div className="today-left">
+          <div className="today-badge"><Zap size={12}/> 오늘의 한 가지 행동</div>
+          <h3 className="today-title">작은 행동 하나가 경로를 바꿉니다</h3>
+          <p className="today-desc">
+            진단 후 맞춤 로드맵에서 위험군 단계와 관심 자격증에 맞는 오늘의 구체적인 행동 하나를 추천받아보세요.
+            시험 접수, 강의 1강, 훈련기관 방문 예약 등 작은 것부터 시작합니다.
+          </p>
+          <Link to="/risk-assessment" className="btn-primary today-btn">진단하고 행동 추천 받기 <ArrowRight size={16}/></Link>
+        </div>
+        <div className="today-right">
+          <div className="today-example-card">
+            <span className="today-ex-label">예시</span>
+            <p className="today-ex-action">📚 오늘 30분 공부</p>
+            <p className="today-ex-desc">정보처리기사 관련 무료 강의 1강을 들어 보세요.</p>
+            <div className="today-ex-effort"><span className="today-ex-min">30분</span> 소요 예상</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section className="cta-section">
       <div className="cta-inner">
         <CheckCircle2 size={32} style={{color:'var(--success)'}}/>
@@ -185,6 +263,7 @@ const Home: React.FC = () => {
       .promise-kw{font-size:.63rem;font-weight:700;letter-spacing:.12em;color:var(--text-light)}
       .promise-title{font-size:1rem;font-weight:700;color:var(--text);line-height:1.3}
       .promise-desc{font-size:.865rem;color:var(--text-muted);line-height:1.65;flex:1}
+      .eyebrow{font-size:.72rem;font-weight:700;letter-spacing:.1em;color:var(--primary);text-transform:uppercase;margin-bottom:.375rem}
       .data-source-section{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.875rem}
       .data-source-inner{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
       .ds-icon{color:var(--text-light);flex-shrink:0}
@@ -197,6 +276,53 @@ const Home: React.FC = () => {
       .ds-stat{display:flex;flex-direction:column;gap:.18rem;padding:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center}
       .ds-stat-num{font-size:1.1rem;font-weight:800;color:var(--primary);letter-spacing:-.02em}
       .ds-stat-desc{font-size:.7rem;color:var(--text-light);line-height:1.4}
+      /* 서비스 그리드 */
+      .service-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.875rem}
+      .service-card{
+        display:flex;align-items:center;gap:.75rem;
+        padding:.875rem 1rem;text-decoration:none;
+        transition:all .15s;
+      }
+      .service-card:hover{border-color:var(--sc,var(--primary));transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.07)}
+      .service-icon-wrap{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+      .service-info{flex:1;display:flex;flex-direction:column;gap:.08rem}
+      .service-title{font-size:.875rem;font-weight:700;color:var(--text)}
+      .service-desc{font-size:.72rem;color:var(--text-muted)}
+      .service-arrow{color:var(--text-light);flex-shrink:0;transition:transform .15s}
+      .service-card:hover .service-arrow{transform:translateX(2px);color:var(--sc,var(--primary))}
+
+      /* 오늘의 행동 티저 */
+      .today-section{
+        background:linear-gradient(135deg,#1e1b4b 0%,#312e81 60%,#1d4ed8 100%);
+        border-radius:var(--radius-lg);
+        padding:2rem 2.25rem;
+        color:#fff;
+      }
+      .today-inner{display:grid;grid-template-columns:1fr auto;gap:2rem;align-items:center}
+      @media(max-width:600px){.today-inner{grid-template-columns:1fr}}
+      .today-left{display:flex;flex-direction:column;gap:.75rem}
+      .today-badge{
+        display:inline-flex;align-items:center;gap:.3rem;
+        padding:.2rem .625rem;background:rgba(255,255,255,.15);
+        border-radius:20px;font-size:.72rem;font-weight:700;
+        color:rgba(255,255,255,.9);width:fit-content;
+      }
+      .today-title{font-size:1.25rem;font-weight:800;line-height:1.3;letter-spacing:-.02em}
+      .today-desc{font-size:.85rem;color:rgba(255,255,255,.75);line-height:1.7}
+      .today-btn{background:#fff;color:#1e1b4b;padding:.65rem 1.25rem;font-size:.875rem;width:fit-content}
+      .today-btn:hover{background:rgba(255,255,255,.9)}
+      .today-right{}
+      .today-example-card{
+        background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+        border-radius:12px;padding:1rem 1.1rem;
+        display:flex;flex-direction:column;gap:.4rem;min-width:200px;
+      }
+      .today-ex-label{font-size:.65rem;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.08em;text-transform:uppercase}
+      .today-ex-action{font-size:.95rem;font-weight:700;margin:0}
+      .today-ex-desc{font-size:.78rem;color:rgba(255,255,255,.7);margin:0;line-height:1.5}
+      .today-ex-effort{display:flex;align-items:center;gap:.35rem;font-size:.72rem;color:rgba(255,255,255,.55)}
+      .today-ex-min{font-weight:700;color:rgba(255,255,255,.8)}
+
       .cta-section{background:var(--primary-light);border:1px solid rgba(37,99,235,.14);border-radius:var(--radius-lg);padding:2.75rem 2rem;text-align:center}
       .cta-inner{display:flex;flex-direction:column;align-items:center;gap:.875rem;max-width:520px;margin:0 auto}
       .cta-title{font-size:1.4rem;font-weight:800;letter-spacing:-.025em;color:var(--text);line-height:1.3}

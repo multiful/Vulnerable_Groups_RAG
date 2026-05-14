@@ -57,6 +57,7 @@ _MAJOR_TO_DOMAIN  = _PROJECT_ROOT / "data/canonical/relations/major_to_domain.cs
 _CERT_TO_ROADMAP  = _PROJECT_ROOT / "data/canonical/relations/cert_to_roadmap_stage.csv"
 _CERT_TO_CERT     = _PROJECT_ROOT / "data/canonical/relations/cert_to_cert_relation.csv"
 _JOB_TO_DOMAIN    = _PROJECT_ROOT / "data/canonical/relations/job_to_domain.csv"
+_MAJOR_ACQUI_CSV  = _PROJECT_ROOT / "data/raw/csv/전공별 취득 현황_rows.csv"
 
 _RISK_ORDER = ["risk_0001", "risk_0002", "risk_0003", "risk_0004", "risk_0005"]
 
@@ -274,6 +275,29 @@ def _load_cert_graph() -> dict[str, tuple[tuple[str, str, str], ...]]:
             )
     # lru_cache 호환을 위해 불변 자료구조로 변환
     return {k: tuple(v) for k, v in acc.items()}
+
+
+@lru_cache(maxsize=1)
+def _load_cert_acqui_map() -> dict[str, int]:
+    """jmNm(자격증명) → 전체 누적 취득자 수 (전공별 취득 현황_rows.csv).
+    여러 전공에 걸쳐 집계된 값이므로 최대값을 사용한다."""
+    if not _MAJOR_ACQUI_CSV.exists():
+        return {}
+    out: dict[str, int] = {}
+    try:
+        with _MAJOR_ACQUI_CSV.open(encoding="utf-8-sig") as f:
+            for r in csv.DictReader(f):
+                name = (r.get("jmNm") or "").strip()
+                try:
+                    cnt = int(r.get("accumAcquCnt") or 0)
+                except (ValueError, TypeError):
+                    cnt = 0
+                if name and cnt > 0:
+                    if out.get(name, 0) < cnt:
+                        out[name] = cnt
+    except Exception:
+        pass
+    return out
 
 
 # ── P2: cert_paths 점수화 가중치 ──
@@ -569,10 +593,19 @@ def _build_roadmap_sequence(
             "_is_redundant": is_redundant,
         })
 
-    # 전체 오름차순 정렬 (sequence용): stage_order 먼저 → 동일 stage 내 level_score → pass_rate 높을수록 앞
+    # 전공별 취득 현황 기반 인기 지수 (누적 취득자 수 → 로그 스케일 → 소수점 보정값)
+    acqui_map = _load_cert_acqui_map()
+    import math as _math
+    for x in enriched:
+        cnt = acqui_map.get(x["cert_name"], 0)
+        x["_popularity_boost"] = _math.log1p(cnt) * 0.01 if cnt > 0 else 0.0
+
+    # 전체 오름차순 정렬 (sequence용):
+    #   1순위 stage_order → 2순위 level_score → 3순위 인기 보정(-popularity → 앞으로) → 4순위 pass_rate 높을수록
     enriched.sort(key=lambda x: (
         x["_eff_stage_info"].get("order", 2),
         x["_level_score"],
+        -(x["_popularity_boost"]),
         -(x["_pass_rate"] or 0.0),
     ))
 
@@ -840,6 +873,7 @@ def _invalidate_caches() -> None:
         _load_cert_to_roadmap_map,
         _load_cert_name_map,
         _load_cert_graph,
+        _load_cert_acqui_map,
     ):
         fn.cache_clear()
 

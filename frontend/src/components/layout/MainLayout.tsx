@@ -44,9 +44,17 @@ const SUPPORT_LINKS = [
   },
 ];
 
-// 상단 네비 — 진단 흐름은 "진단 시작" CTA 통해서만 진입. 자유 탐색은 "전체 자격증".
+// 상단 네비 — 진단 흐름은 "진단 시작" CTA 통해서만 진입.
 const NAV_LINKS = [
   { label: '전체 자격증', path: '/certs' },
+  { label: '시험 일정', path: '/schedule' },
+];
+
+const EXPLORE_LINKS = [
+  { label: '직업 탐색', sub: '커리어넷 직업정보', path: '/explore' },
+  { label: '학과 탐색', sub: '커리어넷 학과정보', path: '/explore?tab=majors' },
+  { label: 'NCS 자격증', sub: '능력단위 기반 검색', path: '/explore?tab=ncs' },
+  { label: '채용 정보', sub: 'WorkNet 실시간 채용', path: '/jobs' },
 ];
 
 const FLOW_STEPS = [
@@ -133,10 +141,35 @@ const MainLayout: React.FC = () => {
               </Link>
             ))}
 
+            {/* 탐색 드롭다운 */}
+            <div className="support-nav-wrap">
+              <button
+                type="button"
+                className={['header-nav-link support-nav-btn', ['/explore', '/jobs'].some(p => location.pathname.startsWith(p)) ? 'active' : ''].filter(Boolean).join(' ')}
+                aria-haspopup="true"
+              >
+                탐색 <span className="support-nav-arrow">▾</span>
+              </button>
+              <div className="support-mega-panel explore-panel" role="menu">
+                {EXPLORE_LINKS.map(item => (
+                  <div key={item.path} className="support-mega-group">
+                    <Link
+                      to={item.path}
+                      className="support-mega-title explore-link"
+                      role="menuitem"
+                    >
+                      {item.label}
+                    </Link>
+                    <span className="explore-link-sub">{item.sub}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* 청년지원제도 드롭다운 탭 */}
             <div className="support-nav-wrap">
               <button type="button" className="header-nav-link support-nav-btn" aria-haspopup="true">
-                청년지원제도 <span className="support-nav-arrow">▾</span>
+                지원제도 <span className="support-nav-arrow">▾</span>
               </button>
               <div className="support-mega-panel" role="menu">
                 {SUPPORT_LINKS.map(item => (
@@ -186,7 +219,12 @@ const MainLayout: React.FC = () => {
 
       {/* ── Mobile bottom nav ── */}
       <nav className="mobile-nav" aria-label="하단 메뉴">
-        {[{ label: '홈', path: '/' }, ...NAV_LINKS].map(item => (
+        {[
+          { label: '홈', path: '/' },
+          ...NAV_LINKS,
+          { label: '직업탐색', path: '/explore' },
+          { label: '채용', path: '/jobs' },
+        ].map(item => (
           <Link
             key={item.path}
             to={item.path}
@@ -196,6 +234,58 @@ const MainLayout: React.FC = () => {
           </Link>
         ))}
       </nav>
+
+      {/* ── Footer ── */}
+      <footer className="app-footer">
+        <div className="container footer-inner">
+          <div className="footer-top">
+            <div className="footer-brand">
+              <Link to="/" className="footer-logo">
+                <img src="/logo.png?v=8" alt="디딤 로고" className="footer-logo-img" />
+                <span className="footer-logo-text">디딤</span>
+              </Link>
+              <p className="footer-tagline">청년 위험군 단계 맞춤<br />자격증·로드맵 추천 시스템</p>
+              <p className="footer-team">Team DBMs · 홍익대학교</p>
+            </div>
+
+            <div className="footer-links-group">
+              <div className="footer-col">
+                <p className="footer-col-title">서비스</p>
+                <Link to="/risk-assessment" className="footer-link">위험군 진단</Link>
+                <Link to="/certs" className="footer-link">전체 자격증</Link>
+                <Link to="/schedule" className="footer-link">시험 일정</Link>
+                <Link to="/explore" className="footer-link">직업 탐색</Link>
+                <Link to="/jobs" className="footer-link">채용 정보</Link>
+                <a href="https://www.didim.life" target="_blank" rel="noopener noreferrer" className="footer-link">didim.life ↗</a>
+              </div>
+              <div className="footer-col">
+                <p className="footer-col-title">공공데이터 출처</p>
+                <a href="https://www.data.go.kr" target="_blank" rel="noopener noreferrer" className="footer-link">공공데이터포털</a>
+                <a href="https://data.seoul.go.kr" target="_blank" rel="noopener noreferrer" className="footer-link">서울 열린데이터광장</a>
+                <a href="https://www.q-net.or.kr" target="_blank" rel="noopener noreferrer" className="footer-link">Q-Net (한국산업인력공단)</a>
+              </div>
+              <div className="footer-col">
+                <p className="footer-col-title">도움말</p>
+                <Link to="/privacy" className="footer-link">개인정보처리방침</Link>
+                <Link to="/contact" className="footer-link">문의하기</Link>
+                <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="footer-link">GitHub ↗</a>
+              </div>
+            </div>
+          </div>
+
+          <div className="footer-bottom">
+            <p className="footer-copy">
+              © 2026 DBMs (DIDIM Team) · 홍익대학교 · 본 서비스는
+              {' '}<a href="https://www.data.go.kr" target="_blank" rel="noopener noreferrer" className="footer-copy-link">공공데이터포털</a>
+              ,{' '}<a href="https://data.seoul.go.kr" target="_blank" rel="noopener noreferrer" className="footer-copy-link">서울 열린데이터광장</a>
+              의 공공데이터를 활용합니다.
+            </p>
+            <p className="footer-disclaimer">
+              본 서비스의 자격증 추천은 공공 통계 기반 참고 정보이며, 취업 성공을 보장하지 않습니다.
+            </p>
+          </div>
+        </div>
+      </footer>
 
       <style>{`
         /* ── 청년지원제도 드롭다운 (헤더 내 탭) ── */
@@ -243,6 +333,25 @@ const MainLayout: React.FC = () => {
         }
         .support-nav-wrap:hover .support-mega-panel {
           display: grid;
+        }
+        /* 탐색 드롭다운 (4열 좁은 버전) */
+        .explore-panel {
+          min-width: 360px;
+          grid-template-columns: repeat(2, 1fr);
+          left: 0;
+          transform: none;
+        }
+        .explore-link {
+          color: #2563eb !important;
+          font-size: 0.82rem !important;
+          font-weight: 700 !important;
+          text-decoration: none !important;
+        }
+        .explore-link-sub {
+          font-size: 0.7rem;
+          color: #94a3b8;
+          padding: 0 0.6rem;
+          display: block;
         }
         /* hover 갭 브릿지 */
         .support-mega-panel::before {
@@ -300,6 +409,84 @@ const MainLayout: React.FC = () => {
           padding-bottom: var(--mobile-nav-h);
         }
         @media (min-width: 769px) { .app-root { padding-bottom: 0; } }
+
+        /* ── Footer ── */
+        .app-footer {
+          background: #0f172a;
+          color: #94a3b8;
+          padding: 3rem 0 1.5rem;
+          margin-top: auto;
+        }
+        @media (max-width: 768px) { .app-footer { padding-bottom: calc(var(--mobile-nav-h) + 1.5rem); } }
+        .footer-inner { display: flex; flex-direction: column; gap: 2rem; }
+        .footer-top {
+          display: flex;
+          gap: 3rem;
+          flex-wrap: wrap;
+        }
+        .footer-brand {
+          display: flex;
+          flex-direction: column;
+          gap: .625rem;
+          min-width: 160px;
+          max-width: 220px;
+        }
+        .footer-logo {
+          display: flex;
+          align-items: center;
+          gap: .4rem;
+          text-decoration: none;
+        }
+        .footer-logo-img { width: 28px; height: 28px; border-radius: 7px; }
+        .footer-logo-text {
+          font-size: 1.1rem;
+          font-weight: 900;
+          background: linear-gradient(135deg, #818cf8, #38bdf8);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        .footer-tagline { font-size: .78rem; color: #64748b; line-height: 1.6; margin: 0; }
+        .footer-team { font-size: .72rem; color: #475569; margin: 0; }
+        .footer-links-group {
+          display: flex;
+          gap: 2.5rem;
+          flex-wrap: wrap;
+          flex: 1;
+        }
+        .footer-col {
+          display: flex;
+          flex-direction: column;
+          gap: .4rem;
+          min-width: 120px;
+        }
+        .footer-col-title {
+          font-size: .72rem;
+          font-weight: 700;
+          letter-spacing: .06em;
+          color: #cbd5e1;
+          text-transform: uppercase;
+          margin: 0 0 .25rem;
+        }
+        .footer-link {
+          font-size: .8rem;
+          color: #64748b;
+          text-decoration: none;
+          transition: color .15s;
+          width: fit-content;
+        }
+        .footer-link:hover { color: #94a3b8; }
+        .footer-bottom {
+          padding-top: 1.5rem;
+          border-top: 1px solid #1e293b;
+          display: flex;
+          flex-direction: column;
+          gap: .375rem;
+        }
+        .footer-copy { font-size: .72rem; color: #475569; margin: 0; line-height: 1.6; }
+        .footer-copy-link { color: #64748b; text-decoration: none; }
+        .footer-copy-link:hover { color: #94a3b8; text-decoration: underline; }
+        .footer-disclaimer { font-size: .68rem; color: #334155; margin: 0; line-height: 1.6; }
 
         /* ── Header ── */
         .app-header {

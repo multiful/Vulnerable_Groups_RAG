@@ -1,7 +1,7 @@
 # SYSTEM_ARCHITECTURE.md
 
 > **파일명**: SYSTEM_ARCHITECTURE.md  
-> **최종 수정일**: 2026-05-07  
+> **최종 수정일**: 2026-05-14  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 시스템 구성, 계층, 책임, 데이터 흐름 정의 문서  
 > **문서 우선순위**: 3  
@@ -97,8 +97,8 @@ CORS·`VITE_API_BASE_URL` 등 환경변수로 출처를 맞춘다. **LlamaIndex*
 데이터는 source_type에 따라 다른 처리 경로를 사용한다.
 
 - PDF / HTML → Parse 및 indexing 대상
-- CSV → structured no-parse canonicalization 대상
-- API → 후속 스프린트에서 canonical target schema 병합 대상
+- CSV → structured no-parse canonicalization 대상 (cert_master, ncs_master, cert_ncs_mapping 등)
+- API → Execution Layer에서 실시간 호출 대상 (Q-Net, WorkNet, Work24, Seoul Open API)
 
 ### 3.3 taxonomy 고정 원칙
 추천 결과의 정합성을 위해 자유 텍스트 라벨을 허용하지 않는다.
@@ -116,14 +116,15 @@ CORS·`VITE_API_BASE_URL` 등 환경변수로 출처를 맞춘다. **LlamaIndex*
 
 ## 4. 상위 구성 요소
 
-시스템은 아래 6개 영역으로 구성된다.
+시스템은 아래 7개 영역으로 구성된다.
 
 1. **Frontend**
 2. **Backend Application Layer**
 3. **Recommendation Core**
 4. **RAG Evidence Layer**
-5. **Storage Layer**
-6. **Offline Build / Evaluation Layer**
+5. **Execution Layer** (외부 공공데이터 API 연동 계층)
+6. **Storage Layer**
+7. **Offline Build / Evaluation Layer**
 
 ---
 
@@ -141,16 +142,28 @@ CORS·`VITE_API_BASE_URL` 등 환경변수로 출처를 맞춘다. **LlamaIndex*
    ├─ Roadmap Builder
    │   └─ Canonical Relational Store
    │
-   └─ Evidence Retrieval
-       ├─ Vector Store
-       └─ Sparse/BM25 Store (optional)
+   ├─ Evidence Retrieval
+   │   ├─ Vector Store
+   │   └─ Sparse/BM25 Store (optional)
+   │
+   └─ Execution Layer (실행 지원 계층)
+       ├─ cert_lookup_service  (cert → NCS → API 파라미터)
+       ├─ exam_schedule_service  (Q-Net 일정)
+       ├─ jobs_service           (WorkNet 채용)
+       ├─ training_service       (Work24 훈련)
+       ├─ seoul_service          (서울시 공공데이터)
+       └─ action_service         (오늘의 행동 제안)
 
 ────────────────────────────────────────────────────────
 
 [Raw Knowledge Sources]
 ├─ Official PDF / HTML
-├─ Structured CSV
-└─ External API (후속 스프린트)
+├─ Structured CSV (cert_master, ncs_master, cert_ncs_mapping 등)
+└─ External Public APIs
+     ├─ Q-Net (시험·접수 일정, 과정평가형)
+     ├─ WorkNet (채용정보)
+     ├─ Work24 (훈련과정)
+     └─ Seoul Open API (일자리카페·건강증진센터·공공예약)
 
          ↓
 
@@ -231,14 +244,18 @@ Home
 - 응답 포맷 조립
 
 ### 핵심 서비스
-- `risk_stage_service`
-- `recommendation_service`
-- `roadmap_service`
-- `retrieval_service`
-- `metadata_service`
-
-### reserved
-- `schedule_service`
+- `risk_stage_service`: 위험군 단계 정보 조회
+- `recommendation_service`: 후보 기반 추천 조립
+- `roadmap_service`: 단계형 로드맵 생성
+- `retrieval_service`: RAG Evidence 검색
+- `metadata_service`: 데이터 메타데이터 관리
+- `cert_lookup_service`: cert_id → NCS → WorkNet/Work24 파라미터 파생 (데이터 체인 중심)
+- `exam_schedule_service`: Q-Net 시험·접수 일정 조회 (hrdkorea_api_key_in)
+- `jobs_service`: WorkNet 채용정보 조회 + 고용24 직업정보 CSV 조회
+- `training_service`: Work24 국민내일배움카드 훈련과정 조회 + 과정평가형 자격
+- `seoul_service`: 서울시 공공데이터 (일자리카페·건강증진센터·공공예약)
+- `action_service`: 위험군 단계 기반 오늘의 한 가지 행동 제안
+- `youtube_service`: 자격증명 기반 YouTube 영상 추천 (캐시)
 
 ---
 
@@ -446,14 +463,22 @@ exact match 보강용 선택 저장소
 - PDF / HTML evidence retrieval
 - CSV canonicalization
 - parse / chunk / metadata / embedding 기본 파이프라인
+- Q-Net 시험 일정 / 접수 일정 조회 (`exam_schedule_service`)
+- WorkNet 채용정보 조회 — cert_id → NCS → occupation 코드 파생 (`jobs_service`)
+- Work24 훈련과정 조회 — cert_id → NCS → srchNcs1 파라미터 파생 (`training_service`)
+- 과정평가형 자격 조회 (`training_service`)
+- 서울시 공공데이터 조회 (일자리카페·건강증진센터·공공예약) (`seoul_service`)
+- 위험군 단계 기반 오늘의 한 가지 행동 제안 (`action_service`)
+- cert_id ↔ NCS ↔ WorkNet/Work24 데이터 체인 (`cert_lookup_service`)
+- YouTube 자격증 강의 영상 캐싱 (`youtube_service`)
 
 ### reserved
-- 시험 일정 API
-- 접수 일정 API
-- 지원 링크 실연동
 - reranker 활성화
+- sparse/BM25 상시 사용
+- parent-child 고도화
 - shared 공용 타입 계층
 - full infra 배포 구조
+- 상담형 대화 에이전트
 
 ---
 
@@ -521,20 +546,22 @@ exact match 보강용 선택 저장소
 
 1. 위험군 2~4단계의 세부 의미와 판정 기준
 2. roadmap stage의 최종 단계명과 단계 수
-3. 일정 API 병합 시 canonical target schema 세부 구조
-4. reranker 활성화 조건
-5. sparse store 상시 사용 여부
+3. reranker 활성화 조건
+4. sparse store 상시 사용 여부
+5. CareerNet API (학과/직업정보) 연동 시 cert_lookup_service 확장 방향
+6. cert_to_cert_relation.csv 완성 후 DAG 전면 순회 활성화
 
 ---
 
 ## 19. 최종 요약
 
-본 시스템은 아래 3개 계층의 결합으로 이해할 수 있다.
+본 시스템은 아래 4개 계층의 결합으로 이해할 수 있다.
 
-- **Canonical Recommendation Layer**
-- **RAG Evidence Layer**
-- **API Orchestration Layer**
+- **Canonical Recommendation Layer**: CSV canonicalization 기반 구조적 추천
+- **RAG Evidence Layer**: PDF/HTML 기반 설명 근거 검색
+- **Execution Layer**: 공공데이터 API 연동으로 채용·훈련·일정·지역 자원 실시간 제공
+- **API Orchestration Layer**: 사용자 요청을 받아 위 3개 계층을 조합해 응답 조립
 
-즉, 구조적 추천은 canonicalization 계층이 담당하고, 설명 근거는 RAG 계층이 담당하며, 최종 사용자 응답은 backend application layer가 조립한다.
+즉, 구조적 추천은 Canonical Recommendation Layer가, 설명 근거는 RAG 계층이, 실행 가능한 실시간 정보는 Execution Layer가 담당하며, Backend API가 최종 응답으로 조립한다.
 
-현재 MVP의 목표는 이 3개 계층을 먼저 안정적으로 연결하는 것이다.
+현재 시스템의 목표는 이 4개 계층을 안정적으로 연결하고, cert_id → NCS → 공공 API 파라미터 데이터 체인을 통해 추천 결과가 실행 행동으로 이어지도록 하는 것이다.

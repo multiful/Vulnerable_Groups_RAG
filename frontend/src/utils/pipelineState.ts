@@ -10,6 +10,7 @@ export interface PipelineState {
   domainName?: string;
   job?: string;
   jobName?: string;
+  major?: string;
 }
 
 /** 파이프라인 상태를 저장(기존 값과 병합). */

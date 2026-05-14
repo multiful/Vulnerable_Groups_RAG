@@ -1,6 +1,7 @@
 // Content Hash: SHA256:TBD
-import React, { useState, useMemo, useEffect, useCallback, useDeferredValue, memo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useDeferredValue, memo, useTransition, useRef } from 'react';
 import { CertFlowDiagram } from '../../components/charts/CertFlowDiagram';
+import KakaoMap, { type MapPoint } from '../../components/map/KakaoMap';
 import { getCertCandidates } from '../../api/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { loadPipeline } from '../../utils/pipelineState';
@@ -185,6 +186,74 @@ interface VideosState {
   cacheHit: boolean;
 }
 
+interface ExamItem {
+  impl_seq_name: string | null;
+  registration_start: string | null;
+  registration_end: string | null;
+  exam_start: string | null;
+  exam_end: string | null;
+  pass_announce_date: string | null;
+  d_day_exam: number | null;
+  d_day_registration: number | null;
+}
+interface CertInfoData {
+  info: {
+    qualification_type?: string;
+    level?: string;
+    related_occupation?: string;
+    acquisition_method?: string;
+    exam_fee_written?: string;
+    exam_fee_practical?: string;
+    eligibility?: string;
+    issuer?: string;
+    website?: string;
+  } | null;
+  exam_info: {
+    written_subjects?: string;
+    practical_subjects?: string;
+    written_pass_score?: string;
+    practical_pass_score?: string;
+    written_exam_time?: string;
+    practical_exam_time?: string;
+    exam_method?: string;
+  } | null;
+}
+interface JobLearnerItem {
+  itemNm?: string;
+  corpNm?: string;
+  jmNm?: string;
+  [key: string]: unknown;
+}
+interface ExecState {
+  loading: boolean;
+  schedule: ExamItem[];
+  hiringTotal: number;
+  hiringItems: Array<{ title: string; company: string; url: string; close_date: string }>;
+  trainingTotal: number;
+  trainingItems: Array<{ course_name: string; institution_name: string; employment_rate: string }>;
+  certId: string;
+  fetched: boolean;
+  activeTab: 'schedule' | 'hiring' | 'training' | 'map' | 'certinfo';
+  mapPoints: MapPoint[];
+  mapLoading: boolean;
+  mapFetched: boolean;
+  certInfoData: CertInfoData | null;
+  certInfoLoading: boolean;
+  certInfoFetched: boolean;
+  jobLearnerItems: JobLearnerItem[];
+  jobLearnerLoading: boolean;
+  jobLearnerFetched: boolean;
+  certJobsList: string[];
+  certJobsLoading: boolean;
+  certJobsFetched: boolean;
+  selectedJobName: string | null;
+  jobDetailData: { job_name: string; salary: string; outlook: string; work_content: string } | null;
+  jobDetailLoading: boolean;
+  processEvalItems: Array<{ [key: string]: unknown }>;
+  processEvalLoading: boolean;
+  processEvalFetched: boolean;
+}
+
 /* ── Memoized cert card ── */
 const CertCard = memo(({
   cert, onEvidence, onDag, onRoadmap, isSelected,
@@ -298,6 +367,28 @@ const Recommendation: React.FC = () => {
     loading: boolean; text: string | null; certId: string; error: string | null;
   }>({ loading: false, text: null, certId: '', error: null });
 
+  const [exec, setExec] = useState<ExecState>({
+    loading: false, schedule: [], hiringTotal: 0, hiringItems: [],
+    trainingTotal: 0, trainingItems: [], certId: '', fetched: false, activeTab: 'schedule',
+    mapPoints: [], mapLoading: false, mapFetched: false,
+    certInfoData: null, certInfoLoading: false, certInfoFetched: false,
+    jobLearnerItems: [], jobLearnerLoading: false, jobLearnerFetched: false,
+    certJobsList: [], certJobsLoading: false, certJobsFetched: false,
+    selectedJobName: null, jobDetailData: null, jobDetailLoading: false,
+    processEvalItems: [], processEvalLoading: false, processEvalFetched: false,
+  });
+
+  // ── In-memory caches: avoid redundant API calls when re-clicking same cert ──
+  const [, startTransition] = useTransition();
+  const evidenceCacheRef = useRef<Record<string, EvidenceRow[]>>({});
+  const dagCacheRef = useRef<Record<string, { predecessors: RelatedCert[]; successors: RelatedCert[] }>>({});
+  const execCacheRef = useRef<Record<string, Pick<ExecState, 'schedule' | 'hiringTotal' | 'hiringItems' | 'trainingTotal' | 'trainingItems'>>>({});
+  const certInfoCacheRef = useRef<Record<string, CertInfoData | null>>({});
+  const certExplainCacheRef = useRef<Record<string, string | null>>({});
+  const jobLearnerCacheRef = useRef<Record<string, JobLearnerItem[]>>({});
+  const certJobsCacheRef = useRef<Record<string, string[]>>({});
+  const processEvalCacheRef = useRef<Record<string, Array<{ [key: string]: unknown }>>>({});
+
   useEffect(() => {
     let cancelled = false;
     getCertCandidates()
@@ -349,28 +440,48 @@ const Recommendation: React.FC = () => {
   );
 
   const fetchEvidence = useCallback(async (certId: string) => {
-    setEvidence({ loading: true, rows: [], error: null, fetched: false, certId });
-    setShowEvidence(true);
+    // Check cache — instant response for repeat clicks
+    const cachedEvidence = evidenceCacheRef.current[certId];
+    const hasExplainCache = certId in certExplainCacheRef.current;
+    const cachedExplain   = certExplainCacheRef.current[certId];
 
-    // Fire AI explanation in parallel (silently suppressed on error)
-    setCertExplain({ loading: true, text: null, certId, error: null });
-    fetch('/api/v1/recommendations/cert_explain', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        cert_id: certId,
-        domain_id: domainParam || '',
-        risk_stage_id: RISK_IDS[stageParam] || '',
-      }),
-    }).then(r => r.json()).then(json => {
-      if (json.success) {
-        setCertExplain({ loading: false, text: json.data?.explanation ?? null, certId, error: null });
+    startTransition(() => {
+      if (cachedEvidence) {
+        setEvidence({ loading: false, rows: cachedEvidence, error: null, fetched: true, certId });
       } else {
-        setCertExplain({ loading: false, text: null, certId, error: null });
+        setEvidence({ loading: true, rows: [], error: null, fetched: false, certId });
       }
-    }).catch(() => {
-      setCertExplain({ loading: false, text: null, certId, error: null });
+      setShowEvidence(true);
+      if (hasExplainCache) {
+        setCertExplain({ loading: false, text: cachedExplain ?? null, certId, error: null });
+      } else {
+        setCertExplain({ loading: true, text: null, certId, error: null });
+      }
     });
+
+    fetchExecData(certId);
+
+    // Fire AI explanation in parallel only if not cached
+    if (!hasExplainCache) {
+      fetch('/api/v1/recommendations/cert_explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cert_id: certId,
+          domain_id: domainParam || '',
+          risk_stage_id: RISK_IDS[stageParam] || '',
+        }),
+      }).then(r => r.json()).then(json => {
+        const explanation = json.success ? (json.data?.explanation ?? null) : null;
+        certExplainCacheRef.current[certId] = explanation;
+        setCertExplain({ loading: false, text: explanation, certId, error: null });
+      }).catch(() => {
+        certExplainCacheRef.current[certId] = null;
+        setCertExplain({ loading: false, text: null, certId, error: null });
+      });
+    }
+
+    if (cachedEvidence) return; // already shown from cache
 
     try {
       const res = await fetch('/api/v1/recommendations/evidence', {
@@ -380,29 +491,35 @@ const Recommendation: React.FC = () => {
       });
       const json = await res.json();
       if (json.success) {
-        setEvidence({ loading: false, rows: json.data?.evidence ?? [], error: null, fetched: true, certId });
+        const rows: EvidenceRow[] = json.data?.evidence ?? [];
+        evidenceCacheRef.current[certId] = rows;
+        setEvidence({ loading: false, rows, error: null, fetched: true, certId });
       } else {
         setEvidence({ loading: false, rows: [], error: json.error?.message ?? '오류 발생', fetched: true, certId });
       }
     } catch {
       setEvidence({ loading: false, rows: [], error: '서버에 연결할 수 없습니다.', fetched: true, certId });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stageParam, domainParam]);
 
   const fetchDag = useCallback(async (certId: string) => {
+    const cached = dagCacheRef.current[certId];
+    if (cached) {
+      setDag({ loading: false, predecessors: cached.predecessors, successors: cached.successors, certId, fetched: true });
+      return;
+    }
     setDag({ loading: true, predecessors: [], successors: [], certId, fetched: false });
     try {
       const res = await fetch(`/api/v1/recommendations/related?cert_id=${encodeURIComponent(certId)}`);
       const json = await res.json();
       if (json.success) {
-        setDag({
-          loading: false,
-          predecessors: json.data?.predecessors ?? [],
-          successors: json.data?.successors ?? [],
-          certId,
-          fetched: true,
-        });
+        const predecessors: RelatedCert[] = json.data?.predecessors ?? [];
+        const successors: RelatedCert[]   = json.data?.successors ?? [];
+        dagCacheRef.current[certId] = { predecessors, successors };
+        setDag({ loading: false, predecessors, successors, certId, fetched: true });
       } else {
+        dagCacheRef.current[certId] = { predecessors: [], successors: [] };
         setDag({ loading: false, predecessors: [], successors: [], certId, fetched: true });
       }
     } catch {
@@ -442,6 +559,157 @@ const Recommendation: React.FC = () => {
         error: '서버에 연결할 수 없습니다.',
         warning: null, fetched: true, certId, certName, cacheHit: false,
       });
+    }
+  }, []);
+
+  const fetchExecData = useCallback(async (certId: string) => {
+    const cached = execCacheRef.current[certId];
+    if (cached) {
+      setExec(prev => ({ ...prev, ...cached, loading: false, certId, fetched: true, activeTab: 'schedule' }));
+      return;
+    }
+    setExec(prev => ({
+      ...prev, loading: true, certId, fetched: false, activeTab: 'schedule',
+      jobLearnerFetched: false, jobLearnerLoading: false, jobLearnerItems: [],
+      certJobsFetched: false, certJobsLoading: false, certJobsList: [],
+      selectedJobName: null, jobDetailData: null, jobDetailLoading: false,
+      processEvalFetched: false, processEvalLoading: false, processEvalItems: [],
+    }));
+    const [schedRes, jobsRes, trainRes] = await Promise.allSettled([
+      fetch(`/api/v1/schedules/exams/${encodeURIComponent(certId)}`).then(r => r.json()),
+      fetch(`/api/v1/jobs/hiring/by-cert/${encodeURIComponent(certId)}?display=5`).then(r => r.json()),
+      fetch(`/api/v1/training/courses/by-cert/${encodeURIComponent(certId)}?page_size=5`).then(r => r.json()),
+    ]);
+    const schedData = schedRes.status === 'fulfilled' && schedRes.value.success ? schedRes.value.data : null;
+    const jobsData  = jobsRes.status === 'fulfilled'  && jobsRes.value.success  ? jobsRes.value.data  : null;
+    const trainData = trainRes.status === 'fulfilled' && trainRes.value.success ? trainRes.value.data : null;
+    const execResult = {
+      schedule:      (schedData?.schedules ?? []).slice(0, 4),
+      hiringTotal:   jobsData?.total  ?? 0,
+      hiringItems:   (jobsData?.jobs ?? []).slice(0, 5),
+      trainingTotal: trainData?.total ?? 0,
+      trainingItems: (trainData?.courses ?? []).slice(0, 5),
+    };
+    execCacheRef.current[certId] = execResult;
+    setExec(prev => ({ ...prev, ...execResult, loading: false, certId, fetched: true }));
+  }, []);
+
+  const fetchMapData = useCallback(async (certId: string) => {
+    setExec(prev => ({ ...prev, mapLoading: true, mapFetched: false }));
+    try {
+      const res = await fetch(`/api/v1/map/infra?cert_id=${encodeURIComponent(certId)}`);
+      const json = await res.json();
+      if (json.success && json.data) {
+        setExec(prev => ({
+          ...prev,
+          mapLoading: false,
+          mapFetched: true,
+          mapPoints: (json.data.all_points ?? []) as MapPoint[],
+        }));
+      } else {
+        setExec(prev => ({ ...prev, mapLoading: false, mapFetched: true }));
+      }
+    } catch {
+      setExec(prev => ({ ...prev, mapLoading: false, mapFetched: true }));
+    }
+  }, []);
+
+  const fetchCertInfo = useCallback(async (certId: string) => {
+    const hasCached = certId in certInfoCacheRef.current;
+    if (hasCached) {
+      setExec(prev => ({ ...prev, certInfoData: certInfoCacheRef.current[certId] ?? null, certInfoLoading: false, certInfoFetched: true }));
+      return;
+    }
+    setExec(prev => ({ ...prev, certInfoLoading: true, certInfoFetched: false }));
+    try {
+      const res = await fetch(`/api/v1/certs/${encodeURIComponent(certId)}/full-info`);
+      const json = await res.json();
+      const data: CertInfoData | null = json.success
+        ? { info: json.data?.info ?? null, exam_info: json.data?.exam_info ?? null }
+        : null;
+      certInfoCacheRef.current[certId] = data;
+      setExec(prev => ({ ...prev, certInfoData: data, certInfoLoading: false, certInfoFetched: true }));
+    } catch {
+      certInfoCacheRef.current[certId] = null;
+      setExec(prev => ({ ...prev, certInfoData: null, certInfoLoading: false, certInfoFetched: true }));
+    }
+  }, []);
+
+  const fetchJobDetail = useCallback(async (jobName: string) => {
+    setExec(prev => ({
+      ...prev,
+      selectedJobName: prev.selectedJobName === jobName ? null : jobName,
+      jobDetailData: null,
+      jobDetailLoading: prev.selectedJobName !== jobName,
+    }));
+    if (exec.selectedJobName === jobName) return; // toggle off
+    try {
+      const res = await fetch(`/api/v1/jobs/info/${encodeURIComponent(jobName)}`);
+      const json = await res.json();
+      if (json.success && json.data?.job) {
+        setExec(prev => ({ ...prev, jobDetailData: json.data.job, jobDetailLoading: false }));
+      } else {
+        setExec(prev => ({ ...prev, jobDetailLoading: false }));
+      }
+    } catch {
+      setExec(prev => ({ ...prev, jobDetailLoading: false }));
+    }
+  }, [exec.selectedJobName]);
+
+  const fetchJobLearner = useCallback(async (certId: string, certName: string) => {
+    const cached = jobLearnerCacheRef.current[certId];
+    if (cached) {
+      setExec(prev => ({ ...prev, jobLearnerItems: cached, jobLearnerLoading: false, jobLearnerFetched: true }));
+      return;
+    }
+    setExec(prev => ({ ...prev, jobLearnerLoading: true, jobLearnerFetched: false }));
+    try {
+      const res = await fetch(`/api/v1/training/job-learner?keyword=${encodeURIComponent(certName)}&page_size=5`);
+      const json = await res.json();
+      const items: JobLearnerItem[] = json.success ? (json.data?.items ?? []).slice(0, 5) : [];
+      jobLearnerCacheRef.current[certId] = items;
+      setExec(prev => ({ ...prev, jobLearnerItems: items, jobLearnerLoading: false, jobLearnerFetched: true }));
+    } catch {
+      jobLearnerCacheRef.current[certId] = [];
+      setExec(prev => ({ ...prev, jobLearnerItems: [], jobLearnerLoading: false, jobLearnerFetched: true }));
+    }
+  }, []);
+
+  const fetchProcessEval = useCallback(async (certId: string, certName: string) => {
+    const cached = processEvalCacheRef.current[certId];
+    if (cached) {
+      setExec(prev => ({ ...prev, processEvalItems: cached, processEvalLoading: false, processEvalFetched: true }));
+      return;
+    }
+    setExec(prev => ({ ...prev, processEvalLoading: true, processEvalFetched: false }));
+    try {
+      const res = await fetch(`/api/v1/training/process-eval?keyword=${encodeURIComponent(certName)}&page_size=5`);
+      const json = await res.json();
+      const items = json.success ? (json.data?.courses ?? json.data?.items ?? []).slice(0, 5) : [];
+      processEvalCacheRef.current[certId] = items;
+      setExec(prev => ({ ...prev, processEvalItems: items, processEvalLoading: false, processEvalFetched: true }));
+    } catch {
+      processEvalCacheRef.current[certId] = [];
+      setExec(prev => ({ ...prev, processEvalItems: [], processEvalLoading: false, processEvalFetched: true }));
+    }
+  }, []);
+
+  const fetchCertJobs = useCallback(async (certId: string, certName: string) => {
+    const cached = certJobsCacheRef.current[certId];
+    if (cached) {
+      setExec(prev => ({ ...prev, certJobsList: cached, certJobsLoading: false, certJobsFetched: true }));
+      return;
+    }
+    setExec(prev => ({ ...prev, certJobsLoading: true, certJobsFetched: false }));
+    try {
+      const res = await fetch(`/api/v1/jobs/cert-jobs/${encodeURIComponent(certName)}`);
+      const json = await res.json();
+      const jobs: string[] = json.success ? (json.data?.jobs ?? []) : [];
+      certJobsCacheRef.current[certId] = jobs;
+      setExec(prev => ({ ...prev, certJobsList: jobs, certJobsLoading: false, certJobsFetched: true }));
+    } catch {
+      certJobsCacheRef.current[certId] = [];
+      setExec(prev => ({ ...prev, certJobsList: [], certJobsLoading: false, certJobsFetched: true }));
     }
   }, []);
 
@@ -910,6 +1178,277 @@ const Recommendation: React.FC = () => {
             </div>
           )}
 
+          {/* ── Execution Panel: 시험일정 / 채용정보 / 훈련과정 ── */}
+          {exec.certId === evidence.certId && (
+            <div className="exec-panel">
+              <div className="exec-tabs">
+                {(['schedule','hiring','training','map','certinfo'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    className={`exec-tab${exec.activeTab === tab ? ' exec-tab-active' : ''}`}
+                    onClick={() => {
+                      setExec(p => ({ ...p, activeTab: tab }));
+                      const cn = allCerts.find(c => c.cert_id === exec.certId)?.cert_name ?? '';
+                      if (tab === 'map' && !exec.mapFetched && !exec.mapLoading) {
+                        fetchMapData(exec.certId);
+                      }
+                      if (tab === 'training' && !exec.jobLearnerFetched && !exec.jobLearnerLoading && cn) {
+                        fetchJobLearner(exec.certId, cn);
+                      }
+                      if (tab === 'training' && !exec.processEvalFetched && !exec.processEvalLoading && cn) {
+                        fetchProcessEval(exec.certId, cn);
+                      }
+                      if (tab === 'certinfo' && !exec.certInfoFetched && !exec.certInfoLoading) {
+                        fetchCertInfo(exec.certId);
+                      }
+                      if (tab === 'certinfo' && !exec.certJobsFetched && !exec.certJobsLoading && cn) {
+                        fetchCertJobs(exec.certId, cn);
+                      }
+                    }}
+                  >
+                    {tab === 'schedule'  && '시험 일정'}
+                    {tab === 'hiring'    && (exec.hiringTotal > 0 ? `채용공고 ${exec.hiringTotal}건` : '채용공고')}
+                    {tab === 'training'  && (exec.trainingTotal > 0 ? `훈련과정 ${exec.trainingTotal}건` : '훈련과정')}
+                    {tab === 'map'       && '주변 인프라'}
+                    {tab === 'certinfo'  && '자격정보'}
+                  </button>
+                ))}
+              </div>
+
+              {exec.loading && (
+                <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 실시간 정보 조회 중…</div>
+              )}
+
+              {!exec.loading && exec.fetched && exec.activeTab === 'schedule' && (
+                exec.schedule.length === 0
+                  ? <p className="exec-empty">현재 예정된 시험 일정이 없습니다.</p>
+                  : <div className="exec-list">
+                      {exec.schedule.map((s, i) => (
+                        <div key={i} className="exec-sched-row">
+                          <div className="exec-sched-left">
+                            <span className="exec-sched-round">{s.impl_seq_name ?? '-'}</span>
+                            <span className="exec-sched-period">
+                              {s.registration_start ? `접수 ${s.registration_start}` : ''}
+                              {s.registration_end ? `~${s.registration_end}` : ''}
+                            </span>
+                            {s.exam_start && (
+                              <span className="exec-sched-exam">시험 {s.exam_start}{s.exam_end && s.exam_end !== s.exam_start ? `~${s.exam_end}` : ''}</span>
+                            )}
+                          </div>
+                          {s.d_day_exam !== null && (
+                            <span className={`exec-dday${s.d_day_exam <= 0 ? ' exec-dday-open' : s.d_day_exam <= 7 ? ' exec-dday-soon' : ''}`}>
+                              {s.d_day_exam === 0 ? 'D-Day' : s.d_day_exam < 0 ? '마감' : `D-${s.d_day_exam}`}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+              )}
+
+              {!exec.loading && exec.fetched && exec.activeTab === 'hiring' && (
+                exec.hiringItems.length === 0
+                  ? <p className="exec-empty">현재 관련 채용공고를 찾지 못했습니다.</p>
+                  : <div className="exec-list">
+                      {exec.hiringItems.map((j, i) => (
+                        <a key={i} href={j.url || '#'} target="_blank" rel="noreferrer" className="exec-job-row">
+                          <div className="exec-job-main">
+                            <span className="exec-job-title">{j.title}</span>
+                            <span className="exec-job-company">{j.company}</span>
+                          </div>
+                          {j.close_date && <span className="exec-job-close">~{j.close_date}</span>}
+                          <ExternalLink size={11} className="exec-job-icon" />
+                        </a>
+                      ))}
+                    </div>
+              )}
+
+              {!exec.loading && exec.fetched && exec.activeTab === 'training' && (
+                exec.trainingItems.length > 0
+                  ? <div className="exec-list">
+                      {exec.trainingItems.map((t, i) => (
+                        <div key={i} className="exec-train-row">
+                          <div className="exec-train-main">
+                            <span className="exec-train-name">{t.course_name}</span>
+                            <span className="exec-train-org">{t.institution_name}</span>
+                          </div>
+                          {t.employment_rate && (
+                            <span className="exec-train-rate">취업률 {t.employment_rate}%</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  : <div>
+                      <p className="exec-empty">Work24 훈련과정을 찾지 못했습니다.</p>
+                      {exec.jobLearnerLoading && (
+                        <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 일학습병행 과정 조회 중…</div>
+                      )}
+                      {exec.jobLearnerFetched && exec.jobLearnerItems.length > 0 && (
+                        <div className="exec-list">
+                          <p className="exec-section-label">일학습병행 과정 (Q-Net)</p>
+                          {exec.jobLearnerItems.map((item, i) => (
+                            <div key={i} className="exec-train-row">
+                              <div className="exec-train-main">
+                                <span className="exec-train-name">{String(item.itemNm ?? item.jmNm ?? '-')}</span>
+                                <span className="exec-train-org">{String(item.corpNm ?? '-')}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {exec.jobLearnerFetched && exec.jobLearnerItems.length === 0 && (
+                        <p className="exec-empty">일학습병행 과정도 찾지 못했습니다.</p>
+                      )}
+                      {exec.processEvalLoading && (
+                        <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 과정평가형 자격 조회 중…</div>
+                      )}
+                      {exec.processEvalFetched && exec.processEvalItems.length > 0 && (
+                        <div className="exec-list">
+                          <p className="exec-section-label">과정평가형 자격 (Work24)</p>
+                          {exec.processEvalItems.map((item, i) => {
+                            const name = String(item.jmNm ?? item.course_name ?? item.itemNm ?? '-');
+                            const org = String(item.insttNm ?? item.institution_name ?? item.corpNm ?? '');
+                            return (
+                              <div key={i} className="exec-train-row">
+                                <div className="exec-train-main">
+                                  <span className="exec-train-name">{name}</span>
+                                  {org && <span className="exec-train-org">{org}</span>}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+              )}
+
+              {exec.activeTab === 'map' && (
+                exec.mapLoading
+                  ? <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 주변 인프라 조회 중…</div>
+                  : exec.mapFetched && exec.mapPoints.length === 0
+                    ? <p className="exec-empty">주변 인프라 데이터를 불러오지 못했습니다.</p>
+                    : exec.mapFetched
+                      ? <KakaoMap points={exec.mapPoints} height="320px" />
+                      : <p className="exec-empty">지도 탭을 클릭하면 주변 인프라를 불러옵니다.</p>
+              )}
+
+              {exec.activeTab === 'certinfo' && (
+                exec.certInfoLoading
+                  ? <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 자격정보 조회 중…</div>
+                  : !exec.certInfoFetched
+                    ? <p className="exec-empty">자격정보 탭을 클릭하면 응시자격·시험과목을 불러옵니다.</p>
+                    : (!exec.certInfoData?.info && !exec.certInfoData?.exam_info)
+                      ? <p className="exec-empty">이 자격증의 상세 정보를 찾지 못했습니다.</p>
+                      : (
+                        <div className="certinfo-wrap">
+                          {exec.certInfoData?.info && (
+                            <div className="certinfo-block">
+                              <p className="certinfo-block-title">자격 기본 정보</p>
+                              <div className="certinfo-grid">
+                                {exec.certInfoData.info.qualification_type && (
+                                  <div className="certinfo-row"><span className="certinfo-key">자격 구분</span><span className="certinfo-val">{exec.certInfoData.info.qualification_type}</span></div>
+                                )}
+                                {exec.certInfoData.info.eligibility && (
+                                  <div className="certinfo-row"><span className="certinfo-key">응시자격</span><span className="certinfo-val">{exec.certInfoData.info.eligibility}</span></div>
+                                )}
+                                {exec.certInfoData.info.exam_fee_written && (
+                                  <div className="certinfo-row"><span className="certinfo-key">필기 수수료</span><span className="certinfo-val">{exec.certInfoData.info.exam_fee_written}원</span></div>
+                                )}
+                                {exec.certInfoData.info.exam_fee_practical && (
+                                  <div className="certinfo-row"><span className="certinfo-key">실기 수수료</span><span className="certinfo-val">{exec.certInfoData.info.exam_fee_practical}원</span></div>
+                                )}
+                                {exec.certInfoData.info.related_occupation && (
+                                  <div className="certinfo-row"><span className="certinfo-key">관련 직업</span><span className="certinfo-val">{exec.certInfoData.info.related_occupation}</span></div>
+                                )}
+                                {exec.certInfoData.info.website && (
+                                  <div className="certinfo-row"><span className="certinfo-key">공식 사이트</span>
+                                    <a href={exec.certInfoData.info.website} target="_blank" rel="noreferrer" className="certinfo-link">{exec.certInfoData.info.website} <ExternalLink size={11} /></a>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {exec.certInfoData?.exam_info && (
+                            <div className="certinfo-block">
+                              <p className="certinfo-block-title">시험 정보</p>
+                              <div className="certinfo-grid">
+                                {exec.certInfoData.exam_info.written_subjects && (
+                                  <div className="certinfo-row"><span className="certinfo-key">필기 과목</span><span className="certinfo-val">{exec.certInfoData.exam_info.written_subjects}</span></div>
+                                )}
+                                {exec.certInfoData.exam_info.practical_subjects && (
+                                  <div className="certinfo-row"><span className="certinfo-key">실기 과목</span><span className="certinfo-val">{exec.certInfoData.exam_info.practical_subjects}</span></div>
+                                )}
+                                {exec.certInfoData.exam_info.written_pass_score && (
+                                  <div className="certinfo-row"><span className="certinfo-key">필기 합격기준</span><span className="certinfo-val">{exec.certInfoData.exam_info.written_pass_score}</span></div>
+                                )}
+                                {exec.certInfoData.exam_info.practical_pass_score && (
+                                  <div className="certinfo-row"><span className="certinfo-key">실기 합격기준</span><span className="certinfo-val">{exec.certInfoData.exam_info.practical_pass_score}</span></div>
+                                )}
+                                {exec.certInfoData.exam_info.written_exam_time && (
+                                  <div className="certinfo-row"><span className="certinfo-key">필기 시험시간</span><span className="certinfo-val">{exec.certInfoData.exam_info.written_exam_time}</span></div>
+                                )}
+                                {exec.certInfoData.exam_info.exam_method && (
+                                  <div className="certinfo-row"><span className="certinfo-key">시험방법</span><span className="certinfo-val">{exec.certInfoData.exam_info.exam_method}</span></div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          <p className="certinfo-src">출처: 한국산업인력공단 Q-Net API (openapi.q-net.or.kr)</p>
+
+                          {/* GOMS 연관 직업 */}
+                          {exec.certJobsLoading && (
+                            <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 연관 직업 조회 중…</div>
+                          )}
+                          {exec.certJobsFetched && exec.certJobsList.length > 0 && (
+                            <div className="certinfo-block">
+                              <p className="certinfo-block-title">연관 직업 ({exec.certJobsList.length}개) <span className="certinfo-job-hint">직업 클릭 → 상세 보기</span></p>
+                              <div className="certinfo-job-tags">
+                                {exec.certJobsList.slice(0, 18).map((job, i) => (
+                                  <button
+                                    key={i}
+                                    className={`certinfo-job-tag certinfo-job-btn${exec.selectedJobName === job ? ' certinfo-job-selected' : ''}`}
+                                    onClick={() => fetchJobDetail(job)}
+                                  >{job}</button>
+                                ))}
+                                {exec.certJobsList.length > 18 && (
+                                  <span className="certinfo-job-tag certinfo-job-more">+{exec.certJobsList.length - 18}개</span>
+                                )}
+                              </div>
+                              {exec.jobDetailLoading && (
+                                <div className="exec-loading"><Loader2 size={13} className="ev-spin" /> 직업 정보 조회 중…</div>
+                              )}
+                              {exec.jobDetailData && exec.selectedJobName && (
+                                <div className="job-detail-card">
+                                  <p className="job-detail-name">{exec.jobDetailData.job_name || exec.selectedJobName}</p>
+                                  {exec.jobDetailData.salary && (
+                                    <div className="job-detail-row">
+                                      <span className="job-detail-key">임금 수준</span>
+                                      <span className="job-detail-val">{exec.jobDetailData.salary}</span>
+                                    </div>
+                                  )}
+                                  {exec.jobDetailData.outlook && (
+                                    <div className="job-detail-row">
+                                      <span className="job-detail-key">일자리 전망</span>
+                                      <span className="job-detail-val">{exec.jobDetailData.outlook}</span>
+                                    </div>
+                                  )}
+                                  {exec.jobDetailData.work_content && (
+                                    <div className="job-detail-row job-detail-row-block">
+                                      <span className="job-detail-key">하는 일</span>
+                                      <span className="job-detail-val job-detail-content">{exec.jobDetailData.work_content.slice(0, 200)}{exec.jobDetailData.work_content.length > 200 ? '…' : ''}</span>
+                                    </div>
+                                  )}
+                                  <p className="certinfo-src">출처: 고용24 직업정보상세 (고용노동부)</p>
+                                </div>
+                              )}
+                              <p className="certinfo-src">출처: 고용24 · NCS 직무 매핑 데이터</p>
+                            </div>
+                          )}
+                        </div>
+                      )
+              )}
+            </div>
+          )}
+
           {/* 관련 동영상 섹션 — 모달 하단, 버튼 클릭 시 영상 inline 펼침 */}
           <div className="modal-videos-section">
             {videos.certId !== evidence.certId || (!videos.fetched && !videos.loading) ? (
@@ -1335,6 +1874,67 @@ const Recommendation: React.FC = () => {
           background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;
           padding:.625rem .875rem;margin:0;
         }
+
+        /* ── Execution Panel ── */
+        .exec-panel{padding:.875rem 1rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.625rem}
+        .exec-tabs{display:flex;gap:.375rem;flex-wrap:wrap}
+        .exec-tab{padding:.3rem .75rem;border-radius:99px;border:1.5px solid #e2e8f0;background:#fff;font-size:.78rem;font-weight:600;color:#64748b;cursor:pointer;transition:all .15s;white-space:nowrap}
+        .exec-tab:hover{border-color:#6366f1;color:#6366f1}
+        .exec-tab-active{background:#6366f1;color:#fff!important;border-color:#6366f1!important}
+        .exec-loading{font-size:.8rem;color:#94a3b8;display:flex;align-items:center;gap:.4rem;padding:.375rem 0}
+        .exec-empty{font-size:.82rem;color:#94a3b8;padding:.375rem 0;margin:0}
+        .exec-list{display:flex;flex-direction:column;gap:.375rem}
+        /* 시험 일정 */
+        .exec-sched-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;background:#fff;border:1px solid #e2e8f0;border-radius:6px;gap:.5rem}
+        .exec-sched-left{display:flex;flex-direction:column;gap:.1rem}
+        .exec-sched-round{font-size:.82rem;font-weight:700;color:#1e293b}
+        .exec-sched-period{font-size:.72rem;color:#64748b}
+        .exec-sched-exam{font-size:.72rem;color:#0ea5e9;margin-top:.1rem;display:block}
+        .exec-dday{font-size:.78rem;font-weight:800;padding:.2rem .625rem;border-radius:99px;background:#f1f5f9;color:#475569;white-space:nowrap}
+        .exec-dday-open{background:#dcfce7;color:#166534}
+        .exec-dday-soon{background:#fef3c7;color:#92400e}
+        /* 채용공고 */
+        .exec-job-row{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:#fff;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:inherit;transition:border-color .15s}
+        .exec-job-row:hover{border-color:#6366f1}
+        .exec-job-main{display:flex;flex-direction:column;gap:.1rem;flex:1;min-width:0}
+        .exec-job-title{font-size:.82rem;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .exec-job-company{font-size:.72rem;color:#64748b}
+        .exec-job-close{font-size:.7rem;color:#94a3b8;white-space:nowrap}
+        .exec-job-icon{color:#94a3b8;flex-shrink:0}
+        /* 훈련과정 */
+        .exec-train-row{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:#fff;border:1px solid #e2e8f0;border-radius:6px}
+        .exec-train-main{display:flex;flex-direction:column;gap:.1rem;flex:1;min-width:0}
+        .exec-train-name{font-size:.82rem;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .exec-train-org{font-size:.72rem;color:#64748b}
+        .exec-train-rate{font-size:.75rem;font-weight:700;color:#0369a1;white-space:nowrap;flex-shrink:0}
+
+        /* 자격정보 탭 */
+        .certinfo-wrap{display:flex;flex-direction:column;gap:.75rem}
+        .certinfo-block{display:flex;flex-direction:column;gap:.5rem}
+        .certinfo-block-title{font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--primary);text-transform:uppercase;margin:0}
+        .certinfo-grid{display:flex;flex-direction:column;gap:.3rem}
+        .certinfo-row{display:flex;gap:.5rem;align-items:flex-start;padding:.35rem .5rem;background:#fff;border-radius:4px;border:1px solid #f1f5f9}
+        .certinfo-key{font-size:.74rem;font-weight:700;color:#475569;width:90px;flex-shrink:0}
+        .certinfo-val{font-size:.8rem;color:#1e293b;line-height:1.5;flex:1}
+        .certinfo-link{font-size:.8rem;color:var(--primary);text-decoration:none;display:inline-flex;align-items:center;gap:.2rem}
+        .certinfo-link:hover{text-decoration:underline}
+        .certinfo-src{font-size:.65rem;color:#94a3b8;margin:0;border-top:1px solid #f1f5f9;padding-top:.375rem}
+        .certinfo-job-tags{display:flex;flex-wrap:wrap;gap:.35rem}
+        .certinfo-job-tag{padding:.2rem .6rem;background:#f0f9ff;border:1px solid #bae6fd;border-radius:99px;font-size:.75rem;color:#0369a1;font-weight:500}
+        .certinfo-job-btn{cursor:pointer;transition:all .15s;border:1px solid #bae6fd}
+        .certinfo-job-btn:hover{background:#0369a1;color:#fff;border-color:#0369a1}
+        .certinfo-job-selected{background:#0369a1!important;color:#fff!important;border-color:#0369a1!important}
+        .certinfo-job-more{background:#f8fafc;border-color:#e2e8f0;color:#64748b}
+        .certinfo-job-hint{font-size:.62rem;font-weight:500;color:#94a3b8;text-transform:none;letter-spacing:0}
+        .job-detail-card{margin-top:.5rem;padding:.75rem .875rem;background:#f0f9ff;border:1px solid #bae6fd;border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.35rem;animation:fade-in .15s ease}
+        @keyframes fade-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+        .job-detail-name{font-size:.85rem;font-weight:800;color:#0c4a6e;margin:0 0 .2rem}
+        .job-detail-row{display:flex;gap:.5rem;align-items:flex-start}
+        .job-detail-row-block{flex-direction:column}
+        .job-detail-key{font-size:.7rem;font-weight:700;color:#0369a1;white-space:nowrap;min-width:70px}
+        .job-detail-val{font-size:.8rem;color:#0c4a6e;line-height:1.55}
+        .job-detail-content{white-space:pre-wrap;word-break:keep-all}
+        .exec-section-label{font-size:.68rem;font-weight:800;letter-spacing:.06em;color:#6366f1;text-transform:uppercase;margin:.375rem 0 .25rem;display:block}
 
         /* 설문 미완료 배너 */
         .survey-required-banner{

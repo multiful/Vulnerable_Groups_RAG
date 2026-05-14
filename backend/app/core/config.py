@@ -1,7 +1,7 @@
 # File: config.py
-# Last Updated: 2026-05-12
+# Last Updated: 2026-05-14
 # Content Hash: SHA256:TBD
-# Role: Pydantic Settings — CORS, Supabase, 임베딩, RAG 경로, YouTube API
+# Role: Pydantic Settings — CORS, Supabase, 임베딩, RAG 경로, YouTube API, 외부 공공데이터 API
 from __future__ import annotations
 
 from functools import lru_cache
@@ -51,9 +51,71 @@ class Settings(BaseSettings):
     youtube_video_cache_table: str = "cert_video_cache"
     youtube_video_cache_ttl_days: int = 30
     youtube_video_max_results: int = 5
-    youtube_query_version: int = 2  # v2: 숏츠 제외 + medium duration 필터
+    youtube_query_version: int = 2
 
-    @field_validator("supabase_url", "openai_api_key", "youtube_api_key", mode="before")
+    # --- 한국산업인력공단 (Q-Net / HRD Korea) ---
+    hrdkorea_api_key_in: str | None = Field(
+        default=None,
+        description="URL 인코딩된 API 키 (요청 URL에 직접 삽입)",
+    )
+    hrdkorea_api_key_de: str | None = Field(
+        default=None,
+        description="디코딩된 API 키 (헤더 or 일반 파라미터용)",
+    )
+    hrdkorea_api_timeout: int = Field(default=10, description="외부 API 타임아웃(초)")
+
+    # --- 워크넷 채용정보 (고용노동부) ---
+    get_job_api_key: str | None = Field(
+        default=None,
+        description="워크넷 채용정보 API 인증키",
+    )
+    worknet_api_timeout: int = Field(default=10)
+
+    # --- 국민내일배움카드 훈련과정 (Work24) ---
+    get_training_api_key: str | None = Field(
+        default=None,
+        description="국민내일배움카드 훈련과정 API 인증키",
+    )
+    training_api_timeout: int = Field(default=10)
+
+    # --- 서울시 공공데이터 ---
+    seoul_api_key: str | None = Field(
+        default=None,
+        description="서울시 공공서비스(예약)종합 API 키",
+    )
+    seoul_api_key2: str | None = Field(
+        default=None,
+        description="서울시 건강증진센터 API 키",
+    )
+    seoul_api_key3: str | None = Field(
+        default=None,
+        description="서울시 일자리카페 API 키",
+    )
+    seoul_api_timeout: int = Field(default=10)
+
+    # --- 커리어넷 ---
+    career_net_api_key: str | None = Field(
+        default=None,
+        description="커리어넷 오픈 API 키",
+    )
+    career_net_api_timeout: int = Field(default=10)
+
+    # --- 카카오 ---
+    # JavaScript 키는 프론트엔드 전용 (VITE_KAKAO_JAVASCRIPT_KEY). 백엔드 config에 포함하지 않음.
+    kakao_rest_api_key: str | None = Field(
+        default=None,
+        description="Kakao REST API 키 — 주소→좌표(지오코딩) 변환용. env: KAKAO_REST_API_KEY",
+    )
+
+    @field_validator(
+        "supabase_url", "openai_api_key", "youtube_api_key",
+        "hrdkorea_api_key_in", "hrdkorea_api_key_de",
+        "get_job_api_key", "get_training_api_key",
+        "seoul_api_key", "seoul_api_key2", "seoul_api_key3",
+        "career_net_api_key",
+        "kakao_rest_api_key",
+        mode="before",
+    )
     @classmethod
     def strip_blank(cls, v: object) -> object:
         if isinstance(v, str) and not v.strip():
