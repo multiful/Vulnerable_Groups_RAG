@@ -46,8 +46,8 @@ _STARTING_STAGE: dict[str, str] = {
     "risk_0001": "roadmap_stage_0003",
     "risk_0002": "roadmap_stage_0002",
     "risk_0003": "roadmap_stage_0002",
-    "risk_0004": "roadmap_stage_0001",
-    "risk_0005": "roadmap_stage_0001",
+    "risk_0004": "roadmap_stage_0002",
+    "risk_0005": "roadmap_stage_0002",
 }
 
 _TIER_ORDER: dict[str, int] = {
@@ -418,10 +418,115 @@ def llm_recommendations(body: dict[str, Any], settings: Settings) -> dict:
     return ok_envelope(result)
 
 
+def _enrich_cert_context(cert_id: str, cert: dict) -> str:
+    """자격증에 대한 구체적 데이터 컨텍스트 문자열 빌드 (합격률·시험과목·직무·시험횟수)."""
+    from backend.app.services import cert_info_service
+    lines: list[str] = []
+
+    # 1. cert_master 평균 합격률
+    stats_env = cert_info_service.get_cert_master_stats(cert_id)
+    if stats_env.get("success") and (sd := stats_env.get("data")):
+        w = sd.get("written_avg_pass_rate")
+        p = sd.get("practical_avg_pass_rate")
+        avg = sd.get("avg_pass_rate_3yr")
+        freq = sd.get("exam_frequency")
+        diff = sd.get("exam_difficulty")
+        rate_parts: list[str] = []
+        if w is not None: rate_parts.append(f"필기 평균 {w:.1f}%")
+        if p is not None: rate_parts.append(f"실기 평균 {p:.1f}%")
+        if avg is not None: rate_parts.append(f"3년 평균 {avg:.1f}%")
+        if rate_parts:
+            lines.append("합격률: " + ", ".join(rate_parts))
+        if freq:
+            lines.append(f"연간 시험 횟수: {freq}")
+        if diff is not None:
+            diff_label = "어려움" if diff >= 4 else "보통" if diff >= 2.5 else "쉬움"
+            lines.append(f"시험 난이도: {diff:.1f}/5 ({diff_label})")
+
+    # 2. 연도별 회별 실 합격률 추이 (최근 3년)
+    sr_env = cert_info_service.get_session_pass_rates(cert_id)
+    if sr_env.get("success") and (srd := sr_env.get("data")):
+        for label, key in [("필기", "written"), ("실기", "practical")]:
+            rows = srd.get(key, [])
+            if rows:
+                yr_map: dict[str, list[float]] = {}
+                for r in rows:
+                    yr_map.setdefault(r["year"], []).append(r["pass_rate"])
+                yr_avg = {y: sum(v) / len(v) for y, v in yr_map.items()}
+                sorted_yrs = sorted(yr_avg.keys())[-3:]
+                trend = ", ".join(f"{y}년 {yr_avg[y]:.1f}%" for y in sorted_yrs)
+                lines.append(f"{label} 합격률 추이({sorted_yrs[0]}–{sorted_yrs[-1]}): {trend}")
+
+    # 3. cert_master에서 exam_type_info (필기/실기/면접 구성)
+    from backend.app.services import cert_info_service as _ci
+    detail = _ci._load_cert_master_details().get(cert_id, {})
+    exam_type = detail.get("exam_type_info") or ""
+    exam_subj = detail.get("exam_subject_info") or ""
+    if exam_type:
+        lines.append(f"시험 구성: {exam_type}")
+    elif exam_subj:
+        lines.append(f"시험 구성: {exam_subj}")
+
+    # 4. dense text에서 시험과목·관련직무 추출
+    dense = cert.get("text_for_dense", "")
+    for pattern, label in [
+        (r"시험 과목:\s*([^\.]+)", "시험 과목"),
+        (r"관련 직무:\s*([^\.]+)", "관련 직무"),
+    ]:
+        m = re.search(pattern, dense)
+        if m:
+            lines.append(f"{label}: {m.group(1).strip()[:100]}")
+
+    # 5. 관련 직업·취업처 (candidates JSON field)
+    related_occ = cert.get("related_occupation", "") or cert.get("related_jobs_text", "")
+    if related_occ and "관련 직무" not in "\n".join(lines):
+        lines.append(f"관련 직업: {str(related_occ)[:100]}")
+
+    # 6. 국가자격/공인민간자격 카탈로그 — 진로(자격활용) · 도입목적 · 자격 활용 현황
+    cert_name = cert.get("cert_name", "")
+    if cert_name:
+        from backend.app.services import retrieval_service as _rs
+        # 국가자격 카탈로그
+        nat_index = _rs._load_national_catalog()
+        nat_rec = nat_index.get(cert_name)
+        if not nat_rec:
+            norm = re.sub(r'[\s\(\)\[\]（）]', '', cert_name).lower()
+            for key, val in nat_index.items():
+                key_norm = re.sub(r'[\s\(\)\[\]（）]', '', key).lower()
+                if norm and key_norm and (norm in key_norm or key_norm in norm):
+                    nat_rec = val
+                    break
+        if nat_rec:
+            career = nat_rec.get("career", "")
+            purpose = nat_rec.get("purpose", "")
+            if career:
+                lines.append(f"진로(자격활용): {career[:200]}")
+            if purpose:
+                lines.append(f"도입목적: {purpose[:150]}")
+        else:
+            # 공인민간자격 카탈로그
+            priv_index = _rs._load_private_catalog()
+            priv_rec = priv_index.get(cert_name)
+            if not priv_rec:
+                norm = re.sub(r'[\s\(\)\[\]（）]', '', cert_name).lower()
+                for key, val in priv_index.items():
+                    key_norm = re.sub(r'[\s\(\)\[\]（）]', '', key).lower()
+                    if norm and key_norm and (norm in key_norm or key_norm in norm):
+                        priv_rec = val
+                        break
+            if priv_rec:
+                usage = priv_rec.get("usage_status", "")
+                if usage:
+                    clean = " ".join(l.strip() for l in usage.splitlines() if l.strip())
+                    lines.append(f"자격 활용 현황: {clean[:200]}")
+
+    return "\n".join(lines) if lines else ""
+
+
 def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
     """POST /api/v1/recommendations/cert_explain
-    단일 자격증에 대한 AI 추천 이유 2문장 생성.
-    evidence API가 원문 스니펫을 보여주는 것과 달리 사용자 맥락(도메인·위험군) 기반 설명을 생성한다.
+    단일 자격증에 대한 AI 추천 이유 생성.
+    합격률 추이·시험과목·관련 직업 등 실 데이터를 컨텍스트로 포함해 구체적 근거를 생성한다.
     OpenAI 키가 없으면 NOT_CONFIGURED를 반환한다.
     """
     cert_id: str = body.get("cert_id") or ""
@@ -445,14 +550,23 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
     risk_info = risk_stages.get(risk_stage_id, {})
     risk_name = risk_info.get("name", "해당 단계") if risk_stage_id else "해당 단계"
 
-    cert_line = _format_cert_line(cert)
+    cert_name = cert.get("cert_name", cert_id)
+    cert_grade = cert.get("cert_grade_tier", "")
+    enriched_ctx = _enrich_cert_context(cert_id, cert)
+
     prompt = (
         f"당신은 청년 취업 진로 상담 전문가입니다.\n"
         f"사용자 관심 분야: {domain_name} / 위험군: {risk_name}\n\n"
-        f"아래 자격증이 이 사용자에게 왜 적합한지 한국어 2문장 이내로 설명하세요.\n"
-        f"규칙: 첫 문장에 자격증 이름을 반드시 포함. 합격률·관련 직무·활용처 등 구체적 근거 사용. "
-        f"'도움이 됩니다'처럼 모호한 표현 금지. 격려하는 톤.\n\n"
-        f"{cert_line}"
+        f"자격증: {cert_name} ({cert_grade})\n"
+        f"아래 실 데이터를 근거로, 이 사용자에게 왜 이 자격증이 지금 적합한지 한국어 3문장 이내로 설명하세요.\n\n"
+        f"[실 데이터]\n{enriched_ctx if enriched_ctx else '(통계 데이터 없음 — cert_candidates 기반으로 추론)'}\n\n"
+        f"규칙:\n"
+        f"- 첫 문장에 자격증 이름 포함\n"
+        f"- 합격률 수치·시험 과목·관련 직업·시험 횟수 중 최소 2가지를 구체적 수치로 언급\n"
+        f"- 사용자 위험군 상황과 연결해 지금 이 자격증을 선택해야 하는 이유를 설명\n"
+        f"- '시험 구성' 항목에 없는 시험 방식(필기/실기/면접)은 절대 언급하지 말 것\n"
+        f"- '도움이 됩니다', '좋습니다', '강점이 있습니다' 같은 막연한 결론 금지\n"
+        f"- 격려하되 근거 기반 어조 유지"
     )
 
     try:
@@ -461,8 +575,8 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
         resp = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=200,
-            temperature=0.5,
+            max_tokens=350,
+            temperature=0.4,
         )
         explanation = (resp.choices[0].message.content or "").strip()
         return ok_envelope({"cert_id": cert_id, "explanation": explanation})

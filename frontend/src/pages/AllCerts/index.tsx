@@ -44,20 +44,35 @@ function gradeBadgeClass(tier: string): string {
 
 function buildSummary(cert: CertCandidate): string {
   const domain = DOMAIN_NAMES[cert.primary_domain] ?? '';
-  const passRate = cert.avg_pass_rate_3yr;
   const sessions = cert.exam_sessions_per_year;
   const parts: string[] = [];
   if (domain) parts.push(domain + ' 분야');
   if (sessions !== null && sessions !== undefined) {
     parts.push(sessions === 0 ? '상시 시험' : `연 ${sessions}회 시험`);
   }
-  if (passRate !== null && passRate !== undefined) parts.push(`합격률 ${passRate.toFixed(0)}%`);
   return parts.join(' · ');
+}
+
+function trendIcon(trend: string | null | undefined): string {
+  if (trend === 'up') return '↑';
+  if (trend === 'down') return '↓';
+  return '→';
+}
+
+function trendClass(trend: string | null | undefined): string {
+  if (trend === 'up') return 'trend-up';
+  if (trend === 'down') return 'trend-down';
+  return 'trend-flat';
 }
 
 // 카드 — 클릭 시 추천 페이지로 cert_id만 들고 이동
 const CertCardSimple = memo(({ cert }: { cert: CertCandidate }) => {
   const summary = buildSummary(cert);
+  const hasWritten = cert.written_avg_pass_rate !== null && cert.written_avg_pass_rate !== undefined;
+  const hasPractical = cert.practical_avg_pass_rate !== null && cert.practical_avg_pass_rate !== undefined;
+  const hasAvg = cert.avg_pass_rate_3yr !== null && cert.avg_pass_rate_3yr !== undefined;
+  const hasTrend = cert.acq_trend !== null && cert.acq_trend !== undefined;
+
   return (
     <Link
       to={`/recommendation?cert=${encodeURIComponent(cert.cert_id)}${cert.primary_domain ? `&domain=${cert.primary_domain}&domainName=${encodeURIComponent(DOMAIN_NAMES[cert.primary_domain] ?? '')}` : ''}`}
@@ -71,7 +86,32 @@ const CertCardSimple = memo(({ cert }: { cert: CertCandidate }) => {
           <span className="cert-issuer">{cert.issuer}</span>
         </div>
         <h3 className="cert-name">{cert.cert_name}</h3>
-        <p className="cert-summary">{summary}</p>
+        {summary && <p className="cert-summary">{summary}</p>}
+        <div className="cert-rate-row">
+          {hasWritten && (
+            <span className="cert-rate-badge cert-rate-written">
+              필기 {Math.round(cert.written_avg_pass_rate!)}%
+            </span>
+          )}
+          {hasPractical && (
+            <span className="cert-rate-badge cert-rate-practical">
+              실기 {Math.round(cert.practical_avg_pass_rate!)}%
+            </span>
+          )}
+          {!hasWritten && !hasPractical && hasAvg && (
+            <span className="cert-rate-badge cert-rate-avg">
+              합격률 {Math.round(cert.avg_pass_rate_3yr!)}%
+            </span>
+          )}
+          {hasTrend && (
+            <span className={`cert-trend ${trendClass(cert.acq_trend)}`}>
+              {trendIcon(cert.acq_trend)}
+              {cert.acq_yoy_pct !== null && cert.acq_yoy_pct !== undefined && cert.acq_yoy_pct !== 0
+                ? ` ${cert.acq_yoy_pct > 0 ? '+' : ''}${cert.acq_yoy_pct}%`
+                : ''}
+            </span>
+          )}
+        </div>
       </div>
       <div className="cert-actions">
         <span className="cert-cta-hint">자세히 보기 <ArrowRight size={12} /></span>
@@ -83,6 +123,8 @@ const CertCardSimple = memo(({ cert }: { cert: CertCandidate }) => {
   );
 });
 
+const PAGE_SIZE = 60;
+
 const AllCerts: React.FC = () => {
   const [allCerts, setAllCerts] = useState<CertCandidate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,6 +133,7 @@ const AllCerts: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGrade, setSelectedGrade] = useState('');
   const [selectedDomain, setSelectedDomain] = useState('');
+  const [page, setPage] = useState(1);
   const deferredQuery = useDeferredValue(searchQuery);
 
   useEffect(() => {
@@ -106,6 +149,7 @@ const AllCerts: React.FC = () => {
   }, []);
 
   const filtered = useMemo(() => {
+    setPage(1); // reset page on filter change
     return allCerts.filter(cert => {
       if (selectedGrade && cert.cert_grade_tier !== selectedGrade) return false;
       if (selectedDomain && cert.primary_domain !== selectedDomain) return false;
@@ -114,6 +158,9 @@ const AllCerts: React.FC = () => {
       return true;
     });
   }, [allCerts, selectedGrade, selectedDomain, deferredQuery]);
+
+  const visibleCerts = useMemo(() => filtered.slice(0, page * PAGE_SIZE), [filtered, page]);
+  const hasMore = filtered.length > page * PAGE_SIZE;
 
   // 도메인 정렬 (배지 형태 토글)
   const domainOptions = useMemo(() => {
@@ -184,22 +231,22 @@ const AllCerts: React.FC = () => {
             <div className="ac-result-row">
               <p className="result-count">
                 전체 자격증 <span className="count-num">{filtered.length}</span>건
-                <span className="result-hint">
-                  {filtered.length > 60 ? ' · 상위 60건 표시 · 검색이나 필터로 좁히세요' : ''}
-                </span>
+                {hasMore && (
+                  <span className="result-hint"> · {visibleCerts.length}건 표시 중</span>
+                )}
               </p>
               {(searchQuery || selectedGrade || selectedDomain) && (
                 <button
                   type="button"
                   className="text-btn"
-                  onClick={() => { setSearchQuery(''); setSelectedGrade(''); setSelectedDomain(''); }}
+                  onClick={() => { setSearchQuery(''); setSelectedGrade(''); setSelectedDomain(''); setPage(1); }}
                 >
                   필터 초기화
                 </button>
               )}
             </div>
             <div className="cert-grid-ac">
-              {filtered.slice(0, 60).map(cert => (
+              {visibleCerts.map(cert => (
                 <CertCardSimple key={cert.candidate_id} cert={cert} />
               ))}
               {filtered.length === 0 && (
@@ -209,6 +256,17 @@ const AllCerts: React.FC = () => {
                 </div>
               )}
             </div>
+            {hasMore && (
+              <div className="ac-load-more">
+                <button
+                  type="button"
+                  className="btn-ghost ac-load-btn"
+                  onClick={() => setPage(p => p + 1)}
+                >
+                  더 보기 ({filtered.length - visibleCerts.length}건 남음)
+                </button>
+              </div>
+            )}
           </>
         )}
       </section>
@@ -240,12 +298,23 @@ const AllCerts: React.FC = () => {
         .cert-name{font-size:.975rem;font-weight:700;color:var(--text)}
         .cert-issuer{font-size:.72rem;color:var(--text-light)}
         .cert-summary{font-size:.79rem;color:var(--text-muted);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .cert-rate-row{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.35rem;align-items:center}
+        .cert-rate-badge{font-size:.7rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;white-space:nowrap}
+        .cert-rate-written{background:#eef2ff;color:#4f46e5}
+        .cert-rate-practical{background:#ecfeff;color:#0891b2}
+        .cert-rate-avg{background:#f0fdf4;color:#16a34a}
+        .cert-trend{font-size:.7rem;font-weight:700;padding:.15rem .45rem;border-radius:4px;white-space:nowrap;margin-left:auto}
+        .trend-up{background:#fef3c7;color:#d97706}
+        .trend-down{background:#fce7f3;color:#be185d}
+        .trend-flat{background:#f3f4f6;color:#6b7280}
         .cert-actions{display:flex;gap:.75rem;padding-top:.625rem;border-top:1px solid var(--border);margin-top:auto;align-items:center}
         .cert-cta-hint{font-size:.78rem;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;gap:.3rem}
         .cert-roadmap-hint{margin-left:auto;font-size:.78rem;font-weight:600;color:var(--text-muted);display:inline-flex;align-items:center;gap:.3rem}
         .no-results{grid-column:1/-1;text-align:center;padding:2.5rem 1.25rem;line-height:1.8;display:flex;flex-direction:column;gap:.5rem}
         .no-results-title{font-size:.95rem;font-weight:700;color:var(--text)}
         .no-results-sub{font-size:.85rem;color:var(--text-muted);line-height:1.65}
+        .ac-load-more{display:flex;justify-content:center;padding:.75rem 0}
+        .ac-load-btn{padding:.5rem 1.5rem;font-size:.85rem;font-weight:600}
       `}</style>
     </div>
   );

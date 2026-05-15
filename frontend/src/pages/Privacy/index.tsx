@@ -13,9 +13,8 @@ const Privacy: React.FC = () => {
         <section className="policy-section">
           <h2>제1조 (총칙)</h2>
           <p>
-            DIDIM (이하 "서비스")는 팀 DBMs (홍익대학교, 이하 "운영팀")이 운영하는
-            청년 위험군 단계 맞춤 자격증·로드맵 추천 서비스입니다.
-            운영팀은 이용자의 개인정보를 중요하게 여기며, 「개인정보 보호법」을 준수합니다.
+            DIDIM (이하 "서비스")은 청년 위험군 단계 맞춤 자격증·로드맵 추천 서비스입니다.
+            서비스는 이용자의 개인정보를 중요하게 여기며, 「개인정보 보호법」을 준수합니다.
             본 방침은 서비스가 어떠한 정보를 수집하고, 어떻게 이용하는지를 안내합니다.
           </p>
         </section>
@@ -77,10 +76,7 @@ const Privacy: React.FC = () => {
         <section className="policy-section">
           <h2>제7조 (이용자의 권리)</h2>
           <p>이용자는 언제든지 브라우저의 세션 스토리지를 직접 삭제할 수 있습니다.
-          개인정보 관련 문의 및 권리 행사는 아래 연락처로 요청하실 수 있습니다.</p>
-          <ul>
-            <li>이메일: <a href="mailto:rlaehdrb9268@g.hongik.ac.kr">rlaehdrb9268@g.hongik.ac.kr</a></li>
-          </ul>
+          개인정보 관련 문의는 서비스 내 문의하기 페이지를 이용해 주세요.</p>
         </section>
 
         <section className="policy-section">
@@ -89,9 +85,8 @@ const Privacy: React.FC = () => {
         </section>
 
         <div className="policy-contact-box">
-          <strong>개인정보 담당자</strong>
-          <p>소속: 홍익대학교 DBMs 팀</p>
-          <p>이메일: <a href="mailto:rlaehdrb9268@g.hongik.ac.kr">rlaehdrb9268@g.hongik.ac.kr</a></p>
+          <strong>개인정보 문의</strong>
+          <p>서비스 내 <a href="/contact">문의하기 페이지</a>를 이용해 주세요.</p>
         </div>
       </div>
 

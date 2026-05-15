@@ -58,6 +58,8 @@ _CERT_TO_ROADMAP  = _PROJECT_ROOT / "data/canonical/relations/cert_to_roadmap_st
 _CERT_TO_CERT     = _PROJECT_ROOT / "data/canonical/relations/cert_to_cert_relation.csv"
 _JOB_TO_DOMAIN    = _PROJECT_ROOT / "data/canonical/relations/job_to_domain.csv"
 _MAJOR_ACQUI_CSV  = _PROJECT_ROOT / "data/raw/csv/전공별 취득 현황_rows.csv"
+_REGION_ACQUI_CSV = _PROJECT_ROOT / "data/raw/csv/행정구역별연도별성별 취득현황_rows.csv"
+_CERT_PREREQ_CSV  = _PROJECT_ROOT / "data/canonical/relations/cert_prerequisite.csv"
 
 _RISK_ORDER = ["risk_0001", "risk_0002", "risk_0003", "risk_0004", "risk_0005"]
 
@@ -153,6 +155,54 @@ def _load_pass_rate_map() -> dict[str, float]:
             except ValueError:
                 pass
     return out
+
+
+@lru_cache(maxsize=1)
+def _load_cert_detail_map() -> dict[str, dict]:
+    """cert_id → {written_avg, practical_avg, exam_frequency, exam_difficulty, exam_fee_info, exam_eligibility_info}"""
+    if not _CERT_MASTER_CSV.exists():
+        return {}
+    out: dict[str, dict] = {}
+    with _CERT_MASTER_CSV.open(encoding="utf-8-sig") as f:
+        for r in csv.DictReader(f):
+            cid = r.get("cert_id", "")
+            if not cid:
+                continue
+            def _flt(v: str) -> float | None:
+                try:
+                    return float(v) if v and v.strip() else None
+                except ValueError:
+                    return None
+            out[cid] = {
+                "written_avg_pass_rate":   _flt(r.get("written_avg_pass_rate", "")),
+                "practical_avg_pass_rate": _flt(r.get("practical_avg_pass_rate", "")),
+                "exam_frequency":          (r.get("exam_frequency") or "").strip() or None,
+                "exam_difficulty":         _flt(r.get("exam_difficulty", "")),
+                "exam_fee_info":           (r.get("exam_fee_info") or "").strip() or None,
+                "exam_eligibility_info":   (r.get("exam_eligibility_info") or "").strip() or None,
+            }
+    return out
+
+
+def _exam_freq_score(freq_str: str | None) -> float:
+    """exam_frequency 문자열 → 접근성 가중치 (0.0~0.15).
+    시험 기회가 많을수록 취업 급한 사용자에게 유리 → 점수 가산."""
+    if not freq_str:
+        return 0.0
+    import re
+    m = re.search(r"연\s*(\d+)회", freq_str)
+    if m:
+        n = int(m.group(1))
+        # 연1회=0.0, 연2회=0.04, 연3회=0.08, 연4+회=0.12, 연10+회=0.15
+        if n >= 10:
+            return 0.15
+        if n >= 4:
+            return 0.12
+        if n >= 3:
+            return 0.08
+        if n >= 2:
+            return 0.04
+    return 0.0
 
 
 @lru_cache(maxsize=1)
@@ -260,18 +310,22 @@ def _load_cert_name_map() -> dict[str, str]:
 
 
 @lru_cache(maxsize=1)
-def _load_cert_graph() -> dict[str, tuple[tuple[str, str, str], ...]]:
-    """from_cert_id → ((to_cert_id, relation_type, source), ...)
+def _load_cert_graph() -> dict[str, tuple[tuple[str, str, str, float], ...]]:
+    """from_cert_id → ((to_cert_id, relation_type, source, confidence), ...)
     cert_to_cert_relation.csv 기반 forward DAG. is_active=False 행은 제외."""
     if not _CERT_TO_CERT.exists():
         return {}
-    acc: dict[str, list[tuple[str, str, str]]] = defaultdict(list)
+    acc: dict[str, list[tuple[str, str, str, float]]] = defaultdict(list)
     with _CERT_TO_CERT.open(encoding="utf-8-sig") as f:
         for r in csv.DictReader(f):
             if r.get("is_active", "True").strip().lower() not in ("true", "1", "yes"):
                 continue
+            try:
+                conf = float(r.get("confidence") or 1.0)
+            except ValueError:
+                conf = 1.0
             acc[r["from_cert_id"]].append(
-                (r["to_cert_id"], r.get("relation_type", ""), r.get("source", ""))
+                (r["to_cert_id"], r.get("relation_type", ""), r.get("source", ""), conf)
             )
     # lru_cache 호환을 위해 불변 자료구조로 변환
     return {k: tuple(v) for k, v in acc.items()}
@@ -317,7 +371,7 @@ def _path_score(
     pass_rate_map: dict[str, float],
 ) -> float:
     """경로의 종합 점수.
-    base = Σ(edge relation_type weight) / edge_count
+    base = Σ(edge relation_type weight * confidence) / edge_count
     length_penalty = -_LENGTH_PENALTY * (length - 2)
     pass_rate_avg  = avg(pass_rate) * _PASSRATE_WEIGHT  (쉬운 경로 선호)
     """
@@ -326,6 +380,7 @@ def _path_score(
         return 0.0
     base = sum(
         _RELATION_TYPE_WEIGHT.get(s.get("relation_type") or "", 0.4)
+        * float(s.get("confidence") or 1.0)
         for s in edges
     ) / len(edges)
     length_penalty = -_LENGTH_PENALTY * max(0, len(steps) - 2)
@@ -368,7 +423,7 @@ def _build_paths_from(
             return
         visited = {s["cert_id"] for s in chain}
         extended = False
-        for to_id, rel_type, source in edges:
+        for to_id, rel_type, source, conf in edges:
             if len(results) >= max_paths:
                 break
             if to_id in visited:
@@ -379,6 +434,7 @@ def _build_paths_from(
                 "cert_name": names.get(to_id, to_id),
                 "relation_type": rel_type,
                 "source": source,
+                "confidence": conf,
             })
             dfs(chain)
             chain.pop()
@@ -390,6 +446,7 @@ def _build_paths_from(
         "cert_name": names.get(start_cert_id, start_cert_id),
         "relation_type": None,
         "source": None,
+        "confidence": 1.0,
     }])
 
     scored = [
@@ -595,17 +652,21 @@ def _build_roadmap_sequence(
 
     # 전공별 취득 현황 기반 인기 지수 (누적 취득자 수 → 로그 스케일 → 소수점 보정값)
     acqui_map = _load_cert_acqui_map()
+    detail_map = _load_cert_detail_map()
     import math as _math
     for x in enriched:
         cnt = acqui_map.get(x["cert_name"], 0)
         x["_popularity_boost"] = _math.log1p(cnt) * 0.01 if cnt > 0 else 0.0
+        # exam_frequency 접근성 가중치: 시험 기회가 많을수록 취업 급한 사용자에게 유리
+        detail = detail_map.get(x.get("cert_id", ""), {})
+        x["_freq_score"] = _exam_freq_score(detail.get("exam_frequency"))
 
     # 전체 오름차순 정렬 (sequence용):
-    #   1순위 stage_order → 2순위 level_score → 3순위 인기 보정(-popularity → 앞으로) → 4순위 pass_rate 높을수록
+    #   1순위 stage_order → 2순위 level_score → 3순위 인기+빈도 보정 → 4순위 pass_rate 높을수록
     enriched.sort(key=lambda x: (
         x["_eff_stage_info"].get("order", 2),
         x["_level_score"],
-        -(x["_popularity_boost"]),
+        -(x["_popularity_boost"] + x["_freq_score"]),
         -(x["_pass_rate"] or 0.0),
     ))
 
@@ -615,6 +676,7 @@ def _build_roadmap_sequence(
         pr = c["_pass_rate"]
         bn_thr = _BOTTLENECK_TIER_THRESHOLD.get(c.get("cert_grade_tier", "") or "", _BOTTLENECK_THRESHOLD)
         is_bn = pr is not None and pr < bn_thr
+        detail = detail_map.get(c.get("cert_id", ""), {})
         sequence.append({
             "step": i,
             "candidate_id": c["candidate_id"],
@@ -624,6 +686,11 @@ def _build_roadmap_sequence(
             "roadmap_stage_id": c["_eff_stage_id"],
             "roadmap_stage_name": c["_eff_stage_info"].get("name", ""),
             "avg_pass_rate": round(pr, 1) if pr is not None else None,
+            "written_avg_pass_rate": round(detail["written_avg_pass_rate"], 1) if detail.get("written_avg_pass_rate") is not None else None,
+            "practical_avg_pass_rate": round(detail["practical_avg_pass_rate"], 1) if detail.get("practical_avg_pass_rate") is not None else None,
+            "exam_frequency": detail.get("exam_frequency"),
+            "exam_difficulty": detail.get("exam_difficulty"),
+            "exam_fee_info": detail.get("exam_fee_info"),
             "is_bottleneck": is_bn,
             "bottleneck_note": (
                 f"해당 단계에서 정체 위험이 높습니다 (합격률 {round(pr, 1)}%)" if is_bn else None

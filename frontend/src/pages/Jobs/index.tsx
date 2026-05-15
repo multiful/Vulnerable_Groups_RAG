@@ -154,9 +154,8 @@ const Jobs: React.FC = () => {
       <div className="jobs-header">
         <h1 className="jobs-title">채용 정보</h1>
         <p className="jobs-sub">
-          WorkNet 실시간 채용 데이터 · 키워드·지역·학력 조건으로 검색
+          키워드, 지역, 학력 조건으로 원하는 공고를 찾아보세요.
         </p>
-        <p className="jobs-datasrc">데이터 출처: 고용노동부 WorkNet (work.go.kr)</p>
       </div>
 
       {/* 검색 폼 */}

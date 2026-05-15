@@ -2,7 +2,7 @@
 
 > **파일명**: FOLDER.md
 > **폴더 경로**: `backend/app/services/`
-> **최종 수정일**: 2026-05-14
+> **최종 수정일**: 2026-05-15
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 백엔드 비즈니스 로직 서비스 계층 설명
 > **연계 경로**: backend/app/api/v1/routes/
@@ -24,7 +24,8 @@ API 엔드포인트에서 전달된 요청을 처리하고, Supabase / 로컬 CS
 | `recommendation_service.py` | 위험군×도메인×직무 기반 자격증 추천 후보 조립 | ✅ 활성 |
 | `risk_stage_service.py` | 위험군 단계 정보 조회 | ✅ 활성 |
 | `roadmap_service.py` | 단계형 로드맵 생성 (DAG 순회) | ✅ 활성 |
-| `retrieval_service.py` | LangChain 기반 RAG Evidence 검색 | ✅ 활성 |
+| `retrieval_service.py` | LangChain 기반 RAG Evidence 검색 (BM25 keyword chunk fallback 포함) | ✅ 활성 |
+| `chat_service.py` | 청년 진로 상담 에이전트 — GPT-4o-mini 기반 대화 Q&A | ✅ 활성 |
 | `metadata_service.py` | 데이터 메타데이터 관리 및 조회 | ✅ 활성 |
 | `dag_service.py` | cert_prerequisite DAG 순회 유틸리티 | ✅ 활성 |
 | `youtube_service.py` | cert_id 기반 YouTube 강의 영상 추천 (30일 캐시) | ✅ 활성 |

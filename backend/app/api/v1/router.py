@@ -1,5 +1,5 @@
 # File: router.py
-# Last Updated: 2026-05-14
+# Last Updated: 2026-05-15
 # Content Hash: SHA256:TBD
 # Role: /api/v1 라우터 집결
 from __future__ import annotations
@@ -12,6 +12,7 @@ from backend.app.api.v1.routes import (
     career_net,
     cert_info,
     cert_videos,
+    chat,
     health,
     jobs,
     jobs_info,
@@ -42,3 +43,4 @@ api_router.include_router(map.router, tags=["map"])
 api_router.include_router(career_net.router, tags=["career_net"])
 api_router.include_router(cert_info.router, tags=["cert_info"])
 api_router.include_router(ncs.router, tags=["ncs"])
+api_router.include_router(chat.router, tags=["chat"])

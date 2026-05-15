@@ -245,7 +245,6 @@ const MainLayout: React.FC = () => {
                 <span className="footer-logo-text">디딤</span>
               </Link>
               <p className="footer-tagline">청년 위험군 단계 맞춤<br />자격증·로드맵 추천 시스템</p>
-              <p className="footer-team">Team DBMs · 홍익대학교</p>
             </div>
 
             <div className="footer-links-group">
@@ -274,18 +273,15 @@ const MainLayout: React.FC = () => {
           </div>
 
           <div className="footer-bottom">
-            <p className="footer-copy">
-              © 2026 DBMs (DIDIM Team) · 홍익대학교 · 본 서비스는
-              {' '}<a href="https://www.data.go.kr" target="_blank" rel="noopener noreferrer" className="footer-copy-link">공공데이터포털</a>
-              ,{' '}<a href="https://data.seoul.go.kr" target="_blank" rel="noopener noreferrer" className="footer-copy-link">서울 열린데이터광장</a>
-              의 공공데이터를 활용합니다.
-            </p>
+            <p className="footer-copy">© 2026 DIDIM</p>
             <p className="footer-disclaimer">
-              본 서비스의 자격증 추천은 공공 통계 기반 참고 정보이며, 취업 성공을 보장하지 않습니다.
+              자격증 추천은 공공 통계 기반 참고 정보이며, 취업 성공을 보장하지 않습니다.
             </p>
           </div>
         </div>
       </footer>
+
+      {/* ── Chat widget ── */}
 
       <style>{`
         /* ── 청년지원제도 드롭다운 (헤더 내 탭) ── */

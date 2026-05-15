@@ -1,7 +1,7 @@
 # SUMMARY.md
 
 > **파일명**: SUMMARY.md  
-> **최종 수정일**: 2026-05-12  
+> **최종 수정일**: 2026-05-15  
 > **문서 해시**: SHA256:TBD  
 > **문서 역할**: 구현된 기능·데이터 소스·API·기술 스택 핵심 요약 — 빠른 파악용  
 > **문서 우선순위**: reference  
@@ -71,9 +71,12 @@
 | — 자격 활용 현황 | 공인민간자격(+항목 목록) 또는 국가자격(진로·취업처) |
 | — 자격증 소개 | 도입목적 (파란 박스) |
 | — 직무·역할 | 관련 직무 목록 |
-| — 시험 정보 | 난이도·합격률·연간 시험 횟수 (pill 뱃지) |
-| — AI 추천 이유 | GPT 기반 개인화 설명 (보라색 박스) |
+| — 시험 정보 | 난이도·합격률·연간 시험 횟수·시험 구성(필기/실기/면접) (pill 뱃지) |
+| — AI 추천 이유 | GPT 기반 개인화 설명 — RAG evidence·exam_type_info 기반 (보라색 박스) |
 | — 응시료·공인 정보 | 공인번호·주무부처·유효기간 |
+| — 시험 일정 | Q-Net 실시간 조회 (국가기술자격·국가전문자격 통합) |
+| — 채용공고 | WorkNet 실시간 채용공고 (cert_id → NCS 직종코드 파생) |
+| — 훈련과정 | Work24 훈련과정 + 일학습병행 + 과정평가형 |
 | DAG | 선수·후속 자격증 연결 경로 |
 | 관련 동영상 | YouTube 강의 영상 썸네일 그리드 (캐시 지원) |
 | browse 모드 | 진단 없이 홈 "자격증 둘러보기"로 접근 가능 |
@@ -86,9 +89,12 @@
 |------|------|---------|-----------|
 | 공인민간자격 정보자료집 (2025) | PDF → JSON | 140종 | 자격 활용 현황, 응시료, 공인번호, 유효기간, 주무부처 |
 | 국가자격 정보집 (2026) | PDF → JSON | 138종 | 진로(자격활용), 도입목적, 응시료, 시행기관 |
-| cert_candidates.jsonl | JSONL | 약 1,200행 | cert_id, 도메인, 직무, 위험군 단계, 로드맵 단계, 합격률, 난이도 |
-| cert_master.csv | CSV | 약 1,200행 | cert_id → cert_name 매핑 |
+| cert_candidates.jsonl | JSONL | 1,290행 | cert_id, 도메인, 직무, 위험군 단계, 로드맵 단계, 합격률, 난이도 |
+| cert_master.csv | CSV | 1,290행 | cert_id → cert_name, exam_type_info, exam_subject_info 등 |
 | Supabase certificates_vectors | pgvector | — | 청크 임베딩 + section_path 메타데이터 |
+| Q-Net ExamScheduleService | 실시간 API | 1,290종 | 시험·접수 일정, D-Day |
+| WorkNet 채용정보 API | 실시간 API | — | 채용공고, 직종코드 파생 |
+| Work24 훈련과정 API | 실시간 API | — | 훈련과정, 일학습병행, 과정평가형 |
 
 ### 카탈로그 매핑 로직
 - 정확 일치 → 양방향 부분 일치 (공백·괄호 정규화 후)  
@@ -106,7 +112,13 @@
 | `POST` | `/api/v1/recommendations/cert_explain` | 자격증 AI 추천 이유 생성 |
 | `GET`  | `/api/v1/recommendations/related` | 자격증 DAG (선수·후속 관계) |
 | `GET`  | `/api/v1/candidates` | 전체 cert candidates 목록 |
+| `GET`  | `/api/v1/certs/{cert_id}/stats` | cert_master 통계 (합격률·시험횟수·exam_type_info) |
 | `GET`  | `/api/v1/certs/{cert_id}/videos` | YouTube 관련 동영상 (캐시 포함) |
+| `GET`  | `/api/v1/schedule/exam` | Q-Net 시험 일정 (국가기술자격·국가전문자격) |
+| `GET`  | `/api/v1/jobs/hiring/by-cert/{cert_id}` | WorkNet 채용공고 (NCS 직종코드 파생) |
+| `GET`  | `/api/v1/training/courses/by-cert/{cert_id}` | Work24 훈련과정 + 일학습병행 |
+| `GET`  | `/api/v1/seoul/job-cafes` | 서울시 일자리카페 목록 |
+| `GET`  | `/api/v1/actions/today` | 위험군 단계별 오늘의 한 가지 행동 제안 |
 
 ### Evidence 우선순위
 ```
@@ -165,8 +177,7 @@ project-root/
 
 ## 8. Reserved (미구현)
 
-- 시험 일정·접수 일정 실연동 API
-- 지원 링크 실연동
+- 지원 링크 실연동 (Q-Net 원서접수 직링크)
 - reranker, sparse/BM25 상시 사용
 - parent-child chunk 고도화
 - 상담형 대화 에이전트

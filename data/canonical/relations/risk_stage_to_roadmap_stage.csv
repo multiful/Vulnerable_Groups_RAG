@@ -2,5 +2,5 @@ relation_id,risk_stage_id,roadmap_stage_id,is_active
 rtr_00001,risk_0001,roadmap_stage_0003,True
 rtr_00002,risk_0002,roadmap_stage_0002,True
 rtr_00003,risk_0003,roadmap_stage_0002,True
-rtr_00004,risk_0004,roadmap_stage_0001,True
-rtr_00005,risk_0005,roadmap_stage_0001,True
+rtr_00004,risk_0004,roadmap_stage_0002,True
+rtr_00005,risk_0005,roadmap_stage_0002,True

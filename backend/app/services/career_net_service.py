@@ -207,11 +207,15 @@ def _normalize_job(item: dict) -> dict:
         "work_env":     item.get("workEnv", ""),
         "salary_low":   item.get("salaryLow", ""),
         "salary_high":  item.get("salaryHigh", ""),
+        "employment_rate":     item.get("emplRate", ""),
         "employment_prospect": item.get("jobPspt", ""),
         "related_certs": item.get("relCert", item.get("relatedCert", "")),
         "related_majors": item.get("relMajor", item.get("relatedMajor", "")),
         "image_url":    item.get("img", ""),
         "career_path":  item.get("careerPath", ""),
+        "personality":  item.get("personality", ""),
+        "interest":     item.get("interest", ""),
+        "job_value":    item.get("jobValue", ""),
     }
 
 

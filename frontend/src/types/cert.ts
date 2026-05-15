@@ -18,6 +18,11 @@ export interface CertCandidate {
   cert_grade_tier: string;
   avg_pass_rate_3yr: number | null;
   exam_sessions_per_year: number | null;
+  written_avg_pass_rate?: number | null;
+  practical_avg_pass_rate?: number | null;
+  acq_trend?: 'up' | 'down' | 'flat' | null;
+  acq_recent?: number | null;
+  acq_yoy_pct?: number | null;
 
   // Legacy / optional — 슬림 빌드에서는 제거됨. 점진 마이그레이션 위한 옵셔널 유지.
   row_type?: string;

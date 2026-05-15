@@ -1,6 +1,6 @@
 // Content Hash: SHA256:TBD
 import React, { useState, useCallback } from 'react';
-import { ArrowRight, CheckCircle2, Database, Calendar, Briefcase, BookOpen, Map, Zap } from 'lucide-react';
+import { ArrowRight, Calendar, Briefcase, BookOpen, Map, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 
@@ -42,17 +42,17 @@ const SERVICES = [
 const PROMISES = [
   {
     num:'01', keyword:'PERSONALIZED', title:'내 단계에 맞는 추천',
-    desc:'위험군 1~5단계를 1차 키로 사용합니다. 고위험군에는 낮은 등급 자격증을 우선 추천하고, 안정권에는 기사·기술사도 후보에 포함됩니다.',
+    desc:'위험군 단계에 따라 지금 도전 가능한 자격증부터 추천합니다. 단계가 높을수록 더 작은 첫 걸음을 제안합니다.',
     color:'promise-primary',
   },
   {
-    num:'02', keyword:'STRUCTURED', title:'구조적으로 연결된 추천',
-    desc:'자격증·직무·도메인·로드맵 단계가 canonical 데이터로 묶여 있습니다. 한 번의 추천이 4가지 정보를 동시에 설명합니다.',
+    num:'02', keyword:'STRUCTURED', title:'자격증부터 취업까지 연결',
+    desc:'자격증 하나를 선택하면 관련 직무, 훈련 과정, 채용 공고까지 한 화면에서 확인할 수 있습니다.',
     color:'promise-secondary',
   },
   {
-    num:'03', keyword:'EVIDENCE-BACKED', title:'근거가 있는 추천',
-    desc:'공식 PDF/HTML 문서에서 RAG로 근거 스니펫을 가져옵니다. 근거가 0건이면 환각 대신 안내를 표시합니다.',
+    num:'03', keyword:'EVIDENCE-BACKED', title:'이유가 있는 추천',
+    desc:'공식 문서와 국가 통계를 근거로 추천 이유를 설명합니다. 추측이 아닌 실제 데이터에서 가져온 정보입니다.',
     color:'promise-accent',
   },
 ];
@@ -88,8 +88,8 @@ const Home: React.FC = () => {
           </div>
         </div>
         <div className="hero-visual">
-          <div className="mascot-figure" onClick={handleMascotClick}>
-            <div className="mascot-wrap">
+          <div className="mascot-figure">
+            <div className="mascot-wrap" onClick={handleMascotClick}>
               <img
                 src={happy ? '/didimi_smile.png' : '/didimi.png'}
                 alt="디딤이"
@@ -157,14 +157,6 @@ const Home: React.FC = () => {
     </section>
 
     <section className="data-source-section">
-      <div className="data-source-inner">
-        <Database size={14} className="ds-icon" />
-        <span className="ds-label">데이터 출처</span>
-        <span className="ds-divider">|</span>
-        <span className="ds-item">서울시 고립·은둔 청년 실태조사 2022 (서울 열린데이터광장)</span>
-        <span className="ds-dot">·</span>
-        <span className="ds-item">국가기술자격 정보 (공공데이터포털 Q-Net)</span>
-      </div>
       <div className="data-stats-row">
         <div className="ds-stat">
           <span className="ds-stat-num">5,513명</span>
@@ -176,7 +168,7 @@ const Home: React.FC = () => {
         </div>
         <div className="ds-stat">
           <span className="ds-stat-num">12문항</span>
-          <span className="ds-stat-desc">Cohen's h 효과 크기 선별</span>
+          <span className="ds-stat-desc">선별된 진단 문항</span>
         </div>
         <div className="ds-stat">
           <span className="ds-stat-num">RAG</span>
@@ -208,14 +200,6 @@ const Home: React.FC = () => {
       </div>
     </section>
 
-    <section className="cta-section">
-      <div className="cta-inner">
-        <CheckCircle2 size={32} style={{color:'var(--success)'}}/>
-        <h2 className="cta-title">청년의 다음 한 걸음을 데이터로 설명합니다</h2>
-        <p className="cta-sub">인기순이 아닌, 위험군·도메인 기반의 정확한 추천을 받아보세요.</p>
-        <Link to="/risk-assessment" className="btn-primary cta-btn">위험군 진단 시작하기 <ArrowRight size={17}/></Link>
-      </div>
-    </section>
 
     <style>{`
       .home-wrap{display:flex;flex-direction:column;gap:3.5rem;padding-bottom:1rem}
@@ -229,8 +213,8 @@ const Home: React.FC = () => {
       .hero-actions{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center}
       .hero-main-btn{padding:.75rem 1.5rem;font-size:.975rem}
       .hero-visual{display:flex;justify-content:center}
-      .mascot-figure{display:flex;justify-content:center;align-items:center;width:100%;position:relative;cursor:pointer}
-      .mascot-wrap{position:relative;width:260px;height:260px;flex-shrink:0}
+      .mascot-figure{display:flex;justify-content:center;align-items:center;width:100%;position:relative}
+      .mascot-wrap{position:relative;width:260px;height:260px;flex-shrink:0;cursor:pointer}
       .mascot-img{width:260px;height:260px;object-fit:contain;filter:drop-shadow(0 12px 32px rgba(99,102,241,.25));animation:mascot-float 3s ease-in-out infinite}
       .mascot-img.mascot-happy{animation:mascot-bounce .4s ease forwards, mascot-float 3s ease-in-out 0.4s infinite}
 .mascot-heart{position:absolute;top:5px;left:50%;transform:translateX(-50%);font-size:1.6rem;animation:heart-pop .6s ease forwards;pointer-events:none}
@@ -293,7 +277,7 @@ const Home: React.FC = () => {
 
       /* 오늘의 행동 티저 */
       .today-section{
-        background:linear-gradient(135deg,#1e1b4b 0%,#312e81 60%,#1d4ed8 100%);
+        background:linear-gradient(135deg,#1d4ed8 0%,#2563eb 55%,#3b82f6 100%);
         border-radius:var(--radius-lg);
         padding:2rem 2.25rem;
         color:#fff;
@@ -309,7 +293,7 @@ const Home: React.FC = () => {
       }
       .today-title{font-size:1.25rem;font-weight:800;line-height:1.3;letter-spacing:-.02em}
       .today-desc{font-size:.85rem;color:rgba(255,255,255,.75);line-height:1.7}
-      .today-btn{background:#fff;color:#1e1b4b;padding:.65rem 1.25rem;font-size:.875rem;width:fit-content}
+      .today-btn{background:#fff;color:#1d4ed8;padding:.65rem 1.25rem;font-size:.875rem;width:fit-content}
       .today-btn:hover{background:rgba(255,255,255,.9)}
       .today-right{}
       .today-example-card{

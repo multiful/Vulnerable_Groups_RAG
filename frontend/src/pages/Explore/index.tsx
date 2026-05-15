@@ -1,9 +1,20 @@
 // Content Hash: SHA256:TBD
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Briefcase, BookOpen, Grid3X3, Loader2, AlertCircle, ChevronRight, ExternalLink } from 'lucide-react';
+import { Search, Briefcase, BookOpen, Grid3X3, Loader2, AlertCircle, ChevronRight, ExternalLink, X } from 'lucide-react';
 
 type Tab = 'jobs' | 'majors' | 'ncs';
+
+interface JobScores {
+  pay_score: number | null;
+  job_security_score: number | null;
+  growth_score: number | null;
+  work_conditions_score: number | null;
+  professionalism_score: number | null;
+  equity_score: number | null;
+  similar_jobs: string | null;
+  salary_summary: string | null;
+}
 
 interface CareerJob {
   seq: string;
@@ -12,9 +23,13 @@ interface CareerJob {
   tasks: string;
   salary_low: string;
   salary_high: string;
+  employment_rate: string;
   employment_prospect: string;
   related_certs: string;
   related_majors: string;
+  personality: string;
+  interest: string;
+  job_value: string;
 }
 
 interface CareerMajor {
@@ -44,18 +59,73 @@ interface NcsItem {
   minor_name: string;
 }
 
+function ScoreMini({ label, score }: { label: string; score: number | null }) {
+  if (score === null) return null;
+  const color = score >= 67 ? '#16a34a' : score >= 34 ? '#d97706' : '#dc2626';
+  return (
+    <div className="ex-score-item">
+      <span className="ex-score-label">{label}</span>
+      <div className="ex-score-bar-wrap">
+        <div className="ex-score-bar-track">
+          <div className="ex-score-bar-fill" style={{ width: `${score}%`, background: color }} />
+        </div>
+        <span className="ex-score-num" style={{ color }}>{Math.round(score)}</span>
+      </div>
+    </div>
+  );
+}
+
 function JobCard({ job }: { job: CareerJob }) {
   const [open, setOpen] = useState(false);
+  const [scores, setScores] = useState<JobScores | null>(null);
+  const [scoresFetched, setScoresFetched] = useState(false);
+
+  const handleOpen = useCallback(async () => {
+    const next = !open;
+    setOpen(next);
+    if (next && !scoresFetched && job.name) {
+      setScoresFetched(true);
+      try {
+        const res = await fetch(`/api/v1/jobs/info/${encodeURIComponent(job.name)}`);
+        const json = await res.json();
+        if (json.success && json.data?.job) {
+          const j = json.data.job;
+          if (j.pay_score !== undefined || j.job_security_score !== undefined) {
+            setScores({
+              pay_score: j.pay_score ?? null,
+              job_security_score: j.job_security_score ?? null,
+              growth_score: j.growth_score ?? null,
+              work_conditions_score: j.work_conditions_score ?? null,
+              professionalism_score: j.professionalism_score ?? null,
+              equity_score: j.equity_score ?? null,
+              similar_jobs: j.similar_jobs ?? null,
+              salary_summary: j.salary_summary ?? null,
+            });
+          }
+        }
+      } catch { /* silent */ }
+    }
+  }, [open, scoresFetched, job.name]);
+
+  const hasScores = scores && (
+    scores.pay_score !== null || scores.job_security_score !== null || scores.growth_score !== null
+  );
+
   return (
     <div className="ex-card">
-      <button className="ex-card-header" onClick={() => setOpen(v => !v)}>
+      <button className="ex-card-header" onClick={handleOpen}>
         <div className="ex-card-title-row">
           <span className="ex-card-name">{job.name || '(이름 없음)'}</span>
-          {job.salary_low && (
-            <span className="ex-salary-badge">
-              {job.salary_low}~{job.salary_high || '?'}만원
-            </span>
-          )}
+          <div className="ex-card-badges">
+            {job.employment_rate && (
+              <span className="ex-emp-badge">취업률 {job.employment_rate}%</span>
+            )}
+            {job.salary_low && (
+              <span className="ex-salary-badge">
+                {job.salary_low}~{job.salary_high || '?'}만원
+              </span>
+            )}
+          </div>
         </div>
         {job.description && (
           <p className="ex-card-desc">{job.description.slice(0, 80)}{job.description.length > 80 ? '…' : ''}</p>
@@ -64,16 +134,56 @@ function JobCard({ job }: { job: CareerJob }) {
       </button>
       {open && (
         <div className="ex-card-detail">
+          {hasScores && (
+            <div className="ex-scores-block">
+              <span className="ex-scores-title">워크넷 직업 지수</span>
+              <div className="ex-scores-grid">
+                <ScoreMini label="보상" score={scores!.pay_score} />
+                <ScoreMini label="고용안정" score={scores!.job_security_score} />
+                <ScoreMini label="발전가능성" score={scores!.growth_score} />
+                <ScoreMini label="근무여건" score={scores!.work_conditions_score} />
+                <ScoreMini label="전문성" score={scores!.professionalism_score} />
+                <ScoreMini label="고용평등" score={scores!.equity_score} />
+              </div>
+              {scores!.salary_summary && (
+                <span className="ex-salary-summary">평균 임금 {scores!.salary_summary}</span>
+              )}
+            </div>
+          )}
           {job.tasks && (
             <div className="ex-detail-row">
               <span className="ex-detail-key">주요 업무</span>
               <span className="ex-detail-val">{job.tasks}</span>
             </div>
           )}
+          {job.personality && (
+            <div className="ex-detail-row">
+              <span className="ex-detail-key">필요 성격</span>
+              <span className="ex-detail-val">{job.personality}</span>
+            </div>
+          )}
+          {job.interest && (
+            <div className="ex-detail-row">
+              <span className="ex-detail-key">흥미 유형</span>
+              <span className="ex-detail-val">{job.interest}</span>
+            </div>
+          )}
+          {job.job_value && (
+            <div className="ex-detail-row">
+              <span className="ex-detail-key">직업 가치관</span>
+              <span className="ex-detail-val">{job.job_value}</span>
+            </div>
+          )}
           {job.employment_prospect && (
             <div className="ex-detail-row">
               <span className="ex-detail-key">취업 전망</span>
               <span className="ex-detail-val">{job.employment_prospect}</span>
+            </div>
+          )}
+          {scores?.similar_jobs && (
+            <div className="ex-detail-row">
+              <span className="ex-detail-key">유사 직업</span>
+              <span className="ex-detail-val">{scores.similar_jobs}</span>
             </div>
           )}
           {job.related_certs && (
@@ -94,11 +204,31 @@ function JobCard({ job }: { job: CareerJob }) {
   );
 }
 
+interface NcsDuty { ncs_major_name: string; ncs_minor_name: string; }
+
 function MajorCard({ major }: { major: CareerMajor }) {
   const [open, setOpen] = useState(false);
+  const [ncsDuties, setNcsDuties] = useState<NcsDuty[] | null>(null);
+  const [ncsFetched, setNcsFetched] = useState(false);
+
+  const handleOpen = useCallback(async () => {
+    const next = !open;
+    setOpen(next);
+    if (next && !ncsFetched && major.name) {
+      setNcsFetched(true);
+      try {
+        const res = await fetch(`/api/v1/certs/major-ncs?major=${encodeURIComponent(major.name)}`);
+        const json = await res.json();
+        if (json.success && json.data?.ncs_duties?.length > 0) {
+          setNcsDuties(json.data.ncs_duties);
+        }
+      } catch { /* silent */ }
+    }
+  }, [open, ncsFetched, major.name]);
+
   return (
     <div className="ex-card">
-      <button className="ex-card-header" onClick={() => setOpen(v => !v)}>
+      <button className="ex-card-header" onClick={handleOpen}>
         <div className="ex-card-title-row">
           <span className="ex-card-name">{major.name || '(이름 없음)'}</span>
           {major.category && <span className="ex-cat-badge">{major.category}</span>}
@@ -123,6 +253,22 @@ function MajorCard({ major }: { major: CareerMajor }) {
             <div className="ex-detail-row">
               <span className="ex-detail-key">관련 자격증</span>
               <span className="ex-detail-val">{major.related_certs}</span>
+            </div>
+          )}
+          {ncsDuties && ncsDuties.length > 0 && (
+            <div className="ex-detail-row ex-ncs-duties-row">
+              <span className="ex-detail-key">NCS 직무</span>
+              <div className="ex-ncs-duties">
+                {ncsDuties.slice(0, 6).map((d, i) => (
+                  <span key={i} className="ex-ncs-duty-chip">
+                    <span className="ex-ncs-duty-major">{d.ncs_major_name}</span>
+                    {d.ncs_minor_name && <span className="ex-ncs-duty-minor"> › {d.ncs_minor_name}</span>}
+                  </span>
+                ))}
+                {ncsDuties.length > 6 && (
+                  <span className="ex-ncs-duty-chip ex-ncs-duty-more">+{ncsDuties.length - 6}개</span>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -187,6 +333,20 @@ const Explore: React.FC = () => {
   const [ncsCertsLoading, setNcsCertsLoading] = useState(false);
   const [ncsCertsError, setNcsCertsError] = useState<string | null>(null);
   const ncsCertCacheRef = useRef<Record<string, NcsCert[]>>({});
+
+  // Autocomplete dropdown state
+  const [jobDropdown, setJobDropdown] = useState<CareerJob[]>([]);
+  const [majorDropdown, setMajorDropdown] = useState<CareerMajor[]>([]);
+  const [ncsDropdown, setNcsDropdown] = useState<NcsItem[]>([]);
+  const [showJobDrop, setShowJobDrop] = useState(false);
+  const [showMajorDrop, setShowMajorDrop] = useState(false);
+  const [showNcsDrop, setShowNcsDrop] = useState(false);
+  const jobDebounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const majorDebounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const ncsDebounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const jobSearchRef = useRef<HTMLDivElement>(null);
+  const majorSearchRef = useRef<HTMLDivElement>(null);
+  const ncsSearchRef = useRef<HTMLDivElement>(null);
 
   const PAGE_SIZE = 20;
 
@@ -294,16 +454,19 @@ const Explore: React.FC = () => {
 
   const handleJobSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
+    setShowJobDrop(false);
     fetchJobs(query.trim(), 1);
   }, [query, fetchJobs]);
 
   const handleMajorSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
+    setShowMajorDrop(false);
     fetchMajors(query.trim(), 1);
   }, [query, fetchMajors]);
 
   const handleNcsSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
+    setShowNcsDrop(false);
     fetchNcsList(ncsKeyword.trim());
     setSelectedNcs(null);
     setNcsCerts([]);
@@ -317,6 +480,101 @@ const Explore: React.FC = () => {
   const handleTabChange = useCallback((t: Tab) => {
     setTab(t);
     setQuery('');
+    setJobDropdown([]);
+    setMajorDropdown([]);
+    setNcsDropdown([]);
+    setShowJobDrop(false);
+    setShowMajorDrop(false);
+    setShowNcsDrop(false);
+  }, []);
+
+  // Autocomplete: debounced input handlers
+  const handleJobQueryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setQuery(val);
+    clearTimeout(jobDebounceRef.current);
+    if (!val.trim()) { setShowJobDrop(false); return; }
+    jobDebounceRef.current = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/v1/career-net/jobs?q=${encodeURIComponent(val)}&page=1&page_size=10`);
+        const json = await r.json();
+        if (json.success && json.data?.jobs?.length > 0) {
+          setJobDropdown(json.data.jobs);
+          setShowJobDrop(true);
+        } else {
+          setShowJobDrop(false);
+        }
+      } catch { /* silent */ }
+    }, 300);
+  }, []);
+
+  const handleMajorQueryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setQuery(val);
+    clearTimeout(majorDebounceRef.current);
+    if (!val.trim()) { setShowMajorDrop(false); return; }
+    majorDebounceRef.current = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/v1/career-net/majors?q=${encodeURIComponent(val)}&page=1&page_size=10`);
+        const json = await r.json();
+        if (json.success && json.data?.majors?.length > 0) {
+          setMajorDropdown(json.data.majors);
+          setShowMajorDrop(true);
+        } else {
+          setShowMajorDrop(false);
+        }
+      } catch { /* silent */ }
+    }, 300);
+  }, []);
+
+  const handleNcsKeywordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setNcsKeyword(val);
+    clearTimeout(ncsDebounceRef.current);
+    if (!val.trim()) { setShowNcsDrop(false); return; }
+    ncsDebounceRef.current = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/v1/ncs/list?keyword=${encodeURIComponent(val)}`);
+        const json = await r.json();
+        if (json.success && json.data?.ncs_list?.length > 0) {
+          setNcsDropdown(json.data.ncs_list.slice(0, 20));
+          setShowNcsDrop(true);
+        } else {
+          setShowNcsDrop(false);
+        }
+      } catch { /* silent */ }
+    }, 300);
+  }, []);
+
+  // Suggestion click handlers
+  const handleJobSuggestionClick = useCallback((job: CareerJob) => {
+    setQuery(job.name);
+    setShowJobDrop(false);
+    fetchJobs(job.name, 1);
+  }, [fetchJobs]);
+
+  const handleMajorSuggestionClick = useCallback((major: CareerMajor) => {
+    setQuery(major.name);
+    setShowMajorDrop(false);
+    fetchMajors(major.name, 1);
+  }, [fetchMajors]);
+
+  const handleNcsSuggestionClick = useCallback((item: NcsItem) => {
+    setNcsKeyword(`${item.major_name} › ${item.mid_name}`);
+    setShowNcsDrop(false);
+    setNcsList([item]);
+    handleNcsSelect(item);
+  }, [handleNcsSelect]);
+
+  // Outside click to close dropdown
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (jobSearchRef.current && !jobSearchRef.current.contains(e.target as Node)) setShowJobDrop(false);
+      if (majorSearchRef.current && !majorSearchRef.current.contains(e.target as Node)) setShowMajorDrop(false);
+      if (ncsSearchRef.current && !ncsSearchRef.current.contains(e.target as Node)) setShowNcsDrop(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const totalPages = tab === 'jobs'
@@ -329,7 +587,6 @@ const Explore: React.FC = () => {
       <div className="ex-header">
         <h1 className="ex-title">직업·학과·NCS 탐색</h1>
         <p className="ex-sub">커리어넷 직업정보, 학과정보, NCS 능력단위 기반 자격증을 한곳에서 탐색하세요.</p>
-        <p className="ex-datasrc">데이터 출처: 한국직업능력연구원 커리어넷 (career.go.kr) · NCS 국가직무능력표준</p>
       </div>
 
       {/* 탭 */}
@@ -354,32 +611,80 @@ const Explore: React.FC = () => {
         </button>
       </div>
 
-      {/* 직업 / 학과 탭 공용 검색바 */}
-      {(tab === 'jobs' || tab === 'majors') && (
-        <form
-          className="ex-search-form"
-          onSubmit={tab === 'jobs' ? handleJobSearch : handleMajorSearch}
-        >
-          <div className="ex-search-inner">
-            <Search size={15} className="ex-search-icon" />
-            <input
-              className="ex-search-input"
-              type="text"
-              placeholder={tab === 'jobs' ? '직업명 검색 (예: 소프트웨어, 간호사)' : '학과명 검색 (예: 컴퓨터공학, 간호학)'}
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-            />
-            <button
-              type="submit"
-              className="btn-primary ex-search-btn"
-              disabled={tab === 'jobs' ? jobLoading : majorLoading}
-            >
-              {(tab === 'jobs' ? jobLoading : majorLoading)
-                ? <Loader2 size={14} className="spin" />
-                : '검색'}
-            </button>
-          </div>
-        </form>
+      {/* 직업 검색바 */}
+      {tab === 'jobs' && (
+        <div className="ex-search-wrap" ref={jobSearchRef}>
+          <form className="ex-search-form" onSubmit={handleJobSearch}>
+            <div className="ex-search-inner">
+              <Search size={15} className="ex-search-icon" />
+              <input
+                className="ex-search-input"
+                type="text"
+                placeholder="직업명 검색 (예: 소프트웨어, 간호사)"
+                value={query}
+                onChange={handleJobQueryChange}
+                onFocus={() => jobDropdown.length > 0 && setShowJobDrop(true)}
+                autoComplete="off"
+              />
+              {query && (
+                <button type="button" className="ex-search-clear" onClick={() => { setQuery(''); setShowJobDrop(false); }}>
+                  <X size={13} />
+                </button>
+              )}
+              <button type="submit" className="btn-primary ex-search-btn" disabled={jobLoading}>
+                {jobLoading ? <Loader2 size={14} className="spin" /> : '검색'}
+              </button>
+            </div>
+          </form>
+          {showJobDrop && jobDropdown.length > 0 && (
+            <div className="ex-dropdown">
+              {jobDropdown.map(job => (
+                <button key={job.seq} className="ex-drop-item" onMouseDown={() => handleJobSuggestionClick(job)}>
+                  <span className="ex-drop-name">{job.name}</span>
+                  {job.description && <span className="ex-drop-sub">{job.description.slice(0, 50)}</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 학과 검색바 */}
+      {tab === 'majors' && (
+        <div className="ex-search-wrap" ref={majorSearchRef}>
+          <form className="ex-search-form" onSubmit={handleMajorSearch}>
+            <div className="ex-search-inner">
+              <Search size={15} className="ex-search-icon" />
+              <input
+                className="ex-search-input"
+                type="text"
+                placeholder="학과명 검색 (예: 컴퓨터공학, 간호학)"
+                value={query}
+                onChange={handleMajorQueryChange}
+                onFocus={() => majorDropdown.length > 0 && setShowMajorDrop(true)}
+                autoComplete="off"
+              />
+              {query && (
+                <button type="button" className="ex-search-clear" onClick={() => { setQuery(''); setShowMajorDrop(false); }}>
+                  <X size={13} />
+                </button>
+              )}
+              <button type="submit" className="btn-primary ex-search-btn" disabled={majorLoading}>
+                {majorLoading ? <Loader2 size={14} className="spin" /> : '검색'}
+              </button>
+            </div>
+          </form>
+          {showMajorDrop && majorDropdown.length > 0 && (
+            <div className="ex-dropdown">
+              {majorDropdown.map(major => (
+                <button key={major.seq} className="ex-drop-item" onMouseDown={() => handleMajorSuggestionClick(major)}>
+                  <span className="ex-drop-name">{major.name}</span>
+                  {major.category && <span className="ex-drop-badge">{major.category}</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {/* 직업 탭 */}
@@ -493,21 +798,40 @@ const Explore: React.FC = () => {
       {/* NCS 탭 */}
       {tab === 'ncs' && (
         <div className="ex-content">
-          <form className="ex-search-form" onSubmit={handleNcsSearch}>
-            <div className="ex-search-inner">
-              <Search size={15} className="ex-search-icon" />
-              <input
-                className="ex-search-input"
-                type="text"
-                placeholder="NCS 분야 검색 (예: 정보통신, 건설, 경영사무)"
-                value={ncsKeyword}
-                onChange={e => setNcsKeyword(e.target.value)}
-              />
-              <button type="submit" className="btn-primary ex-search-btn" disabled={ncsListLoading}>
-                {ncsListLoading ? <Loader2 size={14} className="spin" /> : '검색'}
-              </button>
-            </div>
-          </form>
+          <div className="ex-search-wrap" ref={ncsSearchRef}>
+            <form className="ex-search-form" onSubmit={handleNcsSearch}>
+              <div className="ex-search-inner">
+                <Search size={15} className="ex-search-icon" />
+                <input
+                  className="ex-search-input"
+                  type="text"
+                  placeholder="NCS 분야 검색 (예: 정보통신, 건설, 경영사무)"
+                  value={ncsKeyword}
+                  onChange={handleNcsKeywordChange}
+                  onFocus={() => ncsDropdown.length > 0 && setShowNcsDrop(true)}
+                  autoComplete="off"
+                />
+                {ncsKeyword && (
+                  <button type="button" className="ex-search-clear" onClick={() => { setNcsKeyword(''); setShowNcsDrop(false); }}>
+                    <X size={13} />
+                  </button>
+                )}
+                <button type="submit" className="btn-primary ex-search-btn" disabled={ncsListLoading}>
+                  {ncsListLoading ? <Loader2 size={14} className="spin" /> : '검색'}
+                </button>
+              </div>
+            </form>
+            {showNcsDrop && ncsDropdown.length > 0 && (
+              <div className="ex-dropdown">
+                {ncsDropdown.map(item => (
+                  <button key={item.ncs_id} className="ex-drop-item" onMouseDown={() => handleNcsSuggestionClick(item)}>
+                    <span className="ex-drop-name">{item.major_name} › {item.mid_name}</span>
+                    {item.minor_name && <span className="ex-drop-sub">{item.minor_name}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {ncsList.length === 0 && !ncsListLoading && (
             <div className="ex-placeholder">
@@ -611,6 +935,7 @@ const Explore: React.FC = () => {
         .ex-tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
 
         /* 검색 */
+        .ex-search-wrap { position: relative; }
         .ex-search-form { }
         .ex-search-inner {
           display: flex; align-items: center; gap: .5rem;
@@ -626,6 +951,38 @@ const Explore: React.FC = () => {
         }
         .ex-search-input::placeholder { color: var(--text-light); }
         .ex-search-btn { padding: .4rem .9rem; font-size: .82rem; }
+        .ex-search-clear {
+          display: flex; align-items: center; justify-content: center;
+          width: 20px; height: 20px; border-radius: 50%;
+          background: var(--border); border: none; cursor: pointer;
+          color: var(--text-muted); flex-shrink: 0;
+          transition: background .12s;
+        }
+        .ex-search-clear:hover { background: var(--border-strong); }
+
+        /* 드롭다운 */
+        .ex-dropdown {
+          position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 200;
+          background: var(--surface); border: 1px solid var(--border);
+          border-radius: var(--radius-sm);
+          box-shadow: 0 8px 24px rgba(0,0,0,.1);
+          max-height: 300px; overflow-y: auto;
+          display: flex; flex-direction: column;
+        }
+        .ex-drop-item {
+          width: 100%; display: flex; flex-direction: column; gap: .18rem;
+          padding: .55rem .875rem; background: none; border: none;
+          border-bottom: 1px solid var(--border); cursor: pointer;
+          text-align: left; transition: background .1s;
+        }
+        .ex-drop-item:last-child { border-bottom: none; }
+        .ex-drop-item:hover { background: var(--primary-light); }
+        .ex-drop-name { font-size: .85rem; font-weight: 600; color: var(--text); }
+        .ex-drop-sub { font-size: .75rem; color: var(--text-light); line-height: 1.4; }
+        .ex-drop-badge {
+          font-size: .68rem; background: var(--primary-light); color: var(--primary);
+          padding: .1rem .4rem; border-radius: 99px; width: fit-content;
+        }
 
         /* 컨텐츠 영역 */
         .ex-content { display: flex; flex-direction: column; gap: 1rem; }
@@ -644,6 +1001,7 @@ const Explore: React.FC = () => {
         }
         .ex-card-header:hover { background: var(--surface-3, #f8fafc); }
         .ex-card-title-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+        .ex-card-badges { display: flex; gap: .35rem; flex-wrap: wrap; margin-left: auto; }
         .ex-card-name { font-size: .9rem; font-weight: 700; color: var(--text); }
         .ex-salary-badge {
           font-size: .7rem; font-weight: 600;
@@ -658,6 +1016,16 @@ const Explore: React.FC = () => {
           font-size: .7rem; background: #fef3c7; color: #d97706;
           padding: .1rem .45rem; border-radius: 20px;
         }
+        .ex-scores-block { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: .625rem .75rem; margin-bottom: .5rem; display: flex; flex-direction: column; gap: .4rem; }
+        .ex-scores-title { font-size: .67rem; font-weight: 700; color: var(--text-muted); letter-spacing: .04em; text-transform: uppercase; }
+        .ex-scores-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .3rem .75rem; }
+        .ex-score-item { display: flex; flex-direction: column; gap: .1rem; }
+        .ex-score-label { font-size: .64rem; color: var(--text-muted); font-weight: 600; }
+        .ex-score-bar-wrap { display: flex; align-items: center; gap: .35rem; }
+        .ex-score-bar-track { flex: 1; height: 5px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+        .ex-score-bar-fill { height: 100%; border-radius: 99px; transition: width .4s; }
+        .ex-score-num { font-size: .68rem; font-weight: 700; min-width: 20px; text-align: right; }
+        .ex-salary-summary { font-size: .7rem; color: #059669; font-weight: 600; }
         .ex-card-desc { font-size: .78rem; color: var(--text-muted); margin: 0; line-height: 1.5; }
         .ex-chevron {
           position: absolute; right: .875rem; top: .875rem;
@@ -721,6 +1089,12 @@ const Explore: React.FC = () => {
           padding: .1rem .4rem; border-radius: 4px;
         }
         .ex-ncs-cert-empty { font-size: .82rem; color: var(--text-light); margin: 0; }
+        .ex-ncs-duties-row { align-items: flex-start !important; }
+        .ex-ncs-duties { display: flex; flex-wrap: wrap; gap: .3rem; }
+        .ex-ncs-duty-chip { display: inline-flex; align-items: center; gap: .1rem; padding: .18rem .5rem; background: #f0f4ff; border: 1px solid #c7d2fe; border-radius: 99px; font-size: .72rem; }
+        .ex-ncs-duty-major { color: #3730a3; font-weight: 600; }
+        .ex-ncs-duty-minor { color: #6366f1; }
+        .ex-ncs-duty-more { background: #f8fafc; border-color: #e2e8f0; color: #64748b; }
         .ex-ncs-cert-list { display: flex; flex-direction: column; gap: .375rem; }
         .ex-ncs-cert-card {
           padding: .5rem .75rem; background: var(--surface);

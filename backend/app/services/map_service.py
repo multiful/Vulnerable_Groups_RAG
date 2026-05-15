@@ -37,7 +37,7 @@ def _geocode(address: str, rest_key: str) -> tuple[float, float] | None:
     try:
         r = httpx.get(
             _KAKAO_GEOCODE_URL,
-            params={"query": address, "size": 1},
+            params={"query": address, "size": 1, "analyze_type": "similar"},
             headers={"Authorization": f"KakaoAK {rest_key}"},
             timeout=5,
         )

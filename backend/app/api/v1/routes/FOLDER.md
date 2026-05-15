@@ -2,7 +2,7 @@
 
 > **파일명**: FOLDER.md
 > **폴더 경로**: `backend/app/api/v1/routes/`
-> **최종 수정일**: 2026-05-14
+> **최종 수정일**: 2026-05-15
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: API v1 라우트 핸들러 폴더 명세
 > **문서 우선순위**: reference
@@ -28,6 +28,7 @@ FastAPI 라우트 핸들러를 모듈별로 둔다. 각 파일은 `APIRouter`를
 | `health.py` | `GET /api/v1/health` | ✅ |
 | `admin.py` | 내부 관리용 (캐시 flush 등) | ✅ |
 | `cert_videos.py` | `GET /api/v1/cert-videos/{cert_id}` | ✅ |
+| `chat.py` | `POST /api/v1/chat` — GPT-4o-mini 진로 상담 에이전트 | ✅ |
 
 ### 2.2 Execution Layer 라우트
 

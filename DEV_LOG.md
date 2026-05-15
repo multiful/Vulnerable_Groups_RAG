@@ -1,7 +1,7 @@
 # DEV_LOG.md
 
 > **파일명**: DEV_LOG.md  
-> **최종 수정일**: 2026-05-14  
+> **최종 수정일**: 2026-05-15  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 날짜별 진행 로그, 변경 요약, 해결 이력  
 > **문서 우선순위**: 14  
@@ -13,6 +13,49 @@
 ## 1. 문서 목적
 
 구현과 문서 정렬 작업의 **타임라인**을 남겨, 이후 기여자가 맥락을 잃지 않게 한다.
+
+---
+
+## 2026-05-15 — Recommendation 패널 UX 개선 + exam_type_info 연동 + 루트 문서 갱신
+
+### 수행
+
+**버그 수정**
+
+- `frontend/src/pages/Recommendation/index.tsx` — `fetchEvidence` useCallback deps 배열 TDZ 버그 수정
+  - 원인: `useCallback` deps에 이후 선언된 `const` (`fetchSessionRates`, `fetchCertJobs`, `fetchCertInfo`, `fetchCertStats`, `fetchExecData`)가 포함 → React 렌더 시 TDZ ReferenceError → 페이지 완전 공백
+  - 수정: deps를 `[stageParam, domainParam, allCerts]`로 축소 (이 함수들은 `[]` stable refs라 deps 생략 safe)
+
+**프론트엔드 (`frontend/src/pages/`)**
+
+- `Recommendation/index.tsx`
+  - Exec 패널: 탭 조건부 렌더링 → 항상 표시되는 stacked 섹션으로 전환 (시험 일정 / 채용공고 / 훈련과정 / 자격 정보 4개 섹션)
+  - `CertStatsData` 인터페이스에 `exam_type_info`, `exam_subject_info` 추가
+  - "시험 구성" 초록 chip 추가: `exam_type_info` 값(필기+실기, 필기+실기+면접 등) 표시
+  - 데이터 출처 배너 제거 (data-src-footer), 출처 표기를 "한국산업인력공단" 단순 텍스트로 간소화
+  - CSS: `.exec-section`, `.exec-section-title`, `.exec-loading`, `.exec-empty`, `.certinfo-stat-type` 추가
+- `Schedule/index.tsx`
+  - empty-tier 자격증 뱃지 레이블 수정: "공인민간" → "국가자격" (1,290개 모두 Q-Net 등록 국가자격)
+  - 부제목·힌트 텍스트에서 "공인민간자격" 제거, "(Q-Net 데이터 기반)" 명시
+- `Jobs/index.tsx` — 데이터 출처 배너 제거
+- `Explore/index.tsx` — 데이터 출처 배너 제거
+
+**백엔드 (`backend/app/services/`)**
+
+- `cert_info_service.py` — `_load_cert_master_details()`에 `exam_type_info` 필드 추가, `get_cert_master_stats()` 응답에 포함
+- `llm_roadmap_service.py` — `_enrich_cert_context()`: `exam_type_info` 컨텍스트 주입 (step 3 신설). `explain_cert()` 프롬프트에 "시험 구성 항목에 없는 시험 방식 절대 언급 금지" 규칙 추가
+
+**문서 갱신**
+
+- `README.md`: 최종 수정일 2026-05-15, API 상태 reserved→실연동, 구현완료 항목 갱신 (Q-Net/WorkNet/Work24/YouTube/서울시 공공 API, DB 1,290종)
+- `SUMMARY.md`: 3.4 exec 패널 섹션 반영, 데이터 소스 표 갱신 (1,290행, 외부 API 추가), API 요약 표 갱신, Reserved에서 시험일정 제거
+- `PROJECT_SUMMARY.md`: 기술 스택 표 갱신 (외부 API 명시), reserved 목록 현행화, 9절 구현 단계 요약 갱신
+
+### 핵심 결정
+
+- exam_type_info 기반 시험 구성 chip: cert_master.csv 원본 값을 그대로 노출 (자유 문자열 생성 금지 정책 일관 유지)
+- AI 프롬프트 시험 방식 제약: "시험 구성" 컨텍스트에 없는 필기/실기/면접 언급을 하드 금지 — 데이터 없는 자격증에서 잘못된 시험 방식 노출 차단
+- empty-tier 뱃지 "국가자격" 통일: 실제 데이터가 전부 Q-Net 등록임을 코드에 반영 (공인민간자격과 혼동 방지)
 
 ---
 

@@ -1,7 +1,7 @@
 # PROJECT_SUMMARY.md
 
 > **파일명**: PROJECT_SUMMARY.md  
-> **최종 수정일**: 2026-04-07  
+> **최종 수정일**: 2026-05-15  
 > **문서 해시**: SHA256:05b369f39d501b8b97271c19436dadac1491eb1abf3040612688ce50dbcdac86
 > **문서 역할**: 저장소 한눈에 보기 — 목적·구조·문서 지도·청킹 개요  
 > **문서 우선순위**: reference (세부 계약·스키마는 각 전용 문서가 우선)  
@@ -32,13 +32,15 @@
 
 | 영역 | 선택 |
 |------|------|
-| 프론트 | React + Vite (`frontend/`) |
+| 프론트 | React 19 + Vite 6 + TypeScript (`frontend/`) |
 | API | FastAPI (`backend/`) |
 | RAG 런타임 | LangChain + Supabase pgvector (`backend/rag/`) |
-| 임베딩 | OpenAI 또는 HuggingFace (환경변수) |
-| 배포(가정) | Vercel / Railway·Render 등 |
+| 임베딩 | OpenAI `text-embedding-3-small` |
+| LLM | OpenAI GPT-4o-mini (추천 이유·로드맵 분석) |
+| 외부 API | Q-Net(시험일정), WorkNet(채용), Work24(훈련), YouTube Data API, 서울시 공공 API |
+| 배포 | API: Render.com / 프론트: Vite dev(로컬) |
 
-**reserved(문서상 미완으로 다룸)**: 일정·접수·지원 링크 실연동, reranker, BM25 상시, 상담 에이전트, full infra 등 — `PRD.md`·`FEATURE_SPEC.md`와 동일.
+**reserved**: 지원 링크 실연동(Q-Net 원서접수 직링크), reranker, BM25 상시, parent-child chunk 고도화, 상담형 대화 에이전트 — `PRD.md`·`FEATURE_SPEC.md`와 동일.
 
 ---
 
@@ -180,9 +182,11 @@
 
 ## 9. 현재 구현 단계 (요약)
 
-- FastAPI 헬스·Evidence API·인제스트 CLI 코드는 있으나, **제품 목표가 준비 단계라면 실행을 강제하지 않는다.**  
-- **POST /recommendations**는 **스텁** — 계약·예시·문서만 유지.  
-- **Parse→Chunk·CSV canonical 배치**는 스텁·후속.  
+- **추천 파이프라인 전체 활성**: `POST /recommendations` → 로드맵 데이터 반환, LLM AI 맞춤 분석 모두 실제 동작.
+- **Execution Layer 전면 활성** (2026-05-14): Q-Net 시험일정·WorkNet 채용공고·Work24 훈련과정·YouTube·서울시 공공 API 실연동.
+- **자격증 DB**: cert_master.csv 1,290종 (exam_type_info, exam_subject_info 포함).
+- **Evidence API**: Supabase pgvector RAG + 카탈로그 JSON 병합 방식으로 동작.
+- **Parse→Chunk·CSV canonical 배치**: 스텁·후속 (인덱스는 별도 수동 인제스트).
 - “준비 완료”의 의미는 **§8 표**의 **형식·위치·문서** 정합이지, 파이프라인을 돌린 여부가 아니다.
 
 ---

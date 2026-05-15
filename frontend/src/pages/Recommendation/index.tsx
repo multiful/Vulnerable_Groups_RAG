@@ -1,7 +1,6 @@
 // Content Hash: SHA256:TBD
 import React, { useState, useMemo, useEffect, useCallback, useDeferredValue, memo, useTransition, useRef } from 'react';
 import { CertFlowDiagram } from '../../components/charts/CertFlowDiagram';
-import KakaoMap, { type MapPoint } from '../../components/map/KakaoMap';
 import { getCertCandidates } from '../../api/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { loadPipeline } from '../../utils/pipelineState';
@@ -196,6 +195,16 @@ interface ExamItem {
   d_day_exam: number | null;
   d_day_registration: number | null;
 }
+interface CertStatsData {
+  written_avg_pass_rate: number | null;
+  practical_avg_pass_rate: number | null;
+  avg_pass_rate_3yr: number | null;
+  exam_frequency: string | null;
+  exam_difficulty: number | null;
+  exam_type_info: string | null;
+  exam_subject_info: string | null;
+}
+
 interface CertInfoData {
   info: {
     qualification_type?: string;
@@ -224,6 +233,16 @@ interface JobLearnerItem {
   jmNm?: string;
   [key: string]: unknown;
 }
+interface SessionRateRow {
+  year: string; session: string; exam_type: string; grade: string;
+  applicants: number; passed: number; pass_rate: number;
+}
+interface SessionRatesData {
+  written: SessionRateRow[];
+  practical: SessionRateRow[];
+  other: SessionRateRow[];
+  total: number;
+}
 interface ExecState {
   loading: boolean;
   schedule: ExamItem[];
@@ -233,13 +252,16 @@ interface ExecState {
   trainingItems: Array<{ course_name: string; institution_name: string; employment_rate: string }>;
   certId: string;
   fetched: boolean;
-  activeTab: 'schedule' | 'hiring' | 'training' | 'map' | 'certinfo';
-  mapPoints: MapPoint[];
-  mapLoading: boolean;
-  mapFetched: boolean;
+  activeTab: 'schedule' | 'hiring' | 'training' | 'certinfo';
   certInfoData: CertInfoData | null;
   certInfoLoading: boolean;
   certInfoFetched: boolean;
+  certStatsData: CertStatsData | null;
+  certStatsLoading: boolean;
+  certStatsFetched: boolean;
+  sessionRatesData: SessionRatesData | null;
+  sessionRatesLoading: boolean;
+  sessionRatesFetched: boolean;
   jobLearnerItems: JobLearnerItem[];
   jobLearnerLoading: boolean;
   jobLearnerFetched: boolean;
@@ -247,7 +269,13 @@ interface ExecState {
   certJobsLoading: boolean;
   certJobsFetched: boolean;
   selectedJobName: string | null;
-  jobDetailData: { job_name: string; salary: string; outlook: string; work_content: string } | null;
+  jobDetailData: {
+    job_name: string; salary: string; outlook: string; work_content: string;
+    pay_score?: number | null; job_security_score?: number | null;
+    growth_score?: number | null; work_conditions_score?: number | null;
+    professionalism_score?: number | null; equity_score?: number | null;
+    similar_jobs?: string | null; salary_summary?: string | null;
+  } | null;
   jobDetailLoading: boolean;
   processEvalItems: Array<{ [key: string]: unknown }>;
   processEvalLoading: boolean;
@@ -281,8 +309,6 @@ const CertCard = memo(({
     : pct <= 50  ? '보통 난이도'
     : pct <= 70  ? '낮은 난이도'
     : '취득 용이';
-  // 데이터 출처: 자격증 정보는 Q-Net/한국산업인력공단 기반
-  const srcLabel = 'Q-Net (q-net.or.kr) · 한국산업인력공단 자격증 목록 API (data.go.kr)';
 
   return (
     <div
@@ -327,8 +353,7 @@ const CertCard = memo(({
         </button>
       </div>
 
-      {/* ── 데이터 출처 ── */}
-      <p className="cert-data-src">출처: {srcLabel}</p>
+      <p className="cert-data-src">한국산업인력공단</p>
     </div>
   );
 });
@@ -370,8 +395,9 @@ const Recommendation: React.FC = () => {
   const [exec, setExec] = useState<ExecState>({
     loading: false, schedule: [], hiringTotal: 0, hiringItems: [],
     trainingTotal: 0, trainingItems: [], certId: '', fetched: false, activeTab: 'schedule',
-    mapPoints: [], mapLoading: false, mapFetched: false,
     certInfoData: null, certInfoLoading: false, certInfoFetched: false,
+    certStatsData: null, certStatsLoading: false, certStatsFetched: false,
+    sessionRatesData: null, sessionRatesLoading: false, sessionRatesFetched: false,
     jobLearnerItems: [], jobLearnerLoading: false, jobLearnerFetched: false,
     certJobsList: [], certJobsLoading: false, certJobsFetched: false,
     selectedJobName: null, jobDetailData: null, jobDetailLoading: false,
@@ -384,6 +410,7 @@ const Recommendation: React.FC = () => {
   const dagCacheRef = useRef<Record<string, { predecessors: RelatedCert[]; successors: RelatedCert[] }>>({});
   const execCacheRef = useRef<Record<string, Pick<ExecState, 'schedule' | 'hiringTotal' | 'hiringItems' | 'trainingTotal' | 'trainingItems'>>>({});
   const certInfoCacheRef = useRef<Record<string, CertInfoData | null>>({});
+  const certStatsCacheRef = useRef<Record<string, CertStatsData | null>>({});
   const certExplainCacheRef = useRef<Record<string, string | null>>({});
   const jobLearnerCacheRef = useRef<Record<string, JobLearnerItem[]>>({});
   const certJobsCacheRef = useRef<Record<string, string[]>>({});
@@ -461,6 +488,18 @@ const Recommendation: React.FC = () => {
 
     fetchExecData(certId);
 
+    // Auto-fetch all certinfo sections so user doesn't need to click tabs
+    fetchCertInfo(certId);
+    fetchCertStats(certId);
+    fetchSessionRates(certId);
+    // certJobs / fallback training needs cert name — look up from candidates
+    const certName_ = allCerts.find(c => c.cert_id === certId)?.cert_name ?? '';
+    if (certName_) {
+      fetchCertJobs(certId, certName_);
+      fetchJobLearner(certId, certName_);
+      fetchProcessEval(certId, certName_);
+    }
+
     // Fire AI explanation in parallel only if not cached
     if (!hasExplainCache) {
       fetch('/api/v1/recommendations/cert_explain', {
@@ -501,7 +540,7 @@ const Recommendation: React.FC = () => {
       setEvidence({ loading: false, rows: [], error: '서버에 연결할 수 없습니다.', fetched: true, certId });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stageParam, domainParam]);
+  }, [stageParam, domainParam, allCerts]);
 
   const fetchDag = useCallback(async (certId: string) => {
     const cached = dagCacheRef.current[certId];
@@ -574,6 +613,9 @@ const Recommendation: React.FC = () => {
       certJobsFetched: false, certJobsLoading: false, certJobsList: [],
       selectedJobName: null, jobDetailData: null, jobDetailLoading: false,
       processEvalFetched: false, processEvalLoading: false, processEvalItems: [],
+      certInfoData: null, certInfoLoading: false, certInfoFetched: false,
+      certStatsData: null, certStatsLoading: false, certStatsFetched: false,
+      sessionRatesData: null, sessionRatesLoading: false, sessionRatesFetched: false,
     }));
     const [schedRes, jobsRes, trainRes] = await Promise.allSettled([
       fetch(`/api/v1/schedules/exams/${encodeURIComponent(certId)}`).then(r => r.json()),
@@ -594,26 +636,6 @@ const Recommendation: React.FC = () => {
     setExec(prev => ({ ...prev, ...execResult, loading: false, certId, fetched: true }));
   }, []);
 
-  const fetchMapData = useCallback(async (certId: string) => {
-    setExec(prev => ({ ...prev, mapLoading: true, mapFetched: false }));
-    try {
-      const res = await fetch(`/api/v1/map/infra?cert_id=${encodeURIComponent(certId)}`);
-      const json = await res.json();
-      if (json.success && json.data) {
-        setExec(prev => ({
-          ...prev,
-          mapLoading: false,
-          mapFetched: true,
-          mapPoints: (json.data.all_points ?? []) as MapPoint[],
-        }));
-      } else {
-        setExec(prev => ({ ...prev, mapLoading: false, mapFetched: true }));
-      }
-    } catch {
-      setExec(prev => ({ ...prev, mapLoading: false, mapFetched: true }));
-    }
-  }, []);
-
   const fetchCertInfo = useCallback(async (certId: string) => {
     const hasCached = certId in certInfoCacheRef.current;
     if (hasCached) {
@@ -632,6 +654,56 @@ const Recommendation: React.FC = () => {
     } catch {
       certInfoCacheRef.current[certId] = null;
       setExec(prev => ({ ...prev, certInfoData: null, certInfoLoading: false, certInfoFetched: true }));
+    }
+  }, []);
+
+  const fetchCertStats = useCallback(async (certId: string) => {
+    if (certId in certStatsCacheRef.current) {
+      setExec(prev => ({ ...prev, certStatsData: certStatsCacheRef.current[certId] ?? null, certStatsLoading: false, certStatsFetched: true }));
+      return;
+    }
+    setExec(prev => ({ ...prev, certStatsLoading: true, certStatsFetched: false }));
+    try {
+      const res = await fetch(`/api/v1/certs/${encodeURIComponent(certId)}/stats`);
+      const json = await res.json();
+      const data: CertStatsData | null = json.success ? {
+        written_avg_pass_rate: json.data?.written_avg_pass_rate ?? null,
+        practical_avg_pass_rate: json.data?.practical_avg_pass_rate ?? null,
+        avg_pass_rate_3yr: json.data?.avg_pass_rate_3yr ?? null,
+        exam_frequency: json.data?.exam_frequency ?? null,
+        exam_difficulty: json.data?.exam_difficulty ?? null,
+        exam_type_info: json.data?.exam_type_info ?? null,
+        exam_subject_info: json.data?.exam_subject_info ?? null,
+      } : null;
+      certStatsCacheRef.current[certId] = data;
+      setExec(prev => ({ ...prev, certStatsData: data, certStatsLoading: false, certStatsFetched: true }));
+    } catch {
+      certStatsCacheRef.current[certId] = null;
+      setExec(prev => ({ ...prev, certStatsData: null, certStatsLoading: false, certStatsFetched: true }));
+    }
+  }, []);
+
+  const sessionRatesCacheRef = useRef<Record<string, SessionRatesData | null>>({});
+  const fetchSessionRates = useCallback(async (certId: string) => {
+    if (certId in sessionRatesCacheRef.current) {
+      setExec(prev => ({ ...prev, sessionRatesData: sessionRatesCacheRef.current[certId] ?? null, sessionRatesLoading: false, sessionRatesFetched: true }));
+      return;
+    }
+    setExec(prev => ({ ...prev, sessionRatesLoading: true, sessionRatesFetched: false }));
+    try {
+      const res = await fetch(`/api/v1/certs/${encodeURIComponent(certId)}/session-rates`);
+      const json = await res.json();
+      const data: SessionRatesData | null = json.success ? {
+        written: json.data?.written ?? [],
+        practical: json.data?.practical ?? [],
+        other: json.data?.other ?? [],
+        total: json.data?.total ?? 0,
+      } : null;
+      sessionRatesCacheRef.current[certId] = data;
+      setExec(prev => ({ ...prev, sessionRatesData: data, sessionRatesLoading: false, sessionRatesFetched: true }));
+    } catch {
+      sessionRatesCacheRef.current[certId] = null;
+      setExec(prev => ({ ...prev, sessionRatesData: null, sessionRatesLoading: false, sessionRatesFetched: true }));
     }
   }, []);
 
@@ -861,6 +933,7 @@ const Recommendation: React.FC = () => {
                 return pri(a.section_path?.[0] ?? '') - pri(b.section_path?.[0] ?? '');
               }).map((row, i) => {
                 const sec = row.section_path?.[0] ?? '';
+                const isGasanjeom = row.source_type === 'gasanjeom' || row.source_type === 'gasanjeom_inferred';
                 const isNational = row.source_type === 'national_cert_catalog';
                 const isPrivate  = row.source_type === 'private_cert_catalog';
                 const isCatalog  = isNational || isPrivate;
@@ -870,6 +943,16 @@ const Recommendation: React.FC = () => {
                 const snippetLines = (isPrivate && row.snippet.includes('\n'))
                   ? row.snippet.split('\n').filter(Boolean)
                   : null;
+                // 공무원 가산점
+                if (isGasanjeom || sec === '가산점') {
+                  const isInferred = row.source_type === 'gasanjeom_inferred';
+                  return (
+                    <div key={row.chunk_id || i} className="ev-gasanjeom">
+                      <span className="ev-gasanjeom-label">{isInferred ? '가산점 참고' : '공무원 가산점'}</span>
+                      <p className="ev-gasanjeom-text">{row.snippet}</p>
+                    </div>
+                  );
+                }
                 // 자격증 소개 — 도입목적 → 전용 intro 박스
                 if (isIntro) {
                   return (
@@ -1025,9 +1108,32 @@ const Recommendation: React.FC = () => {
                     }
                   }
 
+                  // ── Step 7.5: Transposed format — years as column headers ──
+                  // Handles: "연도 2022 2023 2024  응시자 A B C  합격자 D E F  합격률(%) R1 R2 R3"
+                  let transposedRows: StatRow[] = [];
+                  if (colMajorRows.length === 0 && yearRows.length === 0 && years.length >= 2) {
+                    const appM = cleaned.match(/응시자\s+((?:[\d,]+\s+){1,6})/);
+                    const passM = cleaned.match(/합격자\s+((?:[\d,]+\s+){1,6})/);
+                    const rateM = cleaned.match(/합격률[^0-9]+((?:[\d.]+\s*){1,6})/);
+                    if (appM && passM) {
+                      const appNums = (appM[1].match(/[\d,]+/g) ?? []).slice(0, years.length);
+                      const passNums = (passM[1].match(/[\d,]+/g) ?? []).slice(0, years.length);
+                      const rateNums = rateM ? (rateM[1].match(/[\d.]+/g) ?? []).slice(0, years.length) : [];
+                      if (appNums.length === years.length && passNums.length === years.length) {
+                        const candidate = years.map((yr, yi) => ({
+                          label: `${yr}년`, applicants: appNums[yi], passed: passNums[yi],
+                          rate: rateNums[yi] ? parseFloat(rateNums[yi]).toFixed(1) : '-',
+                        }));
+                        if (candidate.every(r => isValidRow(r.applicants, r.passed, r.rate))) {
+                          transposedRows = candidate;
+                        }
+                      }
+                    }
+                  }
+
                   // ── Step 8: 행 방향(row-major) 파싱 — sanity check 포함 ──
                   let rowMajorRows: StatRow[] = [];
-                  if (colMajorRows.length === 0 && yearRows.length === 0) {
+                  if (colMajorRows.length === 0 && yearRows.length === 0 && transposedRows.length === 0) {
                     const rowPat = /(기술사|기능장|기사|산업기사|기능사|전문가|개발자|준전문가|특급|고급|중급|초급|1급|2급|3급|A급|B급|C급|필기|실기|[가-힣\d]+차시?)\s+([\d,]+)\s+([\d,]+|-)\s*([\d.]+)?/g;
                     let rm: RegExpExecArray | null;
                     while ((rm = rowPat.exec(cleaned)) !== null) {
@@ -1104,8 +1210,32 @@ const Recommendation: React.FC = () => {
                         </div>
                       )}
 
+                      {/* Transposed (연도=열) 형식 */}
+                      {colMajorRows.length === 0 && yearRows.length === 0 && transposedRows.length > 0 && (
+                        <div className="ev-stats-table-wrap">
+                          <table className="ev-stats-table">
+                            <thead>
+                              <tr>
+                                <th>구분</th>
+                                {transposedRows.map(r => <th key={r.label}>{r.label}</th>)}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr><td className="ev-td-label">응시자</td>{transposedRows.map(r => <td key={r.label}>{r.applicants}</td>)}</tr>
+                              <tr><td className="ev-td-label">합격자</td>{transposedRows.map(r => <td key={r.label}>{r.passed}</td>)}</tr>
+                              <tr>
+                                <td className="ev-td-label">합격률(%)</td>
+                                {transposedRows.map(r => (
+                                  <td key={r.label} className="ev-td-rate">{r.rate !== '-' ? `${r.rate}%` : '-'}</td>
+                                ))}
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
                       {/* 행 방향 (급수 라벨 inline) */}
-                      {colMajorRows.length === 0 && yearRows.length === 0 && rowMajorRows.length > 0 && (
+                      {colMajorRows.length === 0 && yearRows.length === 0 && transposedRows.length === 0 && rowMajorRows.length > 0 && (
                         <div className="ev-stats-table-wrap">
                           {years.length > 0 && (
                             <div className="ev-stats-years">
@@ -1129,7 +1259,7 @@ const Recommendation: React.FC = () => {
                       )}
 
                       {/* 파싱 실패 fallback — 정제된 텍스트 */}
-                      {colMajorRows.length === 0 && yearRows.length === 0 && rowMajorRows.length === 0 && (
+                      {colMajorRows.length === 0 && yearRows.length === 0 && transposedRows.length === 0 && rowMajorRows.length === 0 && (
                         <div className="ev-stats-fallback">
                           {years.length > 0 && (
                             <div className="ev-stats-years">
@@ -1178,164 +1308,151 @@ const Recommendation: React.FC = () => {
             </div>
           )}
 
-          {/* ── Execution Panel: 시험일정 / 채용정보 / 훈련과정 ── */}
+          {/* ── Execution Panel: 시험일정 / 채용정보 / 훈련과정 / 자격정보 (stacked) ── */}
           {exec.certId === evidence.certId && (
             <div className="exec-panel">
-              <div className="exec-tabs">
-                {(['schedule','hiring','training','map','certinfo'] as const).map(tab => (
-                  <button
-                    key={tab}
-                    className={`exec-tab${exec.activeTab === tab ? ' exec-tab-active' : ''}`}
-                    onClick={() => {
-                      setExec(p => ({ ...p, activeTab: tab }));
-                      const cn = allCerts.find(c => c.cert_id === exec.certId)?.cert_name ?? '';
-                      if (tab === 'map' && !exec.mapFetched && !exec.mapLoading) {
-                        fetchMapData(exec.certId);
-                      }
-                      if (tab === 'training' && !exec.jobLearnerFetched && !exec.jobLearnerLoading && cn) {
-                        fetchJobLearner(exec.certId, cn);
-                      }
-                      if (tab === 'training' && !exec.processEvalFetched && !exec.processEvalLoading && cn) {
-                        fetchProcessEval(exec.certId, cn);
-                      }
-                      if (tab === 'certinfo' && !exec.certInfoFetched && !exec.certInfoLoading) {
-                        fetchCertInfo(exec.certId);
-                      }
-                      if (tab === 'certinfo' && !exec.certJobsFetched && !exec.certJobsLoading && cn) {
-                        fetchCertJobs(exec.certId, cn);
-                      }
-                    }}
-                  >
-                    {tab === 'schedule'  && '시험 일정'}
-                    {tab === 'hiring'    && (exec.hiringTotal > 0 ? `채용공고 ${exec.hiringTotal}건` : '채용공고')}
-                    {tab === 'training'  && (exec.trainingTotal > 0 ? `훈련과정 ${exec.trainingTotal}건` : '훈련과정')}
-                    {tab === 'map'       && '주변 인프라'}
-                    {tab === 'certinfo'  && '자격정보'}
-                  </button>
-                ))}
+              {/* dummy tabs removed — sections always visible */}
+              <div style={{display:'none'}}>
               </div>
 
               {exec.loading && (
                 <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 실시간 정보 조회 중…</div>
               )}
 
-              {!exec.loading && exec.fetched && exec.activeTab === 'schedule' && (
-                exec.schedule.length === 0
-                  ? <p className="exec-empty">현재 예정된 시험 일정이 없습니다.</p>
-                  : <div className="exec-list">
-                      {exec.schedule.map((s, i) => (
-                        <div key={i} className="exec-sched-row">
-                          <div className="exec-sched-left">
-                            <span className="exec-sched-round">{s.impl_seq_name ?? '-'}</span>
-                            <span className="exec-sched-period">
-                              {s.registration_start ? `접수 ${s.registration_start}` : ''}
-                              {s.registration_end ? `~${s.registration_end}` : ''}
-                            </span>
-                            {s.exam_start && (
-                              <span className="exec-sched-exam">시험 {s.exam_start}{s.exam_end && s.exam_end !== s.exam_start ? `~${s.exam_end}` : ''}</span>
+              {/* ── 시험 일정 ── */}
+              <div className="exec-section">
+                <p className="exec-section-title">시험 일정</p>
+                {!exec.loading && exec.fetched && (
+                  exec.schedule.length === 0
+                    ? <p className="exec-empty">현재 예정된 시험 일정이 없습니다.</p>
+                    : <div className="exec-list">
+                        {exec.schedule.map((s, i) => (
+                          <div key={i} className="exec-sched-row">
+                            <div className="exec-sched-left">
+                              <span className="exec-sched-round">{s.impl_seq_name ?? '-'}</span>
+                              <span className="exec-sched-period">
+                                {s.registration_start ? `접수 ${s.registration_start}` : ''}
+                                {s.registration_end ? `~${s.registration_end}` : ''}
+                              </span>
+                              {s.exam_start && (
+                                <span className="exec-sched-exam">시험 {s.exam_start}{s.exam_end && s.exam_end !== s.exam_start ? `~${s.exam_end}` : ''}</span>
+                              )}
+                            </div>
+                            <div className="exec-sched-right">
+                              {s.d_day_registration !== null && s.d_day_registration <= 0 && (s.d_day_exam ?? 1) > 0 && (
+                                <span className="exec-sched-reg-open">접수 중</span>
+                              )}
+                              {s.d_day_exam !== null && (
+                                <span className={`exec-dday${s.d_day_exam <= 0 ? ' exec-dday-open' : s.d_day_exam <= 7 ? ' exec-dday-soon' : ''}`}>
+                                  {s.d_day_exam === 0 ? 'D-Day' : s.d_day_exam < 0 ? '마감' : `D-${s.d_day_exam}`}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                )}
+                {exec.fetched && evidenceCertName && (() => {
+                  const qnetUrl = `https://www.q-net.or.kr/crf005.do?id=crf00503s&jmNm=${encodeURIComponent(evidenceCertName)}`;
+                  return (
+                    <a href={qnetUrl} target="_blank" rel="noreferrer" className="exec-qnet-btn">
+                      <ExternalLink size={12} /> Q-Net 원서접수
+                    </a>
+                  );
+                })()}
+              </div>
+
+              {/* ── 채용공고 ── */}
+              <div className="exec-section">
+                <p className="exec-section-title">채용공고</p>
+                {!exec.loading && exec.fetched && (
+                  exec.hiringItems.length === 0
+                    ? <p className="exec-empty">현재 관련 채용공고를 찾지 못했습니다.</p>
+                    : <div className="exec-list">
+                        {exec.hiringItems.map((j, i) => (
+                          <a key={i} href={j.url || '#'} target="_blank" rel="noreferrer" className="exec-job-row">
+                            <div className="exec-job-main">
+                              <span className="exec-job-title">{j.title}</span>
+                              <span className="exec-job-company">{j.company}</span>
+                            </div>
+                            {j.close_date && <span className="exec-job-close">~{j.close_date}</span>}
+                            <ExternalLink size={11} className="exec-job-icon" />
+                          </a>
+                        ))}
+                      </div>
+                )}
+              </div>
+
+              {/* ── 훈련과정 ── */}
+              <div className="exec-section">
+                <p className="exec-section-title">훈련과정</p>
+                {!exec.loading && exec.fetched && (
+                  exec.trainingItems.length > 0
+                    ? <div className="exec-list">
+                        {exec.trainingItems.map((t, i) => (
+                          <div key={i} className="exec-train-row">
+                            <div className="exec-train-main">
+                              <span className="exec-train-name">{t.course_name}</span>
+                              <span className="exec-train-org">{t.institution_name}</span>
+                            </div>
+                            {t.employment_rate && (
+                              <span className="exec-train-rate">취업률 {t.employment_rate}%</span>
                             )}
                           </div>
-                          {s.d_day_exam !== null && (
-                            <span className={`exec-dday${s.d_day_exam <= 0 ? ' exec-dday-open' : s.d_day_exam <= 7 ? ' exec-dday-soon' : ''}`}>
-                              {s.d_day_exam === 0 ? 'D-Day' : s.d_day_exam < 0 ? '마감' : `D-${s.d_day_exam}`}
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-              )}
-
-              {!exec.loading && exec.fetched && exec.activeTab === 'hiring' && (
-                exec.hiringItems.length === 0
-                  ? <p className="exec-empty">현재 관련 채용공고를 찾지 못했습니다.</p>
-                  : <div className="exec-list">
-                      {exec.hiringItems.map((j, i) => (
-                        <a key={i} href={j.url || '#'} target="_blank" rel="noreferrer" className="exec-job-row">
-                          <div className="exec-job-main">
-                            <span className="exec-job-title">{j.title}</span>
-                            <span className="exec-job-company">{j.company}</span>
-                          </div>
-                          {j.close_date && <span className="exec-job-close">~{j.close_date}</span>}
-                          <ExternalLink size={11} className="exec-job-icon" />
-                        </a>
-                      ))}
-                    </div>
-              )}
-
-              {!exec.loading && exec.fetched && exec.activeTab === 'training' && (
-                exec.trainingItems.length > 0
-                  ? <div className="exec-list">
-                      {exec.trainingItems.map((t, i) => (
-                        <div key={i} className="exec-train-row">
-                          <div className="exec-train-main">
-                            <span className="exec-train-name">{t.course_name}</span>
-                            <span className="exec-train-org">{t.institution_name}</span>
-                          </div>
-                          {t.employment_rate && (
-                            <span className="exec-train-rate">취업률 {t.employment_rate}%</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  : <div>
-                      <p className="exec-empty">Work24 훈련과정을 찾지 못했습니다.</p>
-                      {exec.jobLearnerLoading && (
-                        <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 일학습병행 과정 조회 중…</div>
-                      )}
-                      {exec.jobLearnerFetched && exec.jobLearnerItems.length > 0 && (
-                        <div className="exec-list">
-                          <p className="exec-section-label">일학습병행 과정 (Q-Net)</p>
-                          {exec.jobLearnerItems.map((item, i) => (
-                            <div key={i} className="exec-train-row">
-                              <div className="exec-train-main">
-                                <span className="exec-train-name">{String(item.itemNm ?? item.jmNm ?? '-')}</span>
-                                <span className="exec-train-org">{String(item.corpNm ?? '-')}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {exec.jobLearnerFetched && exec.jobLearnerItems.length === 0 && (
-                        <p className="exec-empty">일학습병행 과정도 찾지 못했습니다.</p>
-                      )}
-                      {exec.processEvalLoading && (
-                        <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 과정평가형 자격 조회 중…</div>
-                      )}
-                      {exec.processEvalFetched && exec.processEvalItems.length > 0 && (
-                        <div className="exec-list">
-                          <p className="exec-section-label">과정평가형 자격 (Work24)</p>
-                          {exec.processEvalItems.map((item, i) => {
-                            const name = String(item.jmNm ?? item.course_name ?? item.itemNm ?? '-');
-                            const org = String(item.insttNm ?? item.institution_name ?? item.corpNm ?? '');
-                            return (
+                        ))}
+                      </div>
+                    : <div>
+                        <p className="exec-empty">Work24 훈련과정을 찾지 못했습니다.</p>
+                        {exec.jobLearnerLoading && (
+                          <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 일학습병행 과정 조회 중…</div>
+                        )}
+                        {exec.jobLearnerFetched && exec.jobLearnerItems.length > 0 && (
+                          <div className="exec-list">
+                            <p className="exec-section-label">일학습병행 과정 (Q-Net)</p>
+                            {exec.jobLearnerItems.map((item, i) => (
                               <div key={i} className="exec-train-row">
                                 <div className="exec-train-main">
-                                  <span className="exec-train-name">{name}</span>
-                                  {org && <span className="exec-train-org">{org}</span>}
+                                  <span className="exec-train-name">{String(item.itemNm ?? item.jmNm ?? '-')}</span>
+                                  <span className="exec-train-org">{String(item.corpNm ?? '-')}</span>
                                 </div>
                               </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-              )}
+                            ))}
+                          </div>
+                        )}
+                        {exec.jobLearnerFetched && exec.jobLearnerItems.length === 0 && (
+                          <p className="exec-empty">일학습병행 과정도 찾지 못했습니다.</p>
+                        )}
+                        {exec.processEvalLoading && (
+                          <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 과정평가형 자격 조회 중…</div>
+                        )}
+                        {exec.processEvalFetched && exec.processEvalItems.length > 0 && (
+                          <div className="exec-list">
+                            <p className="exec-section-label">과정평가형 자격 (Work24)</p>
+                            {exec.processEvalItems.map((item, i) => {
+                              const name = String(item.jmNm ?? item.course_name ?? item.itemNm ?? '-');
+                              const org = String(item.insttNm ?? item.institution_name ?? item.corpNm ?? '');
+                              return (
+                                <div key={i} className="exec-train-row">
+                                  <div className="exec-train-main">
+                                    <span className="exec-train-name">{name}</span>
+                                    {org && <span className="exec-train-org">{org}</span>}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                )}
+              </div>
 
-              {exec.activeTab === 'map' && (
-                exec.mapLoading
-                  ? <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 주변 인프라 조회 중…</div>
-                  : exec.mapFetched && exec.mapPoints.length === 0
-                    ? <p className="exec-empty">주변 인프라 데이터를 불러오지 못했습니다.</p>
-                    : exec.mapFetched
-                      ? <KakaoMap points={exec.mapPoints} height="320px" />
-                      : <p className="exec-empty">지도 탭을 클릭하면 주변 인프라를 불러옵니다.</p>
-              )}
-
-              {exec.activeTab === 'certinfo' && (
-                exec.certInfoLoading
+              {/* ── 자격 정보 ── */}
+              <div className="exec-section">
+                <p className="exec-section-title">자격 정보</p>
+                {exec.certInfoLoading
                   ? <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 자격정보 조회 중…</div>
                   : !exec.certInfoFetched
-                    ? <p className="exec-empty">자격정보 탭을 클릭하면 응시자격·시험과목을 불러옵니다.</p>
+                    ? <p className="exec-empty">자격 정보를 불러오는 중입니다…</p>
                     : (!exec.certInfoData?.info && !exec.certInfoData?.exam_info)
                       ? <p className="exec-empty">이 자격증의 상세 정보를 찾지 못했습니다.</p>
                       : (
@@ -1392,7 +1509,175 @@ const Recommendation: React.FC = () => {
                               </div>
                             </div>
                           )}
-                          <p className="certinfo-src">출처: 한국산업인력공단 Q-Net API (openapi.q-net.or.kr)</p>
+                          <p className="certinfo-src">한국산업인력공단</p>
+
+                          {/* 합격률 통계 — session-rates (회별 실데이터) + cert_master 평균 */}
+                          {exec.sessionRatesLoading && (
+                            <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 합격률 데이터 조회 중…</div>
+                          )}
+                          {exec.sessionRatesFetched && (() => {
+                            const sr = exec.sessionRatesData;
+                            const cs = exec.certStatsData;
+                            const hasSession = sr && sr.total > 0;
+                            const hasSummary = cs && (cs.written_avg_pass_rate != null || cs.practical_avg_pass_rate != null || cs.avg_pass_rate_3yr != null || cs.exam_frequency);
+                            if (!hasSession && !hasSummary) return null;
+
+                            // build year-aggregated series for chart
+                            type ChartPoint = { year: string; written: number | null; practical: number | null };
+                            const yearMap: Record<string, { wSum: number; wCnt: number; pSum: number; pCnt: number }> = {};
+                            if (sr) {
+                              for (const r of sr.written) {
+                                const y = r.year;
+                                if (!yearMap[y]) yearMap[y] = { wSum: 0, wCnt: 0, pSum: 0, pCnt: 0 };
+                                yearMap[y].wSum += r.pass_rate; yearMap[y].wCnt++;
+                              }
+                              for (const r of sr.practical) {
+                                const y = r.year;
+                                if (!yearMap[y]) yearMap[y] = { wSum: 0, wCnt: 0, pSum: 0, pCnt: 0 };
+                                yearMap[y].pSum += r.pass_rate; yearMap[y].pCnt++;
+                              }
+                            }
+                            const chartData: ChartPoint[] = Object.keys(yearMap).sort().map(y => ({
+                              year: y,
+                              written: yearMap[y].wCnt > 0 ? yearMap[y].wSum / yearMap[y].wCnt : null,
+                              practical: yearMap[y].pCnt > 0 ? yearMap[y].pSum / yearMap[y].pCnt : null,
+                            }));
+
+                            // SVG mini line chart
+                            const SvgChart = ({ data, color, key2 }: { data: ChartPoint[]; color: string; key2: 'written' | 'practical' }) => {
+                              const pts = data.filter(d => d[key2] != null);
+                              if (pts.length < 2) return null;
+                              const W = 260, H = 72, PAD = 28;
+                              const vals = pts.map(p => p[key2] as number);
+                              const minV = Math.max(0, Math.min(...vals) - 5);
+                              const maxV = Math.min(100, Math.max(...vals) + 5);
+                              const range = maxV - minV || 1;
+                              const toX = (i: number) => PAD + (i / (pts.length - 1)) * (W - PAD * 2);
+                              const toY = (v: number) => H - 14 - ((v - minV) / range) * (H - 28);
+                              const polyline = pts.map((p, i) => `${toX(i)},${toY(p[key2] as number)}`).join(' ');
+                              return (
+                                <svg width={W} height={H} style={{ overflow: 'visible', display: 'block' }}>
+                                  <polyline points={polyline} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" />
+                                  {pts.map((p, i) => (
+                                    <g key={i}>
+                                      <circle cx={toX(i)} cy={toY(p[key2] as number)} r="3.5" fill={color} />
+                                      <text x={toX(i)} y={toY(p[key2] as number) - 7} textAnchor="middle" fontSize="10" fill={color} fontWeight="600">
+                                        {(p[key2] as number).toFixed(1)}%
+                                      </text>
+                                      <text x={toX(i)} y={H - 2} textAnchor="middle" fontSize="9" fill="#94a3b8">{p.year}</text>
+                                    </g>
+                                  ))}
+                                </svg>
+                              );
+                            };
+
+                            // Render session table for one group
+                            const SessionTable = ({ rows, label, color }: { rows: SessionRateRow[]; label: string; color: string }) => {
+                              if (rows.length === 0) return null;
+                              const years = [...new Set(rows.map(r => r.year))].sort();
+                              const sessions = [...new Set(rows.map(r => r.session))].sort();
+                              return (
+                                <div className="sr-table-wrap">
+                                  <div className="sr-table-head" style={{ color }}>{label}</div>
+                                  <div className="sr-chart-row">
+                                    <SvgChart data={chartData} color={color} key2={label === '필기' ? 'written' : 'practical'} />
+                                  </div>
+                                  <div style={{ overflowX: 'auto' }}>
+                                    <table className="ev-stats-table">
+                                      <thead>
+                                        <tr>
+                                          <th>연도</th>
+                                          {sessions.map(s => (
+                                            <React.Fragment key={s}>
+                                              <th>{s} 응시</th>
+                                              <th>{s} 합격</th>
+                                              <th>{s} 합격률</th>
+                                            </React.Fragment>
+                                          ))}
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {years.map(yr => {
+                                          const rowsByYear = rows.filter(r => r.year === yr);
+                                          return (
+                                            <tr key={yr}>
+                                              <td className="ev-td-label">{yr}년</td>
+                                              {sessions.map(s => {
+                                                const r = rowsByYear.find(x => x.session === s);
+                                                return (
+                                                  <React.Fragment key={s}>
+                                                    <td>{r ? r.applicants.toLocaleString() : '-'}</td>
+                                                    <td>{r ? r.passed.toLocaleString() : '-'}</td>
+                                                    <td className="ev-td-rate">{r ? `${r.pass_rate.toFixed(1)}%` : '-'}</td>
+                                                  </React.Fragment>
+                                                );
+                                              })}
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              );
+                            };
+
+                            return (
+                              <div className="certinfo-block">
+                                <p className="certinfo-block-title">합격률 통계</p>
+                                {/* summary chips from cert_master */}
+                                {hasSummary && (
+                                  <div className="certinfo-stat-row">
+                                    {cs!.written_avg_pass_rate != null && (
+                                      <div className="certinfo-stat-chip certinfo-stat-written">
+                                        <span className="certinfo-stat-label">필기 평균</span>
+                                        <span className="certinfo-stat-val">{cs!.written_avg_pass_rate.toFixed(1)}%</span>
+                                      </div>
+                                    )}
+                                    {cs!.practical_avg_pass_rate != null && (
+                                      <div className="certinfo-stat-chip certinfo-stat-practical">
+                                        <span className="certinfo-stat-label">실기 평균</span>
+                                        <span className="certinfo-stat-val">{cs!.practical_avg_pass_rate.toFixed(1)}%</span>
+                                      </div>
+                                    )}
+                                    {cs!.avg_pass_rate_3yr != null && (
+                                      <div className="certinfo-stat-chip certinfo-stat-avg">
+                                        <span className="certinfo-stat-label">3년 평균</span>
+                                        <span className="certinfo-stat-val">{cs!.avg_pass_rate_3yr.toFixed(1)}%</span>
+                                      </div>
+                                    )}
+                                    {cs!.exam_frequency && (
+                                      <div className="certinfo-stat-chip certinfo-stat-freq">
+                                        <span className="certinfo-stat-label">시험 횟수</span>
+                                        <span className="certinfo-stat-val">{cs!.exam_frequency}</span>
+                                      </div>
+                                    )}
+                                    {cs!.exam_difficulty != null && (
+                                      <div className="certinfo-stat-chip certinfo-stat-diff">
+                                        <span className="certinfo-stat-label">난이도</span>
+                                        <span className="certinfo-stat-val">{cs!.exam_difficulty.toFixed(1)}</span>
+                                      </div>
+                                    )}
+                                    {(cs!.exam_type_info || cs!.exam_subject_info) && (
+                                      <div className="certinfo-stat-chip certinfo-stat-type">
+                                        <span className="certinfo-stat-label">시험 구성</span>
+                                        <span className="certinfo-stat-val">{cs!.exam_type_info || cs!.exam_subject_info}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {/* Session-rate tables with charts */}
+                                {hasSession && (
+                                  <div className="sr-tables">
+                                    <SessionTable rows={sr!.written} label="필기" color="#3b82f6" />
+                                    <SessionTable rows={sr!.practical} label="실기" color="#10b981" />
+                                    {sr!.other.length > 0 && <SessionTable rows={sr!.other} label="기타" color="#f59e0b" />}
+                                  </div>
+                                )}
+                                <p className="certinfo-src">한국산업인력공단 국가기술자격 취득현황</p>
+                              </div>
+                            );
+                          })()}
 
                           {/* GOMS 연관 직업 */}
                           {exec.certJobsLoading && (
@@ -1419,10 +1704,33 @@ const Recommendation: React.FC = () => {
                               {exec.jobDetailData && exec.selectedJobName && (
                                 <div className="job-detail-card">
                                   <p className="job-detail-name">{exec.jobDetailData.job_name || exec.selectedJobName}</p>
-                                  {exec.jobDetailData.salary && (
+                                  {/* 워크넷 6개 직업 지수 */}
+                                  {(exec.jobDetailData.pay_score != null || exec.jobDetailData.job_security_score != null) && (
+                                    <div className="jd-scores">
+                                      {[
+                                        { label: '보상', val: exec.jobDetailData.pay_score },
+                                        { label: '고용안정', val: exec.jobDetailData.job_security_score },
+                                        { label: '성장', val: exec.jobDetailData.growth_score },
+                                        { label: '근무여건', val: exec.jobDetailData.work_conditions_score },
+                                        { label: '전문성', val: exec.jobDetailData.professionalism_score },
+                                        { label: '고용평등', val: exec.jobDetailData.equity_score },
+                                      ].filter(s => s.val != null).map(({ label, val }) => {
+                                        const v = val!;
+                                        const c = v >= 67 ? '#16a34a' : v >= 34 ? '#d97706' : '#dc2626';
+                                        return (
+                                          <div key={label} className="jd-score-item">
+                                            <span className="jd-score-label">{label}</span>
+                                            <div className="jd-score-bar"><div className="jd-score-fill" style={{ width: `${v}%`, background: c }} /></div>
+                                            <span className="jd-score-num" style={{ color: c }}>{Math.round(v)}</span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                  {(exec.jobDetailData.salary_summary || exec.jobDetailData.salary) && (
                                     <div className="job-detail-row">
                                       <span className="job-detail-key">임금 수준</span>
-                                      <span className="job-detail-val">{exec.jobDetailData.salary}</span>
+                                      <span className="job-detail-val">{exec.jobDetailData.salary_summary || exec.jobDetailData.salary}</span>
                                     </div>
                                   )}
                                   {exec.jobDetailData.outlook && (
@@ -1431,21 +1739,28 @@ const Recommendation: React.FC = () => {
                                       <span className="job-detail-val">{exec.jobDetailData.outlook}</span>
                                     </div>
                                   )}
+                                  {exec.jobDetailData.similar_jobs && (
+                                    <div className="job-detail-row">
+                                      <span className="job-detail-key">유사 직업</span>
+                                      <span className="job-detail-val">{exec.jobDetailData.similar_jobs}</span>
+                                    </div>
+                                  )}
                                   {exec.jobDetailData.work_content && (
                                     <div className="job-detail-row job-detail-row-block">
                                       <span className="job-detail-key">하는 일</span>
                                       <span className="job-detail-val job-detail-content">{exec.jobDetailData.work_content.slice(0, 200)}{exec.jobDetailData.work_content.length > 200 ? '…' : ''}</span>
                                     </div>
                                   )}
-                                  <p className="certinfo-src">출처: 고용24 직업정보상세 (고용노동부)</p>
+                                  <p className="certinfo-src">고용24 · 워크넷 직업사전</p>
                                 </div>
                               )}
-                              <p className="certinfo-src">출처: 고용24 · NCS 직무 매핑 데이터</p>
+                              <p className="certinfo-src">고용24 · NCS</p>
                             </div>
                           )}
                         </div>
                       )
-              )}
+                  }
+              </div>
             </div>
           )}
 
@@ -1604,18 +1919,6 @@ const Recommendation: React.FC = () => {
         )}
       </section>
 
-      {/* ── 데이터 출처 푸터 ── */}
-      <div className="data-src-footer">
-        <span className="data-src-footer-label">데이터 출처</span>
-        <span className="data-src-sep">·</span>
-        <a href="https://www.data.go.kr" target="_blank" rel="noreferrer" className="data-src-link">
-          공공데이터포털 (data.go.kr) — 국가기술자격 종목별 취득 정보 (한국산업인력공단)
-        </a>
-        <span className="data-src-sep">·</span>
-        <a href="https://data.seoul.go.kr" target="_blank" rel="noreferrer" className="data-src-link">
-          서울 열린데이터광장 (data.seoul.go.kr) — 서울시 고립·은둔 청년 실태조사 2022
-        </a>
-      </div>
 
       <style>{`
         .rec-wrap{display:flex;flex-direction:column;gap:1.5rem}
@@ -1767,6 +2070,9 @@ const Recommendation: React.FC = () => {
         .ev-exam-section-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:var(--primary);text-transform:uppercase}
         .ev-exam-row{display:flex;flex-wrap:wrap;gap:.5rem}
         .ev-exam-pill{display:inline-flex;align-items:center;padding:.25rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-full);font-size:.8rem;font-weight:600;color:var(--text);white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+        .ev-gasanjeom{padding:.875rem 1rem;background:#fefce8;border:1px solid #fde68a;border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.35rem}
+        .ev-gasanjeom-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:#92400e;text-transform:uppercase}
+        .ev-gasanjeom-text{font-size:.855rem;color:#78350f;line-height:1.65;margin:0}
         .videos-panel{padding:1.25rem;display:flex;flex-direction:column;gap:.875rem;border-left:3px solid #ef4444}
         .cache-badge{padding:.1rem .4rem;background:#f1f5f9;color:#64748b;border-radius:3px;font-size:.62rem;font-weight:700;letter-spacing:.05em;flex-shrink:0}
         .videos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.875rem}
@@ -1876,16 +2182,19 @@ const Recommendation: React.FC = () => {
         }
 
         /* ── Execution Panel ── */
-        .exec-panel{padding:.875rem 1rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.625rem}
-        .exec-tabs{display:flex;gap:.375rem;flex-wrap:wrap}
-        .exec-tab{padding:.3rem .75rem;border-radius:99px;border:1.5px solid #e2e8f0;background:#fff;font-size:.78rem;font-weight:600;color:#64748b;cursor:pointer;transition:all .15s;white-space:nowrap}
-        .exec-tab:hover{border-color:#6366f1;color:#6366f1}
-        .exec-tab-active{background:#6366f1;color:#fff!important;border-color:#6366f1!important}
-        .exec-loading{font-size:.8rem;color:#94a3b8;display:flex;align-items:center;gap:.4rem;padding:.375rem 0}
-        .exec-empty{font-size:.82rem;color:#94a3b8;padding:.375rem 0;margin:0}
+        .exec-panel{padding:0;background:transparent;border:none;display:flex;flex-direction:column;gap:0}
+        .exec-section{padding:.875rem 1rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.5rem;margin-bottom:.5rem}
+        .exec-section:last-child{margin-bottom:0}
+        .exec-section-title{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:var(--primary);text-transform:uppercase;margin:0}
+        .exec-loading{font-size:.8rem;color:var(--text-light);display:flex;align-items:center;gap:.4rem;padding:.375rem 0}
+        .exec-empty{font-size:.82rem;color:var(--text-light);padding:.375rem 0;margin:0}
         .exec-list{display:flex;flex-direction:column;gap:.375rem}
         /* 시험 일정 */
         .exec-sched-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;background:#fff;border:1px solid #e2e8f0;border-radius:6px;gap:.5rem}
+        .exec-sched-right{display:flex;flex-direction:column;align-items:flex-end;gap:.25rem;flex-shrink:0}
+        .exec-sched-reg-open{font-size:.68rem;font-weight:700;padding:.15rem .45rem;border-radius:var(--radius-xs);background:#dcfce7;color:#15803d}
+        .exec-qnet-btn{display:inline-flex;align-items:center;gap:.35rem;font-size:.75rem;font-weight:600;color:var(--primary);text-decoration:none;padding:.3rem .6rem;border:1px solid var(--primary);border-radius:var(--radius-xs);width:fit-content;margin-top:.25rem;transition:background .15s}
+        .exec-qnet-btn:hover{background:var(--primary-light)}
         .exec-sched-left{display:flex;flex-direction:column;gap:.1rem}
         .exec-sched-round{font-size:.82rem;font-weight:700;color:#1e293b}
         .exec-sched-period{font-size:.72rem;color:#64748b}
@@ -1919,6 +2228,16 @@ const Recommendation: React.FC = () => {
         .certinfo-link{font-size:.8rem;color:var(--primary);text-decoration:none;display:inline-flex;align-items:center;gap:.2rem}
         .certinfo-link:hover{text-decoration:underline}
         .certinfo-src{font-size:.65rem;color:#94a3b8;margin:0;border-top:1px solid #f1f5f9;padding-top:.375rem}
+        .certinfo-stat-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem}
+        .certinfo-stat-chip{display:flex;flex-direction:column;align-items:center;padding:.35rem .7rem;border-radius:8px;min-width:64px;gap:.1rem}
+        .certinfo-stat-label{font-size:.62rem;font-weight:600;opacity:.75}
+        .certinfo-stat-val{font-size:.9rem;font-weight:800}
+        .certinfo-stat-written{background:#eef2ff;color:#4f46e5}
+        .certinfo-stat-practical{background:#ecfeff;color:#0891b2}
+        .certinfo-stat-avg{background:#f0fdf4;color:#16a34a}
+        .certinfo-stat-freq{background:#fef9c3;color:#92400e}
+        .certinfo-stat-diff{background:#fdf4ff;color:#7c3aed}
+        .certinfo-stat-type{background:#f0fdf4;color:#15803d}
         .certinfo-job-tags{display:flex;flex-wrap:wrap;gap:.35rem}
         .certinfo-job-tag{padding:.2rem .6rem;background:#f0f9ff;border:1px solid #bae6fd;border-radius:99px;font-size:.75rem;color:#0369a1;font-weight:500}
         .certinfo-job-btn{cursor:pointer;transition:all .15s;border:1px solid #bae6fd}
@@ -1926,6 +2245,12 @@ const Recommendation: React.FC = () => {
         .certinfo-job-selected{background:#0369a1!important;color:#fff!important;border-color:#0369a1!important}
         .certinfo-job-more{background:#f8fafc;border-color:#e2e8f0;color:#64748b}
         .certinfo-job-hint{font-size:.62rem;font-weight:500;color:#94a3b8;text-transform:none;letter-spacing:0}
+        .jd-scores{display:flex;flex-direction:column;gap:.25rem;background:#e0f2fe;border-radius:6px;padding:.5rem .625rem;margin-bottom:.25rem}
+        .jd-score-item{display:grid;grid-template-columns:60px 1fr 24px;align-items:center;gap:.35rem}
+        .jd-score-label{font-size:.65rem;font-weight:600;color:#0369a1}
+        .jd-score-bar{height:5px;background:#bae6fd;border-radius:99px;overflow:hidden}
+        .jd-score-fill{height:100%;border-radius:99px;transition:width .4s}
+        .jd-score-num{font-size:.67rem;font-weight:800;text-align:right}
         .job-detail-card{margin-top:.5rem;padding:.75rem .875rem;background:#f0f9ff;border:1px solid #bae6fd;border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.35rem;animation:fade-in .15s ease}
         @keyframes fade-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
         .job-detail-name{font-size:.85rem;font-weight:800;color:#0c4a6e;margin:0 0 .2rem}
@@ -1935,6 +2260,12 @@ const Recommendation: React.FC = () => {
         .job-detail-val{font-size:.8rem;color:#0c4a6e;line-height:1.55}
         .job-detail-content{white-space:pre-wrap;word-break:keep-all}
         .exec-section-label{font-size:.68rem;font-weight:800;letter-spacing:.06em;color:#6366f1;text-transform:uppercase;margin:.375rem 0 .25rem;display:block}
+
+        /* session-rates table+chart */
+        .sr-tables{display:flex;flex-direction:column;gap:.875rem;margin-top:.5rem}
+        .sr-table-wrap{display:flex;flex-direction:column;gap:.3rem}
+        .sr-table-head{font-size:.72rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:.2rem 0}
+        .sr-chart-row{padding:.25rem 0 .5rem}
 
         /* 설문 미완료 배너 */
         .survey-required-banner{

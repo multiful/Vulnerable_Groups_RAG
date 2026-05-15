@@ -17,6 +17,11 @@ interface RecommendedCert {
   cert_name: string;
   cert_grade_tier: string;
   avg_pass_rate: number | null;
+  written_avg_pass_rate?: number | null;
+  practical_avg_pass_rate?: number | null;
+  exam_frequency?: string | null;
+  exam_difficulty?: number | null;
+  exam_fee_info?: string | null;
   is_bottleneck: boolean;
   bottleneck_note: string | null;
   is_redundant: boolean;
@@ -123,8 +128,8 @@ const STARTING_STAGE_MAP: Record<number, string> = {
   1: 'roadmap_stage_0003',
   2: 'roadmap_stage_0002',
   3: 'roadmap_stage_0002',
-  4: 'roadmap_stage_0001',
-  5: 'roadmap_stage_0001',
+  4: 'roadmap_stage_0002',
+  5: 'roadmap_stage_0002',
 };
 
 function extractPassRate(text: string): number | null {
@@ -240,18 +245,19 @@ const Roadmap: React.FC = () => {
   const [llmLoadStep, setLlmLoadStep] = useState(0);
 
   const LLM_LOAD_MESSAGES = [
-    '위험군 단계와 관심 분야를 분석하는 중…',
-    '적합한 자격증 후보를 탐색하는 중…',
-    '최적 학습 순서를 설계하는 중…',
-    '로드맵 단계별 경로를 조합하는 중…',
-    '거의 다 됐어요! 마무리 중…',
+    '위험군 단계와 관심 분야를 파악하는 중…',
+    '조건에 맞는 자격증 후보를 추리는 중…',
+    '학습 난이도와 선수 관계를 정리하는 중…',
+    '단계별 로드맵 경로를 조합하는 중…',
+    '마지막으로 검토하는 중…',
   ];
 
   useEffect(() => {
     if (!llmLoading) { setLlmLoadStep(0); return; }
+    // 1.8s 간격으로 단계 진행 — 마지막 단계에서는 API 완료까지 대기
     const iv = setInterval(() => {
       setLlmLoadStep(s => Math.min(s + 1, LLM_LOAD_MESSAGES.length - 1));
-    }, 5000);
+    }, 1800);
     return () => clearInterval(iv);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [llmLoading]);
@@ -261,6 +267,8 @@ const Roadmap: React.FC = () => {
   const [evRows, setEvRows] = useState<{ section_path: string[]; snippet: string; chunk_id: string; source_type?: string; similarity?: number | null; source_url?: string | null }[]>([]);
   const [dagData, setDagData] = useState<{ predecessors: { cert_id: string; cert_name: string; relation_label: string; cert_grade_tier?: string; avg_pass_rate?: number | null }[]; successors: { cert_id: string; cert_name: string; relation_label: string; cert_grade_tier?: string; avg_pass_rate?: number | null }[] } | null>(null);
   const [evLoading, setEvLoading] = useState(false);
+  const [srData, setSrData] = useState<{ written: {year:string;session:string;pass_rate:number}[]; practical: {year:string;session:string;pass_rate:number}[]; total: number } | null>(null);
+  const srCacheRef = useRef<Record<string, typeof srData>>({});
   const drawerAbortRef  = useRef<AbortController | null>(null);
   const roadmapAbortRef = useRef<AbortController | null>(null);
   const llmAbortRef     = useRef<AbortController | null>(null);
@@ -428,21 +436,38 @@ const Roadmap: React.FC = () => {
     setActiveCert({ id: certId, name: certName });
     setEvRows([]);
     setDagData(null);
+    setSrData(null);
     setEvLoading(true);
     try {
-      const [evRes, dagRes] = await Promise.all([
+      const srCached = srCacheRef.current[certId];
+      const srPromise = srCached !== undefined
+        ? Promise.resolve(srCached)
+        : fetch(`/api/v1/certs/${encodeURIComponent(certId)}/session-rates`, { signal: ctrl.signal })
+            .then(r => r.json())
+            .then(json => {
+              const d = json.success && json.data?.total > 0
+                ? { written: json.data.written ?? [], practical: json.data.practical ?? [], total: json.data.total ?? 0 }
+                : null;
+              srCacheRef.current[certId] = d;
+              return d;
+            })
+            .catch(() => null);
+
+      const [evRes, dagRes, srResult] = await Promise.all([
         fetch('/api/v1/recommendations/evidence', {
           method: 'POST', signal: ctrl.signal,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ cert_id: certId }),
         }),
         fetch(`/api/v1/recommendations/related?cert_id=${encodeURIComponent(certId)}`, { signal: ctrl.signal }),
+        srPromise,
       ]);
       if (ctrl.signal.aborted) return;
       const evJson = await evRes.json();
       const dagJson = await dagRes.json();
       if (evJson.success) setEvRows(evJson.data?.evidence ?? []);
       if (dagJson.success) setDagData(dagJson.data);
+      setSrData(srResult ?? null);
     } catch (e) {
       if ((e as Error).name === 'AbortError') return;
     } finally {
@@ -757,6 +782,15 @@ const Roadmap: React.FC = () => {
                                           {cert.is_bottleneck && ' ⚠'}
                                         </span>
                                       )}
+                                      {cert.written_avg_pass_rate !== null && cert.written_avg_pass_rate !== undefined && (
+                                        <span className="tl-pass-split">필기 {Math.round(cert.written_avg_pass_rate)}%</span>
+                                      )}
+                                      {cert.practical_avg_pass_rate !== null && cert.practical_avg_pass_rate !== undefined && (
+                                        <span className="tl-pass-split tl-pass-practical">실기 {Math.round(cert.practical_avg_pass_rate)}%</span>
+                                      )}
+                                      {cert.exam_frequency && (
+                                        <span className="tl-exam-freq">{cert.exam_frequency}</span>
+                                      )}
                                       <span className="tl-achievability" style={{ color: aColor }}>
                                         {achievabilityLabel(cert.achievability)}
                                       </span>
@@ -815,15 +849,90 @@ const Roadmap: React.FC = () => {
                                             return pri(a.section_path?.[0] ?? '') - pri(b.section_path?.[0] ?? '');
                                           }).map((ev, i) => {
                                             const sec = ev.section_path?.[0] ?? '';
+                                            const isGasanjeom = ev.source_type === 'gasanjeom' || ev.source_type === 'gasanjeom_inferred';
                                             const isNational = ev.source_type === 'national_cert_catalog';
                                             const isPrivate  = ev.source_type === 'private_cert_catalog';
                                             const isCatalog  = isNational || isPrivate;
-                                            const isIntro    = sec === '도입목적';
-                                            const isCareer   = sec === '진로(자격활용)' || sec === '자격 활용 현황';
-                                            const isExamInfo = sec === '시험 정보' || sec.includes('합격률') || sec.includes('난이도');
-                                            const snippetLines = (isPrivate && ev.snippet.includes('\n'))
+
+                                            if (isGasanjeom || sec === '가산점') {
+                                              const isInferred = ev.source_type === 'gasanjeom_inferred';
+                                              return (
+                                                <div key={ev.chunk_id ?? i} className="rm-ev-gasanjeom">
+                                                  <span className="rm-ev-gasanjeom-label">{isInferred ? '가산점 참고' : '공무원 가산점'}</span>
+                                                  <p className="rm-ev-gasanjeom-text">{ev.snippet}</p>
+                                                </div>
+                                              );
+                                            }
+                                            const isIntro       = sec === '도입목적';
+                                            const isCareer      = sec === '진로(자격활용)' || sec === '자격 활용 현황';
+                                            const isExamInfo    = sec === '시험 정보' || sec.includes('합격률') || sec.includes('난이도');
+                                            const isExamHistory = sec === '검정 현황';
+                                            const snippetLines  = (isPrivate && ev.snippet.includes('\n'))
                                               ? ev.snippet.split('\n').filter(Boolean)
                                               : null;
+
+                                            if (isExamHistory) {
+                                              // 공백 구분 평문 테이블을 파싱
+                                              const tks = ev.snippet.trim().split(/\s+/);
+                                              const FIXED = ['연도','차시','응시자','합격자','합격률(%)'];
+                                              let ti = 0;
+                                              // 헤더 건너뜀
+                                              for (const h of FIXED) { if (tks[ti] === h) ti++; }
+                                              const years: string[] = [];
+                                              while (ti < tks.length && /^20\d{2}$/.test(tks[ti])) years.push(tks[ti++]);
+                                              const sessions: string[] = [];
+                                              while (ti < tks.length && /^\d+차$/.test(tks[ti])) sessions.push(tks[ti++]);
+                                              const nC = sessions.length;
+                                              const rem = tks.slice(ti);
+                                              const app = rem.slice(0, nC);
+                                              const pas = rem.slice(nC, nC * 2);
+                                              const rat = rem.slice(nC * 2, nC * 3);
+                                              const spY = years.length > 0 ? Math.ceil(nC / years.length) : 1;
+                                              type HRow = {year:string;session:string;app:string;pas:string;rat:string};
+                                              const tableRows: HRow[] = sessions.map((s, idx) => ({
+                                                year: idx % spY === 0 ? (years[Math.floor(idx / spY)] ?? '') : '',
+                                                session: s,
+                                                app: app[idx] ?? '-',
+                                                pas: pas[idx] ?? '-',
+                                                rat: rat[idx] && rat[idx] !== '.' ? rat[idx] + '%' : '-',
+                                              }));
+                                              const parsed = tableRows.length > 0 && nC > 0;
+                                              return (
+                                                <div key={ev.chunk_id ?? i} className="rm-ev-hist-wrap">
+                                                  <span className="rm-ev-src rm-ev-src-catalog">공인민간자격</span>
+                                                  <span className="rm-ev-hist-title">검정 현황</span>
+                                                  {parsed ? (
+                                                    <div style={{ overflowX: 'auto' }}>
+                                                      <table className="rm-ev-hist-table">
+                                                        <thead>
+                                                          <tr>
+                                                            <th>연도</th>
+                                                            <th>차시</th>
+                                                            <th>응시자</th>
+                                                            <th>합격자</th>
+                                                            <th>합격률</th>
+                                                          </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                          {tableRows.map((r, ri) => (
+                                                            <tr key={ri}>
+                                                              <td className="rm-ev-hist-year">{r.year}</td>
+                                                              <td className="rm-ev-hist-sess">{r.session}</td>
+                                                              <td>{r.app}</td>
+                                                              <td>{r.pas}</td>
+                                                              <td className={`rm-ev-hist-rate${parseFloat(r.rat) >= 70 ? ' hi' : parseFloat(r.rat) >= 50 ? ' mid' : ''}`}>{r.rat}</td>
+                                                            </tr>
+                                                          ))}
+                                                        </tbody>
+                                                      </table>
+                                                    </div>
+                                                  ) : (
+                                                    <p className="rm-ev-snippet">{ev.snippet}</p>
+                                                  )}
+                                                </div>
+                                              );
+                                            }
+
                                             if (isIntro) {
                                               return (
                                                 <div key={ev.chunk_id ?? i} className="rm-ev-intro-box">
@@ -906,6 +1015,67 @@ const Roadmap: React.FC = () => {
                                       {!evLoading && !dagData && evRows.length === 0 && (
                                         <p className="rm-drawer-empty">근거 데이터가 없습니다.</p>
                                       )}
+                                      {srData && srData.total > 0 && (() => {
+                                        type ChartPt = { year: string; w: number | null; p: number | null };
+                                        const yearMap: Record<string, { wS: number; wC: number; pS: number; pC: number }> = {};
+                                        for (const r of srData.written) {
+                                          if (!yearMap[r.year]) yearMap[r.year] = { wS: 0, wC: 0, pS: 0, pC: 0 };
+                                          yearMap[r.year].wS += r.pass_rate; yearMap[r.year].wC++;
+                                        }
+                                        for (const r of srData.practical) {
+                                          if (!yearMap[r.year]) yearMap[r.year] = { wS: 0, wC: 0, pS: 0, pC: 0 };
+                                          yearMap[r.year].pS += r.pass_rate; yearMap[r.year].pC++;
+                                        }
+                                        const pts: ChartPt[] = Object.keys(yearMap).sort().map(y => ({
+                                          year: y,
+                                          w: yearMap[y].wC > 0 ? yearMap[y].wS / yearMap[y].wC : null,
+                                          p: yearMap[y].pC > 0 ? yearMap[y].pS / yearMap[y].pC : null,
+                                        }));
+                                        const hasW = pts.some(p => p.w !== null);
+                                        const hasP = pts.some(p => p.p !== null);
+                                        if (!hasW && !hasP) return null;
+                                        const W = 280, H = 80, PAD = 26;
+                                        const allVals = pts.flatMap(p => [p.w, p.p]).filter(v => v != null) as number[];
+                                        const minV = Math.max(0, Math.min(...allVals) - 5);
+                                        const maxV = Math.min(100, Math.max(...allVals) + 5);
+                                        const range = maxV - minV || 1;
+                                        const toX = (i: number, total: number) => PAD + (i / Math.max(total - 1, 1)) * (W - PAD * 2);
+                                        const toY = (v: number) => H - 14 - ((v - minV) / range) * (H - 28);
+                                        const wPts = pts.map((p, i) => p.w !== null ? { x: toX(i, pts.length), y: toY(p.w), v: p.w, yr: p.year } : null).filter(Boolean) as {x:number;y:number;v:number;yr:string}[];
+                                        const pPts = pts.map((p, i) => p.p !== null ? { x: toX(i, pts.length), y: toY(p.p), v: p.p, yr: p.year } : null).filter(Boolean) as {x:number;y:number;v:number;yr:string}[];
+                                        return (
+                                          <div className="rm-sr-section">
+                                            <p className="rm-dag-title">합격률 추이</p>
+                                            <div className="rm-sr-chart-wrap">
+                                              <svg width={W} height={H} style={{ overflow: 'visible', display: 'block' }}>
+                                                {hasW && wPts.length >= 2 && (
+                                                  <polyline points={wPts.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#2563eb" strokeWidth="2" strokeLinejoin="round" />
+                                                )}
+                                                {hasP && pPts.length >= 2 && (
+                                                  <polyline points={pPts.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#10b981" strokeWidth="2" strokeLinejoin="round" strokeDasharray="4 2" />
+                                                )}
+                                                {hasW && wPts.map((p, i) => (
+                                                  <g key={`w${i}`}>
+                                                    <circle cx={p.x} cy={p.y} r="3" fill="#2563eb" />
+                                                    <text x={p.x} y={p.y - 6} textAnchor="middle" fontSize="9" fill="#2563eb" fontWeight="700">{p.v.toFixed(1)}%</text>
+                                                    <text x={p.x} y={H - 2} textAnchor="middle" fontSize="8" fill="#94a3b8">{p.yr}</text>
+                                                  </g>
+                                                ))}
+                                                {hasP && pPts.map((p, i) => (
+                                                  <g key={`p${i}`}>
+                                                    <circle cx={p.x} cy={p.y} r="3" fill="#10b981" />
+                                                    <text x={p.x} y={p.y - 6} textAnchor="middle" fontSize="9" fill="#10b981" fontWeight="700">{p.v.toFixed(1)}%</text>
+                                                  </g>
+                                                ))}
+                                              </svg>
+                                              <div className="rm-sr-legend">
+                                                {hasW && <span className="rm-sr-leg rm-sr-leg-w">필기</span>}
+                                                {hasP && <span className="rm-sr-leg rm-sr-leg-p">실기</span>}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      })()}
                                     </>
                                   )}
                                 </div>
@@ -1176,6 +1346,25 @@ const Roadmap: React.FC = () => {
         .rm-ev-score-pct { font-size: .65rem; font-weight: 700; color: var(--primary); white-space: nowrap; }
         .rm-ev-snippet { font-size: .79rem; color: var(--text-muted); line-height: 1.55; margin: 0; }
         .rm-drawer-empty { font-size: .8rem; color: var(--text-light); font-style: italic; margin: 0; }
+        .rm-sr-section { display: flex; flex-direction: column; gap: .35rem; }
+        .rm-sr-chart-wrap { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-xs); padding: .625rem .75rem .375rem; display: flex; flex-direction: column; gap: .35rem; }
+        .rm-sr-legend { display: flex; gap: .625rem; }
+        .rm-sr-leg { font-size: .7rem; font-weight: 600; display: flex; align-items: center; gap: .3rem; }
+        .rm-sr-leg::before { content: ''; display: inline-block; width: 14px; height: 2px; border-radius: 1px; }
+        .rm-sr-leg-w { color: #2563eb; }
+        .rm-sr-leg-w::before { background: #2563eb; }
+        .rm-sr-leg-p { color: #10b981; }
+        .rm-sr-leg-p::before { background: #10b981; }
+        .rm-ev-hist-wrap { display: flex; flex-direction: column; gap: .35rem; }
+        .rm-ev-hist-title { font-size: .72rem; font-weight: 700; color: var(--text-muted); }
+        .rm-ev-hist-table { border-collapse: collapse; width: 100%; font-size: .78rem; min-width: 280px; }
+        .rm-ev-hist-table th { background: var(--surface-3, #f1f5f9); color: var(--text-muted); font-weight: 700; padding: .3rem .5rem; text-align: center; border: 1px solid var(--border); white-space: nowrap; }
+        .rm-ev-hist-table td { padding: .28rem .5rem; border: 1px solid var(--border); text-align: center; color: var(--text-muted); }
+        .rm-ev-hist-year { font-weight: 700; color: var(--text); white-space: nowrap; }
+        .rm-ev-hist-sess { color: var(--text-light); }
+        .rm-ev-hist-rate { font-weight: 700; }
+        .rm-ev-hist-rate.hi { color: #16a34a; }
+        .rm-ev-hist-rate.mid { color: #d97706; }
         .rm-ev-intro-box { padding: .625rem .75rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-xs); display: flex; flex-direction: column; gap: .3rem; }
         .rm-ev-intro-label { font-size: .62rem; font-weight: 800; letter-spacing: .07em; color: #1d4ed8; text-transform: uppercase; }
         .rm-ev-intro-text { font-size: .8rem; color: #1e3a5f; line-height: 1.65; margin: 0; }
@@ -1186,6 +1375,9 @@ const Roadmap: React.FC = () => {
         .rm-ev-exam-label { font-size: .62rem; font-weight: 800; letter-spacing: .07em; color: var(--primary); text-transform: uppercase; }
         .rm-ev-exam-row { display: flex; flex-wrap: wrap; gap: .35rem; }
         .rm-ev-exam-pill { display: inline-flex; align-items: center; padding: .2rem .6rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: .74rem; font-weight: 600; color: var(--text); white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+        .rm-ev-gasanjeom { padding: .5rem .75rem; background: #fefce8; border: 1px solid #fde68a; border-radius: var(--radius-xs); display: flex; flex-direction: column; gap: .25rem; }
+        .rm-ev-gasanjeom-label { font-size: .62rem; font-weight: 800; letter-spacing: .07em; color: #92400e; text-transform: uppercase; }
+        .rm-ev-gasanjeom-text { font-size: .8rem; color: #78350f; line-height: 1.6; margin: 0; }
         .tl-cert-reason {
           font-size: .76rem; color: var(--text-muted); line-height: 1.55;
           font-style: italic; padding-left: .25rem;
@@ -1204,6 +1396,9 @@ const Roadmap: React.FC = () => {
         .tl-pass-rate { font-size: .7rem; color: var(--text-light); white-space: nowrap; }
         .tl-bottleneck { color: var(--warning); font-weight: 600; }
         .tl-achievability { font-size: .68rem; font-weight: 600; white-space: nowrap; }
+        .tl-pass-split { font-size: .68rem; color: #6366f1; white-space: nowrap; padding: .1rem .35rem; background: #eef2ff; border-radius: 4px; }
+        .tl-pass-practical { color: #0891b2; background: #ecfeff; }
+        .tl-exam-freq { font-size: .68rem; color: #059669; background: #ecfdf5; padding: .1rem .35rem; border-radius: 4px; white-space: nowrap; }
         .tl-empty { font-size: .8rem; color: var(--text-light); font-style: italic; }
 
         .tl-expand-btn {
