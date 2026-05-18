@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import time
+import urllib.parse
 import xml.etree.ElementTree as ET
 from datetime import date
 from typing import Any
@@ -27,6 +28,12 @@ logger = logging.getLogger(__name__)
 _TRAINING_BASE = "https://www.work24.go.kr/cm/openApi/call/hr/callOpenApiSvcInfo310L01.do"
 _PROCESS_EVAL_BASE = "http://openapi.q-net.or.kr/api/service/rest/ProcessEvalService/getProcessEvalList"
 _JOB_LEARNER_BASE  = "http://openapi.q-net.or.kr/api/service/rest/ProcessEvalService/getJobLearnerList"
+
+
+def _build_qnet_url(base: str, api_key_in: str, extra: dict[str, str]) -> str:
+    """이미 URL-인코딩된 serviceKey를 직접 삽입 — params dict 사용 시 이중인코딩 발생."""
+    qs = "&".join(f"{k}={urllib.parse.quote(str(v), safe='')}" for k, v in extra.items())
+    return f"{base}?serviceKey={api_key_in}&{qs}"
 
 _TTL = 300
 _training_cache: dict[str, tuple[float, Any]] = {}
@@ -103,9 +110,11 @@ def _parse_training_xml(xml_text: str) -> list[dict[str, Any]]:
 def _normalize_training_course(raw: dict[str, Any]) -> dict[str, Any]:
     return {
         "course_id":        raw.get("trprId") or raw.get("inst_base_id"),
-        "course_name":      raw.get("trprNm") or raw.get("subTitle"),
-        "institution_name": raw.get("traInstNm") or raw.get("instCd"),
-        "institution_addr": raw.get("traAddr") or raw.get("addr"),
+        "course_name":      raw.get("title") or raw.get("trprNm"),
+        "institution_name": raw.get("subTitle") or raw.get("traInstNm"),
+        "institution_addr": raw.get("address") or raw.get("traAddr"),
+        "course_url":       raw.get("titleLink"),
+        "institution_url":  raw.get("subTitleLink"),
         "ncs_name":         raw.get("ncsCdNm"),
         "train_start":      raw.get("traStartDate") or raw.get("trStartDate"),
         "train_end":        raw.get("traEndDate")   or raw.get("trEndDate"),
@@ -253,14 +262,14 @@ def get_process_eval_courses(
     if not api_key:
         return err_envelope("API_KEY_MISSING", "한국산업인력공단 API 키가 설정되지 않았습니다.")
 
-    params: dict[str, Any] = {
-        "serviceKey": api_key,
+    extra: dict[str, str] = {
         "returnType": "json",
         "numOfRows":  str(min(page_size, 100)),
         "pageNo":     "1",
     }
     if keyword:
-        params["itemNm"] = keyword
+        extra["itemNm"] = keyword
+    proc_url = _build_qnet_url(_PROCESS_EVAL_BASE, api_key, extra)
 
     proc_cache_key = f"process_eval|{keyword}|{page_size}"
     cached = _cache_get(proc_cache_key)
@@ -268,11 +277,7 @@ def get_process_eval_courses(
         return cached
 
     try:
-        resp = httpx.get(
-            _PROCESS_EVAL_BASE,
-            params=params,
-            timeout=settings.hrdkorea_api_timeout,
-        )
+        resp = httpx.get(proc_url, timeout=settings.hrdkorea_api_timeout)
         resp.raise_for_status()
         data = resp.json()
     except httpx.TimeoutException:
@@ -314,14 +319,14 @@ def get_job_learner_courses(
     if not api_key:
         return err_envelope("API_KEY_MISSING", "한국산업인력공단 API 키가 설정되지 않았습니다.")
 
-    params: dict[str, Any] = {
-        "serviceKey": api_key,
+    extra: dict[str, str] = {
         "returnType": "json",
         "numOfRows":  str(min(page_size, 100)),
         "pageNo":     "1",
     }
     if keyword:
-        params["itemNm"] = keyword
+        extra["itemNm"] = keyword
+    jl_url = _build_qnet_url(_JOB_LEARNER_BASE, api_key, extra)
 
     jl_cache_key = f"job_learner|{keyword}|{page_size}"
     cached = _cache_get(jl_cache_key)
@@ -329,11 +334,7 @@ def get_job_learner_courses(
         return cached
 
     try:
-        resp = httpx.get(
-            _JOB_LEARNER_BASE,
-            params=params,
-            timeout=settings.hrdkorea_api_timeout,
-        )
+        resp = httpx.get(jl_url, timeout=settings.hrdkorea_api_timeout)
         resp.raise_for_status()
         data = resp.json()
     except httpx.TimeoutException:

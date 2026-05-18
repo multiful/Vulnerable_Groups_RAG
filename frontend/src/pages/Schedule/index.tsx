@@ -114,7 +114,8 @@ function ScheduleTimeline({ schedules }: { schedules: ScheduleItem[] }) {
       {upcoming.length > 0 && (
         <div className="sch-timeline-section">
           <p className="sch-timeline-label">예정된 시험</p>
-          {upcoming.map((s, i) => (
+          {upcoming.map((s, i) => {
+            return (
             <div key={i} className="sch-timeline-item sch-timeline-upcoming">
               <div className="sch-timeline-dot" />
               <div className="sch-timeline-body">
@@ -147,7 +148,7 @@ function ScheduleTimeline({ schedules }: { schedules: ScheduleItem[] }) {
                 </div>
               </div>
             </div>
-          ))}
+          );})}
         </div>
       )}
       {past.length > 0 && (

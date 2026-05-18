@@ -5,7 +5,7 @@
 //   - 도메인 필터
 //   - 1290개 그리드 (스크롤)
 //   - 카드 클릭 → 해당 자격증의 추천 페이지로 이동 (cert 파라미터 전달)
-import React, { useState, useMemo, useEffect, useDeferredValue, memo } from 'react';
+import React, { useState, useMemo, useEffect, useDeferredValue, useTransition, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ChevronDown, AlertCircle, Loader2, ArrowRight, Map } from 'lucide-react';
 import { getCertCandidates } from '../../api/client';
@@ -132,6 +132,9 @@ const AllCerts: React.FC = () => {
   const [selectedDomain, setSelectedDomain] = useState('');
   const [page, setPage] = useState(1);
   const deferredQuery = useDeferredValue(searchQuery);
+  const [isFilterTransitioning, startFilterTransition] = useTransition();
+  const isSearchPending = deferredQuery !== searchQuery;
+  const isFiltering = isSearchPending || isFilterTransitioning;
 
   useEffect(() => {
     let cancelled = false;
@@ -151,7 +154,13 @@ const AllCerts: React.FC = () => {
       if (selectedGrade && cert.cert_grade_tier !== selectedGrade) return false;
       if (selectedDomain && cert.primary_domain !== selectedDomain) return false;
       const q = deferredQuery.trim();
-      if (q && !cert.cert_name.includes(q) && !(cert.aliases ?? []).some(a => a.includes(q))) return false;
+      if (q) {
+        const nameMatch   = cert.cert_name.includes(q);
+        const aliasMatch  = (cert.aliases ?? []).some(a => a.includes(q));
+        const domainMatch = (DOMAIN_NAMES[cert.primary_domain] ?? '').includes(q);
+        const jobMatch    = (cert.related_jobs ?? []).some(j => j.includes(q));
+        if (!nameMatch && !aliasMatch && !domainMatch && !jobMatch) return false;
+      }
       return true;
     });
   }, [allCerts, selectedGrade, selectedDomain, deferredQuery]);
@@ -179,7 +188,7 @@ const AllCerts: React.FC = () => {
           <input
             type="text"
             className="input search-input"
-            placeholder="자격증명 또는 별칭 검색…"
+            placeholder="자격증명, 분야, 직무명 검색… (예: 용접, 전기, 데이터/AI)"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
@@ -188,7 +197,7 @@ const AllCerts: React.FC = () => {
           <div className="filter-group">
             <label className="filter-label">등급 필터</label>
             <div className="select-wrap">
-              <select className="select" value={selectedGrade} onChange={e => setSelectedGrade(e.target.value)}>
+              <select className="select" value={selectedGrade} onChange={e => { const v = e.target.value; startFilterTransition(() => setSelectedGrade(v)); }}>
                 <option value="">전체 등급</option>
                 <option value="1_기능사">기능사</option>
                 <option value="2_산업기사">산업기사</option>
@@ -203,7 +212,7 @@ const AllCerts: React.FC = () => {
           <div className="filter-group">
             <label className="filter-label">분야 필터</label>
             <div className="select-wrap">
-              <select className="select" value={selectedDomain} onChange={e => setSelectedDomain(e.target.value)}>
+              <select className="select" value={selectedDomain} onChange={e => { const v = e.target.value; startFilterTransition(() => setSelectedDomain(v)); }}>
                 <option value="">전체 분야</option>
                 {domainOptions.map(([id, name]) => (
                   <option key={id} value={id}>{name}</option>
@@ -225,6 +234,12 @@ const AllCerts: React.FC = () => {
           </div>
         ) : (
           <>
+            {isFiltering && (
+              <div className="ac-filter-loading">
+                <Loader2 size={13} className="ac-spin" />
+                <span>필터 적용 중…</span>
+              </div>
+            )}
             <div className="ac-result-row">
               <p className="result-count">
                 전체 자격증 <span className="count-num">{filtered.length}</span>건
@@ -312,6 +327,7 @@ const AllCerts: React.FC = () => {
         .no-results-sub{font-size:.85rem;color:var(--text-muted);line-height:1.65}
         .ac-load-more{display:flex;justify-content:center;padding:.75rem 0}
         .ac-load-btn{padding:.5rem 1.5rem;font-size:.85rem;font-weight:600}
+        .ac-filter-loading{display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:var(--text-muted);padding:.25rem 0;margin-bottom:.25rem}
       `}</style>
     </div>
   );
