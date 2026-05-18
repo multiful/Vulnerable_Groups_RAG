@@ -1,6 +1,6 @@
 // Content Hash: SHA256:TBD
-import React, { useState, useCallback } from 'react';
-import { ArrowRight, Calendar, Briefcase, BookOpen, Map, Zap } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { ArrowRight, Calendar, Briefcase, BookOpen, Map } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 
@@ -66,12 +66,19 @@ const FLOW = [
 
 const Home: React.FC = () => {
   const [happy, setHappy] = useState(false);
+  const [showSticky, setShowSticky] = useState(false);
 
   const handleMascotClick = useCallback(() => {
     if (happy) return;
     setHappy(true);
     setTimeout(() => setHappy(false), 2000);
   }, [happy]);
+
+  useEffect(() => {
+    const onScroll = () => setShowSticky(window.scrollY > 420);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
   <div className="home-wrap">
@@ -157,11 +164,7 @@ const Home: React.FC = () => {
     </section>
 
     <section className="data-source-section">
-      <div className="data-stats-row">
-        <div className="ds-stat">
-          <span className="ds-stat-num">5,513명</span>
-          <span className="ds-stat-desc">서울 청년 조사 샘플</span>
-        </div>
+      <div className="data-stats-row data-stats-row--3">
         <div className="ds-stat">
           <span className="ds-stat-num">9.4%</span>
           <span className="ds-stat-desc">고립·은둔 경험 청년 비율</span>
@@ -177,35 +180,55 @@ const Home: React.FC = () => {
       </div>
     </section>
 
-    {/* 오늘의 행동 티저 */}
+    {/* 추천 결과 티저 */}
     <section className="today-section">
       <div className="today-inner">
         <div className="today-left">
-          <div className="today-badge"><Zap size={12}/> 오늘의 한 가지 행동</div>
-          <h3 className="today-title">작은 행동 하나가 경로를 바꿉니다</h3>
+          <div className="today-badge">맞춤 자격증 추천</div>
+          <h3 className="today-title">내 위험군과 관심 분야에 맞는<br/>자격증 로드맵을 찾아드립니다</h3>
           <p className="today-desc">
-            진단 후 맞춤 로드맵에서 위험군 단계와 관심 자격증에 맞는 오늘의 구체적인 행동 하나를 추천받아보세요.
-            시험 접수, 강의 1강, 훈련기관 방문 예약 등 작은 것부터 시작합니다.
+            12문항 진단으로 위험군 단계를 확인하고, 관심 도메인을 선택하면<br/>
+            지금 도전할 수 있는 자격증과 단계별 로드맵을 추천합니다.
           </p>
-          <Link to="/risk-assessment" className="btn-primary today-btn">진단하고 행동 추천 받기 <ArrowRight size={16}/></Link>
+          <Link to="/risk-assessment" className="btn-primary today-btn">지금 진단 시작하기 <ArrowRight size={16}/></Link>
         </div>
         <div className="today-right">
           <div className="today-example-card">
-            <span className="today-ex-label">예시</span>
-            <p className="today-ex-action">📚 오늘 30분 공부</p>
-            <p className="today-ex-desc">정보처리기사 관련 무료 강의 1강을 들어 보세요.</p>
-            <div className="today-ex-effort"><span className="today-ex-min">30분</span> 소요 예상</div>
+            <span className="today-ex-label">추천 결과 예시</span>
+            <div className="today-ex-stage-row">
+              <span className="today-ex-stage">위험군 3단계</span>
+              <span className="today-ex-sep">·</span>
+              <span className="today-ex-domain">기계/제조</span>
+            </div>
+            <div className="today-ex-cert-row">
+              <div className="today-ex-cert-info">
+                <p className="today-ex-cert-name">용접기능사</p>
+                <p className="today-ex-cert-sub">연 2회 시험 · 합격률 49%</p>
+              </div>
+            </div>
+            <div className="today-ex-actions-row">
+              <span className="today-ex-action-chip">로드맵 보기</span>
+              <span className="today-ex-action-chip">추천 이유 보기</span>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
 
+    {showSticky && (
+      <div className="sticky-cta-wrap">
+        <Link to="/risk-assessment" className="btn-primary sticky-cta-btn">
+          진단 시작하기 <ArrowRight size={15}/>
+        </Link>
+      </div>
+    )}
+
     <style>{`
       .home-wrap{display:flex;flex-direction:column;gap:3.5rem;padding-bottom:1rem}
-      .hero{padding:1.5rem 0 .5rem}
-      .hero-inner{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center}
-      @media(max-width:860px){.hero-inner{grid-template-columns:1fr;gap:2rem}}
+      .hero{padding:2rem 0 .5rem}
+      .hero-inner{display:grid;grid-template-columns:1.1fr 0.9fr;gap:2rem;align-items:center}
+      @media(max-width:860px){.hero-inner{grid-template-columns:1fr;gap:1.5rem}}
       .hero-text{display:flex;flex-direction:column;gap:1.25rem}
       .hero-badge{display:inline-flex;align-items:center;gap:.375rem;padding:.28rem .875rem;background:var(--primary-light);color:var(--primary);border-radius:var(--radius-full);font-size:.78rem;font-weight:700;border:1px solid rgba(37,99,235,.2);width:fit-content}
       .hero-title{font-size:clamp(1.85rem,4.5vw,2.75rem);font-weight:800;letter-spacing:-.035em;line-height:1.18;color:var(--text)}
@@ -214,6 +237,7 @@ const Home: React.FC = () => {
       .hero-main-btn{padding:.75rem 1.5rem;font-size:.975rem}
       .hero-visual{display:flex;justify-content:center}
       .mascot-figure{display:flex;justify-content:center;align-items:center;width:100%;position:relative}
+      .mascot-figure::before{content:'';position:absolute;width:290px;height:290px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.07) 0%,rgba(99,102,241,.03) 55%,transparent 75%);border:1px dashed rgba(99,102,241,.15);pointer-events:none}
       .mascot-wrap{position:relative;width:260px;height:260px;flex-shrink:0;cursor:pointer}
       .mascot-img{width:260px;height:260px;object-fit:contain;filter:drop-shadow(0 12px 32px rgba(99,102,241,.25));animation:mascot-float 3s ease-in-out infinite}
       .mascot-img.mascot-happy{animation:mascot-bounce .4s ease forwards, mascot-float 3s ease-in-out 0.4s infinite}
@@ -256,6 +280,7 @@ const Home: React.FC = () => {
       .ds-item{font-size:.78rem;color:var(--text-muted)}
       .ds-dot{color:var(--text-light);font-size:.85rem}
       .data-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
+      .data-stats-row--3{grid-template-columns:repeat(3,1fr)}
       @media(max-width:600px){.data-stats-row{grid-template-columns:repeat(2,1fr)}}
       .ds-stat{display:flex;flex-direction:column;gap:.18rem;padding:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center}
       .ds-stat-num{font-size:1.1rem;font-weight:800;color:var(--primary);letter-spacing:-.02em}
@@ -265,9 +290,9 @@ const Home: React.FC = () => {
       .service-card{
         display:flex;align-items:center;gap:.75rem;
         padding:.875rem 1rem;text-decoration:none;
-        transition:all .15s;
+        transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
       }
-      .service-card:hover{border-color:var(--sc,var(--primary));transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.07)}
+      .service-card:hover{border-color:var(--sc,var(--primary));transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
       .service-icon-wrap{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
       .service-info{flex:1;display:flex;flex-direction:column;gap:.08rem}
       .service-title{font-size:.875rem;font-weight:700;color:var(--text)}
@@ -302,16 +327,29 @@ const Home: React.FC = () => {
         display:flex;flex-direction:column;gap:.4rem;min-width:200px;
       }
       .today-ex-label{font-size:.65rem;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.08em;text-transform:uppercase}
-      .today-ex-action{font-size:.95rem;font-weight:700;margin:0}
-      .today-ex-desc{font-size:.78rem;color:rgba(255,255,255,.7);margin:0;line-height:1.5}
-      .today-ex-effort{display:flex;align-items:center;gap:.35rem;font-size:.72rem;color:rgba(255,255,255,.55)}
-      .today-ex-min{font-weight:700;color:rgba(255,255,255,.8)}
+      .today-ex-stage-row{display:flex;align-items:center;gap:.4rem;margin-top:.25rem}
+      .today-ex-stage{font-size:.75rem;font-weight:700;color:rgba(255,255,255,.9);background:rgba(255,255,255,.15);padding:.15rem .5rem;border-radius:12px}
+      .today-ex-sep{color:rgba(255,255,255,.35);font-size:.75rem}
+      .today-ex-domain{font-size:.75rem;color:rgba(255,255,255,.65)}
+      .today-ex-cert-row{display:flex;align-items:center;gap:.6rem;margin-top:.5rem}
+      .today-ex-cert-icon{font-size:1.4rem;flex-shrink:0}
+      .today-ex-cert-info{display:flex;flex-direction:column;gap:.06rem}
+      .today-ex-cert-name{font-size:1rem;font-weight:800;color:#fff;margin:0;line-height:1.2}
+      .today-ex-cert-sub{font-size:.72rem;color:rgba(255,255,255,.6);margin:0}
+      .today-ex-actions-row{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem}
+      .today-ex-action-chip{font-size:.7rem;font-weight:600;padding:.2rem .55rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;color:rgba(255,255,255,.8)}
 
       .cta-section{background:var(--primary-light);border:1px solid rgba(37,99,235,.14);border-radius:var(--radius-lg);padding:2.75rem 2rem;text-align:center}
       .cta-inner{display:flex;flex-direction:column;align-items:center;gap:.875rem;max-width:520px;margin:0 auto}
       .cta-title{font-size:1.4rem;font-weight:800;letter-spacing:-.025em;color:var(--text);line-height:1.3}
       .cta-sub{font-size:.925rem;color:var(--text-muted);line-height:1.65}
       .cta-btn{padding:.875rem 2rem;font-size:1rem;margin-top:.375rem}
+
+      /* sticky floating CTA */
+      .sticky-cta-wrap{position:fixed;bottom:72px;right:1.25rem;z-index:300;animation:sticky-in .22s ease}
+      @media(min-width:769px){.sticky-cta-wrap{bottom:1.5rem}}
+      @keyframes sticky-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+      .sticky-cta-btn{display:flex;align-items:center;gap:.4rem;padding:.65rem 1.1rem;font-size:.875rem;box-shadow:0 4px 20px rgba(37,99,235,.4);white-space:nowrap}
     `}</style>
   </div>
   );

@@ -283,12 +283,19 @@ def get_training_search_params(cert_id: str) -> dict[str, Any]:
     ncs_names = get_ncs_level1_names(cert_id)
     cert_name = cert.get("cert_name", "")
 
+    _GRADE_SUFFIXES = ("기술사", "기능장", "기사", "산업기사", "기능사")
+
     params: dict[str, Any] = {}
     if ncs_names:
-        # 대직무분류명을 Work24 ncs_category로 전달
         params["ncs_category"] = ncs_names[0]
     if cert_name:
-        params["course_name"] = cert_name
+        keyword = cert_name
+        for suffix in _GRADE_SUFFIXES:
+            if keyword.endswith(suffix):
+                keyword = keyword[: -len(suffix)].strip()
+                break
+        if keyword:
+            params["course_name"] = keyword
 
     return params
 

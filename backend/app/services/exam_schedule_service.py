@@ -13,6 +13,7 @@ from __future__ import annotations
 import csv
 import logging
 import time
+import urllib.parse
 from datetime import date, datetime
 from functools import lru_cache
 from pathlib import Path
@@ -46,6 +47,24 @@ def _cache_set(key: str, value: Any) -> None:
     _sched_cache[key] = (time.monotonic(), value)
 
 
+def _build_qnet_url(base: str, api_key_in: str, extra: dict[str, str]) -> str:
+    """
+    hrdkorea_api_key_in(이미 URL-인코딩된 키)를 URL에 직접 삽입하고
+    나머지 파라미터는 별도 인코딩. httpx params dict로 넘기면 이중 인코딩 발생.
+    """
+    qs = "&".join(f"{k}={urllib.parse.quote(str(v), safe='')}" for k, v in extra.items())
+    return f"{base}?serviceKey={api_key_in}&{qs}"
+
+
+def _qnet_links(cert_name: str) -> dict[str, str]:
+    encoded = urllib.parse.quote(cert_name)
+    return {
+        "qnet_search_url": f"https://www.q-net.or.kr/crf005.do?id=crf00501&gSite=Q&jmNm={encoded}",
+        "qnet_schedule_url": "https://www.q-net.or.kr/crf021.do?id=crf02101&scheType=03",
+        "qnet_apply_url": "https://www.q-net.or.kr/man001.do?gSite=Q",
+    }
+
+
 @lru_cache(maxsize=1)
 def _load_cert_name_map() -> dict[str, str]:
     if not _CERT_MASTER_CSV.exists():
@@ -54,6 +73,28 @@ def _load_cert_name_map() -> dict[str, str]:
     with _CERT_MASTER_CSV.open(encoding="utf-8-sig") as f:
         for r in csv.DictReader(f):
             out[r["cert_id"]] = r["cert_name"]
+    return out
+
+
+@lru_cache(maxsize=1)
+def _load_cert_info_map() -> dict[str, dict[str, Any]]:
+    """cert_id → {grade_tier, avg_pass_rate_3yr, primary_domain, exam_frequency, issuer}"""
+    if not _CERT_MASTER_CSV.exists():
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    with _CERT_MASTER_CSV.open(encoding="utf-8-sig") as f:
+        for r in csv.DictReader(f):
+            try:
+                avg_pass = float(r.get("avg_pass_rate_3yr") or 0) or None
+            except ValueError:
+                avg_pass = None
+            out[r["cert_id"]] = {
+                "cert_grade_tier": r.get("cert_grade_tier", ""),
+                "avg_pass_rate_3yr": avg_pass,
+                "primary_domain": r.get("primary_domain", ""),
+                "exam_frequency": r.get("exam_frequency", ""),
+                "issuer": r.get("issuer", ""),
+            }
     return out
 
 
@@ -95,57 +136,64 @@ def _format_schedule_item(item: dict[str, Any]) -> dict[str, Any]:
 def get_exam_schedule(cert_id: str, settings: Settings) -> dict:
     """
     cert_id → cert_name 변환 후 Q-Net 시험일정 API 조회.
-    API 키 미설정 시 fallback 응답 반환.
+    API 실패 시에도 ok_envelope로 cert 정보 + Q-Net 링크를 함께 반환 (api_status 필드로 구분).
     """
-    api_key = settings.hrdkorea_api_key_in
-    if not api_key:
-        return err_envelope(
-            "API_KEY_MISSING",
-            "한국산업인력공단 API 키가 설정되지 않았습니다. 관리자에게 문의하세요.",
-            {"cert_id": cert_id},
-        )
-
     cert_names = _load_cert_name_map()
     cert_name = cert_names.get(cert_id)
     if not cert_name:
         return err_envelope("CERT_NOT_FOUND", f"cert_id '{cert_id}'를 찾을 수 없습니다.")
 
+    cert_info = _load_cert_info_map().get(cert_id, {})
+    links = _qnet_links(cert_name)
     current_year = str(date.today().year)
+
+    def _fallback(api_status: str) -> dict:
+        return ok_envelope({
+            "cert_id":   cert_id,
+            "cert_name": cert_name,
+            "year":      current_year,
+            "schedules": [],
+            "total":     0,
+            "api_status": api_status,
+            **cert_info,
+            **links,
+        })
+
+    api_key = settings.hrdkorea_api_key_in
+    if not api_key:
+        return _fallback("key_missing")
 
     sched_cache_key = f"exam_sched|{cert_id}|{current_year}"
     cached = _cache_get(sched_cache_key)
     if cached is not None:
         return cached
 
-    params: dict[str, str] = {
-        "serviceKey": api_key,
+    # serviceKey는 이미 URL-인코딩된 값(_IN) → URL에 직접 삽입. params dict로 넘기면 이중 인코딩 발생.
+    url = _build_qnet_url(_QNET_BASE, api_key, {
         "implYy":     current_year,
         "itemNm":     cert_name,
         "returnType": "json",
         "numOfRows":  "10",
         "pageNo":     "1",
-    }
+    })
 
     try:
-        resp = httpx.get(
-            _QNET_BASE,
-            params=params,
-            timeout=settings.hrdkorea_api_timeout,
-        )
+        resp = httpx.get(url, timeout=settings.hrdkorea_api_timeout)
         resp.raise_for_status()
         data = resp.json()
     except httpx.TimeoutException:
-        return err_envelope("EXTERNAL_API_TIMEOUT", "시험일정 API 응답 시간이 초과되었습니다.")
+        logger.warning("exam_schedule API timeout: cert_id=%s", cert_id)
+        return _fallback("unavailable")
     except httpx.HTTPStatusError as e:
-        return err_envelope("EXTERNAL_API_ERROR", f"시험일정 API 오류: HTTP {e.response.status_code}")
+        logger.warning("exam_schedule API HTTP error: %s cert_id=%s", e.response.status_code, cert_id)
+        return _fallback("unavailable")
     except Exception as e:
-        logger.warning("exam_schedule API error: %s", e)
-        return err_envelope("EXTERNAL_API_ERROR", "시험일정 조회 중 오류가 발생했습니다.")
+        logger.warning("exam_schedule API error: %s cert_id=%s", e, cert_id)
+        return _fallback("unavailable")
 
     try:
         body = data.get("response", {}).get("body", {})
         items_raw = body.get("items", {})
-        # API에 따라 items가 dict(단건) 또는 list일 수 있음
         if isinstance(items_raw, dict):
             item_list = items_raw.get("item", [])
             if isinstance(item_list, dict):
@@ -158,15 +206,17 @@ def get_exam_schedule(cert_id: str, settings: Settings) -> dict:
         item_list = []
 
     schedules = [_format_schedule_item(it) for it in item_list]
-    # 현재 연도 기준 가장 가까운 시험부터 정렬
     schedules.sort(key=lambda s: s.get("d_day_exam") or 9999)
 
     result = ok_envelope({
-        "cert_id":   cert_id,
-        "cert_name": cert_name,
-        "year":      current_year,
-        "schedules": schedules,
-        "total":     len(schedules),
+        "cert_id":    cert_id,
+        "cert_name":  cert_name,
+        "year":       current_year,
+        "schedules":  schedules,
+        "total":      len(schedules),
+        "api_status": "ok",
+        **cert_info,
+        **links,
     })
     _cache_set(sched_cache_key, result)
     return result
@@ -223,21 +273,16 @@ def get_professional_exam_schedule(
     if cached is not None:
         return cached
 
-    params: dict[str, str] = {
-        "serviceKey": api_key,
+    url = _build_qnet_url(_QNET_PROF_BASE, api_key, {
         "implYy":     current_year,
         "jmNm":       cert_name.strip(),
         "returnType": "json",
         "numOfRows":  "10",
         "pageNo":     "1",
-    }
+    })
 
     try:
-        resp = httpx.get(
-            _QNET_PROF_BASE,
-            params=params,
-            timeout=settings.hrdkorea_api_timeout,
-        )
+        resp = httpx.get(url, timeout=settings.hrdkorea_api_timeout)
         resp.raise_for_status()
         data = resp.json()
     except httpx.TimeoutException:

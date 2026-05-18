@@ -1353,7 +1353,7 @@ const Recommendation: React.FC = () => {
                       </div>
                 )}
                 {exec.fetched && evidenceCertName && (() => {
-                  const qnetUrl = `https://www.q-net.or.kr/crf005.do?id=crf00503s&jmNm=${encodeURIComponent(evidenceCertName)}`;
+                  const qnetUrl = `https://www.q-net.or.kr/crf005.do?id=crf00501&gSite=Q&jmNm=${encodeURIComponent(evidenceCertName)}`;
                   return (
                     <a href={qnetUrl} target="_blank" rel="noreferrer" className="exec-qnet-btn">
                       <ExternalLink size={12} /> Q-Net 원서접수
@@ -1453,7 +1453,7 @@ const Recommendation: React.FC = () => {
                   ? <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 자격정보 조회 중…</div>
                   : !exec.certInfoFetched
                     ? <p className="exec-empty">자격 정보를 불러오는 중입니다…</p>
-                    : (!exec.certInfoData?.info && !exec.certInfoData?.exam_info)
+                    : (!exec.certInfoData?.info && !exec.certInfoData?.exam_info && !exec.certStatsData)
                       ? <p className="exec-empty">이 자격증의 상세 정보를 찾지 못했습니다.</p>
                       : (
                         <div className="certinfo-wrap">
@@ -1727,18 +1727,72 @@ const Recommendation: React.FC = () => {
                                       })}
                                     </div>
                                   )}
-                                  {(exec.jobDetailData.salary_summary || exec.jobDetailData.salary) && (
-                                    <div className="job-detail-row">
-                                      <span className="job-detail-key">임금 수준</span>
-                                      <span className="job-detail-val">{exec.jobDetailData.salary_summary || exec.jobDetailData.salary}</span>
-                                    </div>
-                                  )}
-                                  {exec.jobDetailData.outlook && (
-                                    <div className="job-detail-row">
-                                      <span className="job-detail-key">일자리 전망</span>
-                                      <span className="job-detail-val">{exec.jobDetailData.outlook}</span>
-                                    </div>
-                                  )}
+                                  {(exec.jobDetailData.salary_summary || exec.jobDetailData.salary) && (() => {
+                                    const raw = exec.jobDetailData.salary_summary || exec.jobDetailData.salary || '';
+                                    // "임금 하위(25%) 5725만원, 평균(50%) 6500만원, 상위(25%) 8000만원"
+                                    const nums = [...raw.matchAll(/(\d[\d,]+)만원/g)].map(m => parseInt(m[1].replace(/,/g, ''), 10));
+                                    const [low, mid, high] = nums.length >= 3 ? [nums[0], nums[1], nums[2]] : [null, null, null];
+                                    return (
+                                      <div className="job-salary-viz">
+                                        <span className="job-detail-key">임금 수준</span>
+                                        {low && mid && high ? (
+                                          <div className="salary-range-wrap">
+                                            <div className="salary-range-bar">
+                                              <div className="salary-range-fill" style={{ left: '0%', right: '0%' }} />
+                                              {[
+                                                { label: '하위25%', val: low, pct: 0 },
+                                                { label: '평균', val: mid, pct: Math.round((mid - low) / (high - low) * 100) },
+                                                { label: '상위25%', val: high, pct: 100 },
+                                              ].map(({ label, val, pct }) => (
+                                                <div key={label} className="salary-dot-wrap" style={{ left: `${pct}%` }}>
+                                                  <div className="salary-dot" />
+                                                  <span className="salary-dot-val">{val.toLocaleString()}</span>
+                                                  <span className="salary-dot-label">{label}</span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <span className="job-detail-val">{raw}</span>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+                                  {exec.jobDetailData.outlook && (() => {
+                                    const raw = exec.jobDetailData.outlook;
+                                    // "증가(23%) 현상유지(42%) 감소(34%)"
+                                    const parts = [...raw.matchAll(/([가-힣·]+)\((\d+)%\)/g)].map(m => ({ label: m[1], pct: parseInt(m[2], 10) }));
+                                    const colors: Record<string, string> = { '증가': '#16a34a', '현상유지': '#d97706', '감소': '#dc2626' };
+                                    return (
+                                      <div className="job-outlook-viz">
+                                        <span className="job-detail-key">일자리 전망</span>
+                                        {parts.length >= 2 ? (
+                                          <div className="outlook-stack-wrap">
+                                            <div className="outlook-stack-bar">
+                                              {parts.map(({ label, pct }) => (
+                                                <div
+                                                  key={label}
+                                                  className="outlook-stack-seg"
+                                                  style={{ width: `${pct}%`, background: colors[label] ?? '#94a3b8' }}
+                                                  title={`${label} ${pct}%`}
+                                                />
+                                              ))}
+                                            </div>
+                                            <div className="outlook-legend">
+                                              {parts.map(({ label, pct }) => (
+                                                <span key={label} className="outlook-legend-item">
+                                                  <span className="outlook-dot" style={{ background: colors[label] ?? '#94a3b8' }} />
+                                                  {label} {pct}%
+                                                </span>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <span className="job-detail-val">{raw}</span>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
                                   {exec.jobDetailData.similar_jobs && (
                                     <div className="job-detail-row">
                                       <span className="job-detail-key">유사 직업</span>
@@ -2259,6 +2313,23 @@ const Recommendation: React.FC = () => {
         .job-detail-key{font-size:.7rem;font-weight:700;color:#0369a1;white-space:nowrap;min-width:70px}
         .job-detail-val{font-size:.8rem;color:#0c4a6e;line-height:1.55}
         .job-detail-content{white-space:pre-wrap;word-break:keep-all}
+        /* 임금 시각화 */
+        .job-salary-viz{display:flex;flex-direction:column;gap:.35rem}
+        .salary-range-wrap{padding:.6rem 0 1.2rem;position:relative}
+        .salary-range-bar{position:relative;height:6px;background:#bae6fd;border-radius:99px;margin:0 8px}
+        .salary-range-fill{position:absolute;inset:0;background:linear-gradient(90deg,#7dd3fc,#0ea5e9);border-radius:99px}
+        .salary-dot-wrap{position:absolute;top:-3px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px}
+        .salary-dot{width:12px;height:12px;border-radius:50%;background:#0ea5e9;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+        .salary-dot-val{font-size:.68rem;font-weight:800;color:#0c4a6e;white-space:nowrap;margin-top:6px}
+        .salary-dot-label{font-size:.6rem;color:#64748b;white-space:nowrap}
+        /* 일자리 전망 시각화 */
+        .job-outlook-viz{display:flex;flex-direction:column;gap:.35rem}
+        .outlook-stack-wrap{display:flex;flex-direction:column;gap:.35rem}
+        .outlook-stack-bar{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px}
+        .outlook-stack-seg{flex-shrink:0;border-radius:3px;transition:width .3s}
+        .outlook-legend{display:flex;gap:.6rem;flex-wrap:wrap}
+        .outlook-legend-item{display:flex;align-items:center;gap:.25rem;font-size:.7rem;color:#0c4a6e;font-weight:600}
+        .outlook-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
         .exec-section-label{font-size:.68rem;font-weight:800;letter-spacing:.06em;color:#6366f1;text-transform:uppercase;margin:.375rem 0 .25rem;display:block}
 
         /* session-rates table+chart */

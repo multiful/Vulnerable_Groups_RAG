@@ -208,9 +208,39 @@ const Jobs: React.FC = () => {
 
       {/* 에러 */}
       {error && (
-        <div className="jobs-error">
-          <AlertCircle size={15} />
-          <span>{error}</span>
+        <div className="jobs-error-wrap">
+          <div className="jobs-error-banner">
+            <AlertCircle size={15} className="jobs-error-icon" />
+            <div>
+              <p className="jobs-error-title">채용 정보 API 점검 중</p>
+              <p className="jobs-error-msg">{error}</p>
+            </div>
+          </div>
+          <div className="jobs-error-actions">
+            <a
+              href={keyword
+                ? `https://www.work.go.kr/empInfo/empInfoSrch/list/dtlEmpSrchList.do?searchKeyword=${encodeURIComponent(keyword)}`
+                : 'https://www.work.go.kr/empInfo/empInfoSrch/list/dtlEmpSrchList.do'}
+              target="_blank" rel="noopener noreferrer"
+              className="jobs-fallback-btn jobs-fallback-primary"
+            >
+              <ExternalLink size={14} /> WorkNet에서 직접 검색{keyword && ` "${keyword}"`}
+            </a>
+            <a href="https://www.work24.go.kr/wk/a/b/1200/retrivewantedList.do" target="_blank" rel="noopener noreferrer" className="jobs-fallback-btn jobs-fallback-secondary">
+              Work24 채용 공고 보기
+            </a>
+          </div>
+          <div className="jobs-fallback-quick">
+            <p className="jobs-fallback-quick-label">인기 직종 바로가기</p>
+            {['IT·인터넷', '의료·복지', '사무·관리', '교육·강사', '서비스'].map(cat => (
+              <a
+                key={cat}
+                href={`https://www.work.go.kr/empInfo/empInfoSrch/list/dtlEmpSrchList.do?searchKeyword=${encodeURIComponent(cat)}`}
+                target="_blank" rel="noopener noreferrer"
+                className="jobs-fallback-quick-btn"
+              >{cat}</a>
+            ))}
+          </div>
         </div>
       )}
 
@@ -228,6 +258,14 @@ const Jobs: React.FC = () => {
           <Briefcase size={36} className="jobs-empty-icon" />
           <h3>검색 결과가 없습니다</h3>
           <p>다른 키워드나 조건으로 다시 검색해보세요.<br />조건을 더 넓게 설정하면 더 많은 결과가 나타납니다.</p>
+          <a
+            href="https://www.work.go.kr/empInfo/empInfoSrch/list/dtlEmpSrchList.do"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="jobs-worknet-direct"
+          >
+            WorkNet에서 직접 검색 →
+          </a>
         </div>
       )}
 
@@ -350,7 +388,29 @@ const Jobs: React.FC = () => {
 
         /* 상태 */
         .jobs-loading { display: flex; align-items: center; gap: .625rem; padding: 2.5rem; justify-content: center; color: var(--text-muted); font-size: .9rem; }
-        .jobs-error { display: flex; align-items: flex-start; gap: .5rem; padding: .875rem 1rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-sm); color: #dc2626; font-size: .82rem; }
+        .jobs-error-wrap { display:flex; flex-direction:column; gap:.75rem; padding:1rem; background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius-sm); }
+        .jobs-error-banner { display:flex; align-items:flex-start; gap:.625rem; }
+        .jobs-error-icon { color:#d97706; flex-shrink:0; margin-top:.1rem; }
+        .jobs-error-title { font-size:.85rem; font-weight:700; color:#92400e; margin:0 0 .2rem; }
+        .jobs-error-msg { font-size:.75rem; color:#b45309; margin:0; }
+        .jobs-error-actions { display:flex; gap:.5rem; flex-wrap:wrap; }
+        .jobs-fallback-btn {
+          display:inline-flex; align-items:center; gap:.4rem;
+          padding:.5rem .875rem; border-radius:var(--radius-sm);
+          font-size:.82rem; font-weight:600; text-decoration:none; transition:all .15s;
+        }
+        .jobs-fallback-primary { background:var(--primary); color:#fff; }
+        .jobs-fallback-primary:hover { background:#1d4ed8; }
+        .jobs-fallback-secondary { background:var(--surface); color:var(--text-muted); border:1px solid var(--border); }
+        .jobs-fallback-secondary:hover { border-color:var(--primary); color:var(--primary); }
+        .jobs-fallback-quick { display:flex; align-items:center; gap:.375rem; flex-wrap:wrap; padding-top:.25rem; border-top:1px solid #fde68a; }
+        .jobs-fallback-quick-label { font-size:.72rem; color:#92400e; font-weight:700; white-space:nowrap; }
+        .jobs-fallback-quick-btn {
+          font-size:.72rem; padding:.2rem .55rem; border-radius:20px;
+          background:#fef3c7; color:#92400e; border:1px solid #fde68a;
+          text-decoration:none; transition:all .15s;
+        }
+        .jobs-fallback-quick-btn:hover { background:#fde68a; }
         .jobs-empty {
           display: flex; flex-direction: column; align-items: center; gap: .625rem;
           padding: 3rem 1.5rem; background: var(--surface-2);
@@ -359,6 +419,7 @@ const Jobs: React.FC = () => {
         .jobs-empty-icon { color: var(--border-strong); }
         .jobs-empty h3 { font-size: .9rem; font-weight: 700; color: var(--text-muted); margin: 0; }
         .jobs-empty p { font-size: .82rem; color: var(--text-light); margin: 0; line-height: 1.7; }
+        .jobs-worknet-direct { margin-top: .75rem; font-size: .8rem; color: var(--primary); text-decoration: underline; }
 
         .jobs-intro { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
         @media (max-width: 640px) { .jobs-intro { grid-template-columns: 1fr; } }

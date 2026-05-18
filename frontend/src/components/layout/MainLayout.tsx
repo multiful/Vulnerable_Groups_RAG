@@ -1,7 +1,7 @@
 // Content Hash: SHA256:TBD
 import React, { useRef, useEffect } from 'react';
 import { Outlet, Link, useLocation, useSearchParams } from 'react-router-dom';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Home, Calendar, Compass, Briefcase } from 'lucide-react';
 import { loadPipeline } from '../../utils/pipelineState';
 
 const SUPPORT_LINKS = [
@@ -219,17 +219,18 @@ const MainLayout: React.FC = () => {
 
       {/* ── Mobile bottom nav ── */}
       <nav className="mobile-nav" aria-label="하단 메뉴">
-        {[
-          { label: '홈', path: '/' },
-          ...NAV_LINKS,
-          { label: '직업탐색', path: '/explore' },
-          { label: '채용', path: '/jobs' },
-        ].map(item => (
+        {([
+          { label: '홈',      path: '/',         Icon: Home },
+          { label: '시험일정', path: '/schedule', Icon: Calendar },
+          { label: '직업탐색', path: '/explore',  Icon: Compass },
+          { label: '채용',    path: '/jobs',      Icon: Briefcase },
+        ] as const).map(item => (
           <Link
             key={item.path}
             to={item.path}
             className={['mobile-nav-item', isActive(item.path) ? 'active' : ''].filter(Boolean).join(' ')}
           >
+            <item.Icon size={18} className="mobile-nav-icon" />
             <span>{item.label}</span>
           </Link>
         ))}
@@ -267,7 +268,6 @@ const MainLayout: React.FC = () => {
                 <p className="footer-col-title">도움말</p>
                 <Link to="/privacy" className="footer-link">개인정보처리방침</Link>
                 <Link to="/contact" className="footer-link">문의하기</Link>
-                <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="footer-link">GitHub ↗</a>
               </div>
             </div>
           </div>
@@ -665,15 +665,29 @@ const MainLayout: React.FC = () => {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 3px;
+          gap: 2px;
           color: var(--text-light);
-          font-size: 0.68rem;
+          font-size: 0.64rem;
           font-weight: 500;
           transition: color 0.15s;
           text-decoration: none;
-          padding-bottom: 2px;
+          padding-bottom: env(safe-area-inset-bottom, 2px);
+          position: relative;
         }
+        .mobile-nav-icon { transition: transform 0.15s; }
         .mobile-nav-item.active { color: var(--primary); font-weight: 700; }
+        .mobile-nav-item.active .mobile-nav-icon { transform: scale(1.08); }
+        .mobile-nav-item.active::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 32px;
+          height: 3px;
+          background: var(--primary);
+          border-radius: 0 0 4px 4px;
+        }
       `}</style>
     </div>
   );

@@ -17,7 +17,7 @@ const FAQ = [
   },
   {
     q: '특정 자격증이 목록에 없어요.',
-    a: '현재 한국산업인력공단 국가기술자격 1,290건을 기반으로 운영합니다. 민간자격 또는 국가전문자격은 일부만 포함되어 있습니다. 추가 요청은 GitHub Issues로 남겨주세요.',
+    a: '현재 한국산업인력공단 국가기술자격 1,290건을 기반으로 운영합니다. 민간자격 또는 국가전문자격은 일부만 포함되어 있습니다. 추가 요청은 문의하기 이메일로 보내주세요.',
   },
   {
     q: '지도가 표시되지 않아요.',
@@ -37,7 +37,7 @@ const Contact: React.FC = () => {
     const body = encodeURIComponent(
       `이름: ${data.get('name') ?? ''}\n\n내용:\n${data.get('message') ?? ''}`
     );
-    window.location.href = `mailto:rlaehdrb9268@g.hongik.ac.kr?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:rlaehdrb2485@naver.com?subject=${subject}&body=${body}`;
     setSent(true);
   };
 
@@ -53,27 +53,13 @@ const Contact: React.FC = () => {
         <div className="contact-channels">
           <h2 className="contact-sec-title">연락 채널</h2>
           <div className="channel-list">
-            <a href="mailto:rlaehdrb9268@g.hongik.ac.kr" className="channel-card">
+            <a href="mailto:rlaehdrb2485@naver.com" className="channel-card">
               <Mail size={22} className="channel-icon" />
               <div>
                 <p className="channel-name">이메일 문의</p>
-                <p className="channel-desc">rlaehdrb9268@g.hongik.ac.kr</p>
+                <p className="channel-desc">rlaehdrb2485@naver.com</p>
                 <p className="channel-hint">일반 문의, 개인정보 관련 요청</p>
               </div>
-            </a>
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="channel-card"
-            >
-              <Code2 size={22} className="channel-icon" />
-              <div>
-                <p className="channel-name">GitHub Issues</p>
-                <p className="channel-desc">버그 제보 · 기능 제안</p>
-                <p className="channel-hint">공개 이슈 트래킹 권장</p>
-              </div>
-              <ExternalLink size={14} className="channel-ext" />
             </a>
             <a href="https://www.didim.life" target="_blank" rel="noopener noreferrer" className="channel-card">
               <ExternalLink size={22} className="channel-icon" />

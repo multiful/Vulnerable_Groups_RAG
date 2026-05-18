@@ -82,11 +82,18 @@ def _load_job_info() -> list[dict]:
 
 
 def _parse_worknet_xml(xml_text: str) -> list[dict[str, Any]]:
-    """WorkNet XML 응답 → job 목록."""
+    """WorkNet XML 응답 → job 목록. 에러 응답(messageCd != 000) 시 ValueError 발생."""
     try:
         root = ET.fromstring(xml_text)
     except ET.ParseError:
         return []
+
+    # API 에러 응답 감지 (예: 유효하지 않은 인증키)
+    msg_cd = root.find("messageCd")
+    if msg_cd is not None and (msg_cd.text or "").strip() != "000":
+        msg_el = root.find("message")
+        err_text = (msg_el.text or "알 수 없는 오류").strip() if msg_el is not None else "알 수 없는 오류"
+        raise ValueError(err_text)
 
     jobs: list[dict[str, Any]] = []
     for wanted in root.iter("wanted"):
@@ -176,6 +183,10 @@ def get_hiring_jobs(
         return err_envelope("EXTERNAL_API_TIMEOUT", "워크넷 API 응답 시간이 초과되었습니다.")
     except httpx.HTTPStatusError as e:
         return err_envelope("EXTERNAL_API_ERROR", f"워크넷 API 오류: HTTP {e.response.status_code}")
+    except ValueError as e:
+        # WorkNet API 자체 에러 (예: 유효하지 않은 인증키)
+        logger.warning("worknet API error response: %s", e)
+        return err_envelope("EXTERNAL_API_ERROR", f"워크넷 API 오류: {e}")
     except Exception as e:
         logger.warning("worknet API error: %s", e)
         return err_envelope("EXTERNAL_API_ERROR", "채용정보 조회 중 오류가 발생했습니다.")

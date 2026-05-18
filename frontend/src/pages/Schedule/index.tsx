@@ -1,7 +1,8 @@
 // Content Hash: SHA256:TBD
 import React, { useState, useCallback, useRef } from 'react';
-import { Search, Calendar, Clock, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
+import { Search, Calendar, Clock, AlertCircle, Loader2, ExternalLink, BookOpen, TrendingUp, ChevronRight } from 'lucide-react';
 import { getCertCandidates } from '../../api/client';
+import type { CertCandidate } from '../../types/cert';
 
 // ── types ──────────────────────────────────────────────────────────────────
 interface ScheduleItem {
@@ -24,18 +25,18 @@ interface CertSchedule {
   year: string;
   schedules: ScheduleItem[];
   total: number;
+  api_status?: 'ok' | 'unavailable' | 'key_missing';
+  // enriched cert info from backend
+  cert_grade_tier?: string;
+  avg_pass_rate_3yr?: number | null;
+  primary_domain?: string;
+  exam_frequency?: string;
+  issuer?: string;
+  // Q-Net links
+  qnet_search_url?: string;
+  qnet_schedule_url?: string;
+  qnet_apply_url?: string;
 }
-
-interface ProfExamResult {
-  cert_name: string;
-  schedules: Record<string, unknown>[];
-  total: number;
-  source?: string;
-}
-
-type UnifiedResult =
-  | { kind: 'tech' | 'private'; data: CertSchedule }
-  | { kind: 'prof'; data: ProfExamResult };
 
 // ── helpers ────────────────────────────────────────────────────────────────
 const TECH_TIERS = ['기사', '산업기사', '기능사', '기능장', '기술사'];
@@ -50,208 +51,261 @@ function fmt(s: string | null): string {
   return s;
 }
 
+function fmtRange(start: string | null, end: string | null): string {
+  if (!start) return '-';
+  const s = fmt(start);
+  const e = end && end !== start ? ` ~ ${fmt(end)}` : '';
+  return `${s}${e}`;
+}
+
 function DdayBadge({ dday }: { dday: number | null }) {
   if (dday === null) return null;
-  if (dday < 0)  return <span className="sch-badge sch-badge-past">마감</span>;
-  if (dday === 0) return <span className="sch-badge sch-badge-today">D-Day</span>;
-  if (dday <= 7) return <span className="sch-badge sch-badge-urgent">D-{dday}</span>;
+  if (dday < 0)   return <span className="sch-badge sch-badge-past">마감</span>;
+  if (dday === 0)  return <span className="sch-badge sch-badge-today">D-Day</span>;
+  if (dday <= 7)  return <span className="sch-badge sch-badge-urgent">D-{dday}</span>;
   if (dday <= 30) return <span className="sch-badge sch-badge-soon">D-{dday}</span>;
   return <span className="sch-badge sch-badge-future">D-{dday}</span>;
 }
 
-// ── Tech/Private cert card ─────────────────────────────────────────────────
-function TechCard({ data }: { data: CertSchedule }) {
-  const upcoming = data.schedules.filter(s => (s.d_day_exam ?? -1) >= 0);
-  const nearest  = upcoming[0] ?? data.schedules[0];
+function TierBadge({ tier }: { tier: string }) {
+  const cls = tier.includes('기술사') ? 'sch-tier-5'
+    : tier.includes('기능장') ? 'sch-tier-4'
+    : tier.includes('기사') && !tier.includes('산업') ? 'sch-tier-3'
+    : tier.includes('산업기사') ? 'sch-tier-2'
+    : tier.includes('기능사') ? 'sch-tier-1'
+    : 'sch-tier-default';
+  return <span className={`sch-tier-badge ${cls}`}>{tier}</span>;
+}
+
+// ── Cert Info Card (항상 표시) ──────────────────────────────────────────────
+function CertInfoRow({ data, candidate }: { data: CertSchedule; candidate?: CertCandidate }) {
+  const grade = data.cert_grade_tier || candidate?.cert_grade_tier || '';
+  const passRate = data.avg_pass_rate_3yr ?? candidate?.avg_pass_rate_3yr;
+  const domain = data.primary_domain || candidate?.primary_domain || '';
+  const freq = data.exam_frequency || candidate?.exam_sessions_per_year?.toString() || '';
+  const issuer = data.issuer || candidate?.issuer || '';
+
+  return (
+    <div className="sch-cert-info-row">
+      <div className="sch-cert-info-left">
+        {grade && <TierBadge tier={grade} />}
+        {domain && <span className="sch-info-chip">{domain}</span>}
+        {issuer && <span className="sch-info-chip sch-info-chip-muted">{issuer}</span>}
+      </div>
+      <div className="sch-cert-info-right">
+        {passRate != null && (
+          <span className="sch-pass-rate">
+            <TrendingUp size={11} /> 평균 합격률 {passRate.toFixed(1)}%
+          </span>
+        )}
+        {freq && <span className="sch-freq-chip">연 {freq}회</span>}
+      </div>
+    </div>
+  );
+}
+
+// ── Schedule timeline (일정이 있을 때) ────────────────────────────────────
+function ScheduleTimeline({ schedules }: { schedules: ScheduleItem[] }) {
+  const upcoming = schedules.filter(s => (s.d_day_exam ?? -1) >= 0);
+  const past     = schedules.filter(s => (s.d_day_exam ?? 0)  <  0);
+
+  return (
+    <div className="sch-timeline">
+      {upcoming.length > 0 && (
+        <div className="sch-timeline-section">
+          <p className="sch-timeline-label">예정된 시험</p>
+          {upcoming.map((s, i) => (
+            <div key={i} className="sch-timeline-item sch-timeline-upcoming">
+              <div className="sch-timeline-dot" />
+              <div className="sch-timeline-body">
+                <div className="sch-timeline-header">
+                  <span className="sch-timeline-seq">{s.impl_seq_name ?? `${s.impl_seq}회`}</span>
+                  <DdayBadge dday={s.d_day_exam} />
+                  {s.d_day_registration !== null && s.d_day_registration !== undefined && s.d_day_registration >= 0 && (
+                    <span className="sch-badge sch-badge-reg">접수 D-{s.d_day_registration}</span>
+                  )}
+                </div>
+                <div className="sch-timeline-dates">
+                  {s.registration_start && (
+                    <span className="sch-td-date">
+                      <span className="sch-td-key">접수</span>
+                      {fmtRange(s.registration_start, s.registration_end)}
+                    </span>
+                  )}
+                  {s.exam_start && (
+                    <span className="sch-td-date">
+                      <span className="sch-td-key">시험</span>
+                      {fmtRange(s.exam_start, s.exam_end)}
+                    </span>
+                  )}
+                  {s.pass_announce_date && (
+                    <span className="sch-td-date">
+                      <span className="sch-td-key">발표</span>
+                      {fmt(s.pass_announce_date)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {past.length > 0 && (
+        <details className="sch-past-details">
+          <summary className="sch-past-summary">지난 일정 {past.length}건</summary>
+          <div className="sch-timeline-section sch-past-section">
+            {past.map((s, i) => (
+              <div key={i} className="sch-timeline-item sch-timeline-past">
+                <div className="sch-timeline-dot sch-dot-past" />
+                <div className="sch-timeline-body">
+                  <div className="sch-timeline-header">
+                    <span className="sch-timeline-seq">{s.impl_seq_name ?? `${s.impl_seq}회`}</span>
+                    <DdayBadge dday={s.d_day_exam} />
+                  </div>
+                  <div className="sch-timeline-dates">
+                    {s.exam_start && (
+                      <span className="sch-td-date">
+                        <span className="sch-td-key">시험</span>
+                        {fmtRange(s.exam_start, s.exam_end)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
+
+// ── API 불가 시 fallback 패널 ──────────────────────────────────────────────
+function ScheduleFallback({ certName, qnetSearchUrl, qnetScheduleUrl }: {
+  certName: string;
+  qnetSearchUrl: string;
+  qnetScheduleUrl: string;
+}) {
+  return (
+    <div className="sch-fallback">
+      <div className="sch-fallback-notice">
+        <AlertCircle size={13} />
+        <span>Q-Net API 점검 중 — 공식 사이트에서 최신 일정을 확인하세요</span>
+      </div>
+      <div className="sch-fallback-actions">
+        <a href={qnetSearchUrl} target="_blank" rel="noopener noreferrer" className="sch-fallback-btn sch-fallback-primary">
+          <Calendar size={14} /> Q-Net에서 "{certName}" 시험일정 보기
+          <ChevronRight size={13} />
+        </a>
+        <a href={qnetScheduleUrl} target="_blank" rel="noopener noreferrer" className="sch-fallback-btn sch-fallback-secondary">
+          <ExternalLink size={13} /> 연도별 시험 일정 전체 보기
+        </a>
+        <a
+          href={`https://www.google.com/search?q=${encodeURIComponent(`${certName} 시험 일정 2026`)}`}
+          target="_blank" rel="noopener noreferrer"
+          className="sch-fallback-btn sch-fallback-secondary"
+        >
+          <Search size={13} /> Google에서 검색
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// ── Main cert card ─────────────────────────────────────────────────────────
+function CertCard({ data, candidate }: { data: CertSchedule; candidate?: CertCandidate }) {
   const typeLabel = data.cert_type === 'tech' ? '국가기술' : '국가자격';
   const typeCls   = data.cert_type === 'tech' ? 'sch-type-tech' : 'sch-type-private';
+  const hasSchedule = data.schedules.length > 0;
+  const apiDown = !hasSchedule && data.api_status !== 'ok';
+
+  const qnetSearch = data.qnet_search_url
+    || `https://www.q-net.or.kr/crf005.do?id=crf00501&gSite=Q&jmNm=${encodeURIComponent(data.cert_name)}`;
+  const qnetSchedule = data.qnet_schedule_url || 'https://www.q-net.or.kr/crf021.do?id=crf02101&scheType=03';
+
+  const upcoming = data.schedules.filter(s => (s.d_day_exam ?? -1) >= 0);
+  const nearest  = upcoming[0] ?? data.schedules[0] ?? null;
 
   return (
     <div className="sch-card">
+      {/* 헤더 */}
       <div className="sch-card-header-info">
         <div className="sch-card-title-row">
           <span className="sch-cert-name">{data.cert_name}</span>
           <span className={`sch-type-badge ${typeCls}`}>{typeLabel}</span>
           {nearest && <DdayBadge dday={nearest.d_day_exam} />}
+          {apiDown && <span className="sch-badge sch-badge-api-down">일정 조회 불가</span>}
         </div>
-        <div className="sch-card-meta">
-          {data.year && <span className="sch-year">{data.year}년</span>}
-          <span className="sch-count">총 {data.total}회차</span>
-          {nearest?.exam_start && (
-            <span className="sch-nearest"><Clock size={11} /> 최근 시험: {fmt(nearest.exam_start)}</span>
-          )}
-        </div>
+        {data.year && (
+          <div className="sch-card-meta">
+            <span className="sch-year">{data.year}년</span>
+            {hasSchedule && <span className="sch-count">총 {data.total}회차</span>}
+            {nearest?.exam_start && (
+              <span className="sch-nearest"><Clock size={11} /> 최근 시험: {fmt(nearest.exam_start)}</span>
+            )}
+          </div>
+        )}
       </div>
 
-      {data.schedules.length === 0 ? (
-        <p className="sch-empty-text">예정된 시험 일정이 없습니다.</p>
-      ) : (
-        <div className="sch-table-wrap">
-          <table className="sch-table">
-            <thead>
-              <tr>
-                <th>회차</th>
-                <th>접수 기간</th>
-                <th>시험 기간</th>
-                <th>합격 발표</th>
-                <th>시험 D-Day</th>
-                <th>접수 D-Day</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.schedules.map((s, i) => (
-                <tr key={i} className={(s.d_day_exam ?? 0) < 0 ? 'sch-row-past' : ''}>
-                  <td className="sch-td-seq">{s.impl_seq_name ?? `${s.impl_seq}회`}</td>
-                  <td>{fmt(s.registration_start)}{s.registration_end ? ` ~ ${fmt(s.registration_end)}` : ''}</td>
-                  <td>{fmt(s.exam_start)}{s.exam_end && s.exam_end !== s.exam_start ? ` ~ ${fmt(s.exam_end)}` : ''}</td>
-                  <td>{fmt(s.pass_announce_date)}</td>
-                  <td><DdayBadge dday={s.d_day_exam} /></td>
-                  <td>
-                    {s.d_day_registration === null || s.d_day_registration === undefined
-                      ? <span className="sch-badge-none">—</span>
-                      : s.d_day_registration < 0
-                        ? <span className="sch-badge sch-badge-past">접수마감</span>
-                        : s.d_day_registration === 0
-                          ? <span className="sch-badge sch-badge-today">접수오늘</span>
-                          : <span className="sch-badge sch-badge-reg">접수 D-{s.d_day_registration}</span>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* cert 기본 정보 */}
+      <CertInfoRow data={data} candidate={candidate} />
+
+      {/* 일정 또는 fallback */}
+      {hasSchedule
+        ? <ScheduleTimeline schedules={data.schedules} />
+        : <ScheduleFallback certName={data.cert_name} qnetSearchUrl={qnetSearch} qnetScheduleUrl={qnetSchedule} />
+      }
+
+      {/* 항상 표시되는 Q-Net 링크 */}
+      {hasSchedule && (
+        <div className="sch-card-footer">
+          <a href={qnetSearch} target="_blank" rel="noopener noreferrer" className="sch-qnet-link">
+            <ExternalLink size={12} /> Q-Net 원서접수
+          </a>
+          <p className="sch-source">한국산업인력공단 Q-Net</p>
         </div>
       )}
-
-      <a
-        className="sch-qnet-link"
-        href={`https://www.q-net.or.kr/crf005.do?id=crf00503s&jmNm=${encodeURIComponent(data.cert_name)}`}
-        target="_blank" rel="noopener noreferrer"
-      >
-        <ExternalLink size={12} /> Q-Net 원서접수
-      </a>
-      <p className="sch-source">한국산업인력공단 Q-Net</p>
-    </div>
-  );
-}
-
-// ── Professional cert card ─────────────────────────────────────────────────
-function ProfCard({ data }: { data: ProfExamResult }) {
-  const keys = data.schedules.length > 0
-    ? Object.keys(data.schedules[0]).filter(k => k !== 'cert_name')
-    : [];
-
-  const FIELD_KO: Record<string, string> = {
-    examNm: '시험명', implYy: '연도', jmFldNm: '종목명',
-    wtmnYmd: '필기 시험일', ptmnYmd: '실기 시험일',
-    docAplyStartDt: '필기 접수 시작', docAplyEndDt: '필기 접수 마감',
-    pracAplyStartDt: '실기 접수 시작', pracAplyEndDt: '실기 접수 마감',
-    docPassDt: '필기 합격 발표', pracPassDt: '실기 합격 발표',
-    implSeq: '회차', entrsFee: '응시료',
-  };
-
-  return (
-    <div className="sch-card">
-      <div className="sch-card-header-info">
-        <div className="sch-card-title-row">
-          <span className="sch-cert-name">{data.cert_name}</span>
-          <span className="sch-type-badge sch-type-prof">국가전문</span>
-          {data.total > 0 && <span className="sch-badge sch-badge-future">{data.total}건</span>}
-        </div>
-        {data.source && <div className="sch-card-meta"><span className="sch-year">{data.source}</span></div>}
-      </div>
-
-      {data.schedules.length === 0 ? (
-        <p className="sch-empty-text">일정 정보가 없습니다.</p>
-      ) : keys.length > 0 ? (
-        <div className="sch-table-wrap">
-          <table className="sch-table">
-            <thead>
-              <tr>{keys.map(k => <th key={k}>{FIELD_KO[k] ?? k}</th>)}</tr>
-            </thead>
-            <tbody>
-              {data.schedules.map((s, i) => (
-                <tr key={i}>
-                  {keys.map(k => <td key={k}>{String(s[k] ?? '-')}</td>)}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="sch-prof-kv">
-          {data.schedules.map((s, i) => (
-            <div key={i} className="sch-prof-kv-row">
-              {Object.entries(s).filter(([k]) => k !== 'cert_name').map(([k, v]) => (
-                <div key={k} className="sch-prof-kv-item">
-                  <span className="sch-prof-kv-label">{FIELD_KO[k] ?? k}</span>
-                  <span className="sch-prof-kv-val">{String(v ?? '-')}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-      <a
-        className="sch-qnet-link"
-        href={`https://www.q-net.or.kr/crf005.do?id=crf00503s&jmNm=${encodeURIComponent(data.cert_name)}`}
-        target="_blank" rel="noopener noreferrer"
-      >
-        <ExternalLink size={12} /> Q-Net 원서접수
-      </a>
-      <p className="sch-source">한국산업인력공단 Q-Net</p>
     </div>
   );
 }
 
 // ── Main component ─────────────────────────────────────────────────────────
 const Schedule: React.FC = () => {
-  const [query, setQuery]     = useState('');
-  const [results, setResults] = useState<UnifiedResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
+  const [query, setQuery]       = useState('');
+  const [results, setResults]   = useState<{ data: CertSchedule; candidate: CertCandidate }[]>([]);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
 
-  const techCacheRef = useRef<Record<string, CertSchedule>>({});
-  const profCacheRef = useRef<Record<string, ProfExamResult | null>>({});
+  const schedCacheRef = useRef<Record<string, CertSchedule>>({});
 
-  const fetchTechSchedule = useCallback(async (certId: string, certName: string, tier: string): Promise<CertSchedule | null> => {
-    if (techCacheRef.current[certId]) return techCacheRef.current[certId];
+  const fetchSchedule = useCallback(async (certId: string): Promise<CertSchedule | null> => {
+    if (schedCacheRef.current[certId]) return schedCacheRef.current[certId];
     try {
       const r    = await fetch(`/api/v1/schedules/exams/${encodeURIComponent(certId)}`);
       const json = await r.json();
       if (json.success && json.data) {
-        const item: CertSchedule = {
+        const sched: CertSchedule = {
           cert_id:   certId,
-          cert_name: json.data.cert_name ?? certName,
-          cert_type: getTechType(tier),
+          cert_name: json.data.cert_name ?? '',
+          cert_type: getTechType(json.data.cert_grade_tier ?? ''),
           year:      json.data.year ?? '',
           schedules: json.data.schedules ?? [],
           total:     json.data.total ?? 0,
+          api_status:       json.data.api_status,
+          cert_grade_tier:  json.data.cert_grade_tier,
+          avg_pass_rate_3yr: json.data.avg_pass_rate_3yr,
+          primary_domain:   json.data.primary_domain,
+          exam_frequency:   json.data.exam_frequency,
+          issuer:           json.data.issuer,
+          qnet_search_url:   json.data.qnet_search_url,
+          qnet_schedule_url: json.data.qnet_schedule_url,
+          qnet_apply_url:    json.data.qnet_apply_url,
         };
-        techCacheRef.current[certId] = item;
-        return item;
+        schedCacheRef.current[certId] = sched;
+        return sched;
       }
     } catch { /* silent */ }
-    return null;
-  }, []);
-
-  const fetchProfSchedule = useCallback(async (q: string): Promise<ProfExamResult | null> => {
-    if (q in profCacheRef.current) return profCacheRef.current[q];
-    try {
-      const r    = await fetch(`/api/v1/schedules/professional-exams?cert_name=${encodeURIComponent(q)}`);
-      const json = await r.json();
-      if (json.success && json.data) {
-        const item: ProfExamResult = {
-          cert_name: json.data.cert_name ?? q,
-          schedules: json.data.schedules ?? [],
-          total:     json.data.total ?? 0,
-          source:    json.data.source,
-        };
-        profCacheRef.current[q] = item;
-        return item;
-      }
-    } catch { /* silent */ }
-    profCacheRef.current[q] = null;
     return null;
   }, []);
 
@@ -266,48 +320,63 @@ const Schedule: React.FC = () => {
     setResults([]);
 
     try {
-      const [allCerts, profResult] = await Promise.all([
-        getCertCandidates(),
-        fetchProfSchedule(q),
-      ]);
-
+      const allCerts = await getCertCandidates();
       const matched = allCerts
         .filter(c =>
           c.cert_name.includes(q) ||
           (c.aliases ?? []).some((a: string) => a.includes(q))
         )
-        .slice(0, 8);
+        .slice(0, 10);
+
+      if (matched.length === 0) {
+        setLoading(false);
+        return;
+      }
 
       const settled = await Promise.allSettled(
-        matched.map(c => fetchTechSchedule(c.cert_id, c.cert_name, c.cert_grade_tier ?? ''))
+        matched.map(c => fetchSchedule(c.cert_id))
       );
 
-      const unified: UnifiedResult[] = [];
-
-      // Professional result first if found
-      if (profResult && profResult.total > 0) {
-        unified.push({ kind: 'prof', data: profResult });
-      }
-
-      // Tech/private results
-      for (const r of settled) {
+      const unified: { data: CertSchedule; candidate: CertCandidate }[] = [];
+      for (let i = 0; i < matched.length; i++) {
+        const candidate = matched[i];
+        const r = settled[i];
         if (r.status === 'fulfilled' && r.value) {
-          unified.push({ kind: r.value.cert_type, data: r.value });
+          unified.push({ data: r.value, candidate });
+        } else {
+          // API 실패 시에도 candidate 데이터로 카드 구성
+          unified.push({
+            candidate,
+            data: {
+              cert_id:   candidate.cert_id,
+              cert_name: candidate.cert_name,
+              cert_type: getTechType(candidate.cert_grade_tier ?? ''),
+              year:      new Date().getFullYear().toString(),
+              schedules: [],
+              total:     0,
+              api_status:       'unavailable',
+              cert_grade_tier:  candidate.cert_grade_tier,
+              avg_pass_rate_3yr: candidate.avg_pass_rate_3yr,
+              primary_domain:   candidate.primary_domain,
+              issuer:           candidate.issuer,
+            },
+          });
         }
       }
-
       setResults(unified);
     } catch {
-      setError('일정 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.');
+      setError('자격증 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.');
     }
     setLoading(false);
-  }, [query, fetchTechSchedule, fetchProfSchedule]);
+  }, [query, fetchSchedule]);
+
+  const exampleCerts = ['정보처리기사', '직업상담사', '산업안전기사', '전기기사', '사회복지사'];
 
   return (
     <div className="sch-wrap">
       <div className="sch-header">
         <h1 className="sch-title">시험 일정</h1>
-        <p className="sch-sub">Q-Net 국가기술자격·국가전문자격 시험 일정 통합 검색</p>
+        <p className="sch-sub">국가기술·전문자격 시험 일정 및 Q-Net 바로가기</p>
       </div>
 
       <form className="sch-search-form" onSubmit={handleSearch}>
@@ -316,7 +385,7 @@ const Schedule: React.FC = () => {
           <input
             className="sch-search-input"
             type="text"
-            placeholder="자격증명 검색 (예: 정보처리기사, 직업상담사, 건축사, 산업안전기사)"
+            placeholder="자격증명 검색 (예: 정보처리기사, 직업상담사)"
             value={query}
             onChange={e => setQuery(e.target.value)}
             autoFocus
@@ -325,7 +394,14 @@ const Schedule: React.FC = () => {
             {loading ? <Loader2 size={15} className="spin" /> : '검색'}
           </button>
         </div>
-        <p className="sch-search-hint">국가기술·국가전문자격을 동시에 검색합니다 (Q-Net 데이터 기반)</p>
+        <div className="sch-quick-searches">
+          {exampleCerts.map(c => (
+            <button
+              key={c} type="button" className="sch-quick-btn"
+              onClick={() => { setQuery(c); }}
+            >{c}</button>
+          ))}
+        </div>
       </form>
 
       {error && (
@@ -334,44 +410,66 @@ const Schedule: React.FC = () => {
       {loading && (
         <div className="sch-loading">
           <Loader2 size={20} className="spin" />
-          <span>시험 일정을 조회하는 중…</span>
+          <span>자격증 정보를 조회하는 중…</span>
         </div>
       )}
 
       {!loading && searched && results.length === 0 && !error && (
         <div className="sch-empty">
-          <AlertCircle size={18} />
-          <p>"{query}"에 대한 시험 일정을 찾지 못했습니다. 자격증 이름을 정확히 입력해 주세요.</p>
+          <BookOpen size={22} className="sch-empty-icon" />
+          <div>
+            <p className="sch-empty-title">"{query}"와 일치하는 자격증이 없습니다</p>
+            <p className="sch-empty-hint">자격증 전체 이름으로 검색해보세요.</p>
+            <a
+              href={`https://www.q-net.or.kr/crf005.do?id=crf00501&gSite=Q&jmNm=${encodeURIComponent(query)}`}
+              target="_blank" rel="noopener noreferrer"
+              className="sch-empty-link"
+            >
+              <ExternalLink size={13} /> Q-Net에서 직접 검색 →
+            </a>
+          </div>
         </div>
       )}
 
       {!loading && results.length > 0 && (
         <div className="sch-results">
-          <p className="sch-result-count">{results.length}개 자격증 일정</p>
-          {results.map((r, i) =>
-            r.kind === 'prof'
-              ? <ProfCard key={`prof-${i}`} data={r.data} />
-              : <TechCard key={(r.data as CertSchedule).cert_id} data={r.data as CertSchedule} />
-          )}
+          <p className="sch-result-count">
+            {results.length}개 자격증 —{' '}
+            {results.some(r => r.data.schedules.length > 0)
+              ? '일정 데이터 포함'
+              : 'Q-Net 바로가기 제공'}
+          </p>
+          {results.map(r => (
+            <CertCard key={r.data.cert_id} data={r.data} candidate={r.candidate} />
+          ))}
         </div>
       )}
 
       {!searched && !loading && (
-        <div className="sch-guide">
-          <div className="sch-guide-card">
-            <Calendar size={26} className="sch-guide-icon" />
-            <h3>국가기술자격</h3>
-            <p>기사·산업기사·기능사·기능장·기술사 등 한국산업인력공단 관할 자격증 시험 일정</p>
+        <div className="sch-guide-wrap">
+          <div className="sch-guide-header">
+            <h2 className="sch-guide-title">이용 안내</h2>
           </div>
-          <div className="sch-guide-card">
-            <Clock size={26} className="sch-guide-icon" />
-            <h3>국가전문자격</h3>
-            <p>의사·약사·건축사·변호사 등 국가전문자격 시험 일정 (Q-Net 국가전문자격 API)</p>
+          <div className="sch-guide">
+            <div className="sch-guide-card">
+              <div className="sch-guide-icon-wrap"><Calendar size={22} /></div>
+              <h3>시험 일정 조회</h3>
+              <p>자격증명 검색 시 Q-Net에 등록된 연도별 시험 일정·접수 기간·합격 발표일을 제공합니다.</p>
+            </div>
+            <div className="sch-guide-card">
+              <div className="sch-guide-icon-wrap"><Clock size={22} /></div>
+              <h3>D-Day 표시</h3>
+              <p>시험까지 남은 일수(D-Day)와 접수 마감 D-Day를 한눈에 확인할 수 있습니다.</p>
+            </div>
+            <div className="sch-guide-card">
+              <div className="sch-guide-icon-wrap"><ExternalLink size={22} /></div>
+              <h3>Q-Net 바로가기</h3>
+              <p>API 점검 중인 경우에도 Q-Net 공식 일정 페이지 바로가기 링크를 제공합니다.</p>
+            </div>
           </div>
-          <div className="sch-guide-card">
-            <ExternalLink size={26} className="sch-guide-icon" />
-            <h3>공인민간자격</h3>
-            <p>국가공인 민간자격증 시험 일정·접수일·합격 발표일 D-Day 표시</p>
+          <div className="sch-api-notice">
+            <AlertCircle size={14} />
+            <span>현재 Q-Net 시험일정 API 점검 중으로 일정 데이터가 제한될 수 있습니다. 검색 시 Q-Net 직접 링크를 제공합니다.</span>
           </div>
         </div>
       )}
@@ -382,35 +480,87 @@ const Schedule: React.FC = () => {
         .sch-title { font-size:1.75rem; font-weight:900; color:var(--text); margin:0; }
         .sch-sub { font-size:.875rem; color:var(--text-muted); margin:0; }
 
-        .sch-search-form { display:flex; flex-direction:column; gap:.375rem; }
+        /* 검색 */
+        .sch-search-form { display:flex; flex-direction:column; gap:.625rem; }
         .sch-search-inner {
           display:flex; align-items:center; gap:.625rem;
-          background:var(--surface-2); border:1px solid var(--border);
-          border-radius:var(--radius-sm); padding:.5rem .75rem;
-          transition:border-color .15s;
+          background:var(--surface-2); border:1.5px solid var(--border);
+          border-radius:var(--radius-sm); padding:.55rem .875rem;
+          transition:border-color .15s, box-shadow .15s;
         }
-        .sch-search-inner:focus-within { border-color:var(--primary); }
+        .sch-search-inner:focus-within {
+          border-color:var(--primary);
+          box-shadow:0 0 0 3px rgba(37,99,235,.1);
+        }
         .sch-search-icon { color:var(--text-light); flex-shrink:0; }
-        .sch-search-input { flex:1; border:none; background:transparent; font-size:.9rem; color:var(--text); outline:none; }
+        .sch-search-input { flex:1; border:none; background:transparent; font-size:.95rem; color:var(--text); outline:none; }
         .sch-search-input::placeholder { color:var(--text-light); }
-        .sch-search-btn { padding:.45rem 1rem; font-size:.85rem; }
-        .sch-search-hint { font-size:.72rem; color:var(--text-light); margin:0; }
+        .sch-search-btn { padding:.45rem 1.1rem; font-size:.875rem; }
+        .sch-quick-searches { display:flex; gap:.375rem; flex-wrap:wrap; }
+        .sch-quick-btn {
+          padding:.3rem .65rem; font-size:.75rem; font-weight:600;
+          background:var(--surface-2); border:1px solid var(--border);
+          border-radius:20px; cursor:pointer; color:var(--text-muted);
+          transition:all .15s;
+        }
+        .sch-quick-btn:hover { border-color:var(--primary); color:var(--primary); background:var(--primary-light); }
 
-        .sch-results { display:flex; flex-direction:column; gap:1rem; }
+        /* 결과 */
+        .sch-results { display:flex; flex-direction:column; gap:.875rem; }
         .sch-result-count { font-size:.78rem; color:var(--text-muted); margin:0; font-weight:600; }
 
+        /* 카드 */
         .sch-card {
-          border:1px solid var(--border); border-radius:var(--radius-sm);
-          background:var(--surface-2); padding:1rem 1.125rem;
-          display:flex; flex-direction:column; gap:.75rem;
+          border:1px solid var(--border); border-radius:10px;
+          background:var(--surface-2); overflow:hidden;
+          display:flex; flex-direction:column; gap:0;
         }
-        .sch-card-header-info { display:flex; flex-direction:column; gap:.25rem; }
+        .sch-card-header-info {
+          display:flex; flex-direction:column; gap:.3rem;
+          padding:1rem 1.125rem .625rem;
+        }
         .sch-card-title-row { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
-        .sch-cert-name { font-size:1rem; font-weight:800; color:var(--text); }
+        .sch-cert-name { font-size:1.05rem; font-weight:800; color:var(--text); }
         .sch-card-meta { display:flex; align-items:center; gap:.625rem; flex-wrap:wrap; }
-        .sch-year { font-size:.73rem; color:var(--text-light); }
-        .sch-count { font-size:.73rem; color:var(--text-light); }
-        .sch-nearest { font-size:.73rem; color:var(--text-muted); display:flex; align-items:center; gap:.25rem; }
+        .sch-year { font-size:.72rem; color:var(--text-light); }
+        .sch-count { font-size:.72rem; color:var(--text-light); }
+        .sch-nearest { font-size:.72rem; color:var(--text-muted); display:flex; align-items:center; gap:.25rem; }
+
+        /* cert info row */
+        .sch-cert-info-row {
+          display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem;
+          padding:.5rem 1.125rem .75rem;
+          border-bottom:1px solid var(--border);
+          background:var(--surface-3,#f8fafc);
+        }
+        .sch-cert-info-left { display:flex; gap:.375rem; flex-wrap:wrap; align-items:center; }
+        .sch-cert-info-right { display:flex; gap:.375rem; align-items:center; }
+        .sch-info-chip {
+          font-size:.7rem; font-weight:600;
+          background:var(--primary-light); color:var(--primary);
+          padding:.15rem .5rem; border-radius:20px;
+        }
+        .sch-info-chip-muted {
+          background:var(--surface-2); color:var(--text-muted);
+          border:1px solid var(--border);
+        }
+        .sch-pass-rate { font-size:.72rem; color:#059669; display:flex; align-items:center; gap:.25rem; font-weight:700; }
+        .sch-freq-chip {
+          font-size:.7rem; background:#ede9fe; color:#6d28d9;
+          padding:.15rem .5rem; border-radius:20px; font-weight:600;
+        }
+
+        /* tier badges */
+        .sch-tier-badge {
+          font-size:.66rem; font-weight:800; letter-spacing:.02em;
+          padding:.15rem .5rem; border-radius:20px;
+        }
+        .sch-tier-1 { background:#f0fdf4; color:#16a34a; }
+        .sch-tier-2 { background:#fef9c3; color:#ca8a04; }
+        .sch-tier-3 { background:#dbeafe; color:#1e40af; }
+        .sch-tier-4 { background:#fce7f3; color:#9d174d; }
+        .sch-tier-5 { background:#ede9fe; color:#5b21b6; }
+        .sch-tier-default { background:var(--border); color:var(--text-muted); }
 
         .sch-type-badge {
           display:inline-flex; align-items:center; padding:.15rem .5rem;
@@ -418,58 +568,130 @@ const Schedule: React.FC = () => {
         }
         .sch-type-tech    { background:#dbeafe; color:#1e40af; }
         .sch-type-private { background:#fef3c7; color:#92400e; }
-        .sch-type-prof    { background:#f3e8ff; color:#6d28d9; }
 
         .sch-badge { display:inline-flex; align-items:center; padding:.15rem .5rem; border-radius:20px; font-size:.7rem; font-weight:700; }
         .sch-badge-past    { background:#f1f5f9; color:#94a3b8; }
         .sch-badge-today   { background:#fee2e2; color:#ef4444; }
-        .sch-badge-urgent  { background:#fee2e2; color:#ef4444; }
+        .sch-badge-urgent  { background:#fee2e2; color:#ef4444; animation:pulse .9s ease infinite; }
         .sch-badge-soon    { background:#fef3c7; color:#d97706; }
         .sch-badge-future  { background:#e0f2fe; color:#0284c7; }
         .sch-badge-reg     { background:#f0fdf4; color:#16a34a; }
-        .sch-badge-none    { color:var(--text-light); font-size:.72rem; }
+        .sch-badge-api-down { background:#f1f5f9; color:#64748b; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
 
-        .sch-table-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:6px; }
-        .sch-table { width:100%; border-collapse:collapse; font-size:.8rem; }
-        .sch-table th {
-          padding:.45rem .75rem; text-align:left;
-          font-size:.72rem; font-weight:700; color:var(--text-muted);
-          background:var(--surface-3,#f8fafc); border-bottom:1px solid var(--border);
-          white-space:nowrap;
+        /* Timeline */
+        .sch-timeline { padding:.875rem 1.125rem; display:flex; flex-direction:column; gap:.75rem; }
+        .sch-timeline-section { display:flex; flex-direction:column; gap:.5rem; }
+        .sch-timeline-label { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin:0 0 .25rem; }
+        .sch-timeline-item { display:flex; gap:.75rem; align-items:flex-start; }
+        .sch-timeline-dot {
+          width:10px; height:10px; border-radius:50%;
+          background:var(--primary); flex-shrink:0; margin-top:.35rem;
+          box-shadow:0 0 0 3px rgba(37,99,235,.15);
         }
-        .sch-table td { padding:.45rem .75rem; color:var(--text-muted); border-bottom:1px solid var(--border); white-space:nowrap; }
-        .sch-table tr:last-child td { border-bottom:none; }
-        .sch-row-past td { opacity:.45; }
-        .sch-td-seq { font-weight:700; color:var(--text); }
+        .sch-dot-past { background:#cbd5e1; box-shadow:none; }
+        .sch-timeline-body { display:flex; flex-direction:column; gap:.3rem; flex:1; }
+        .sch-timeline-header { display:flex; align-items:center; gap:.375rem; flex-wrap:wrap; }
+        .sch-timeline-seq { font-size:.85rem; font-weight:700; color:var(--text); }
+        .sch-timeline-dates { display:flex; flex-wrap:wrap; gap:.5rem; }
+        .sch-td-date { font-size:.78rem; color:var(--text-muted); display:flex; align-items:center; gap:.3rem; }
+        .sch-td-key { font-size:.68rem; font-weight:700; color:var(--text-light); min-width:28px; }
+        .sch-timeline-past { opacity:.5; }
 
-        .sch-prof-kv { display:flex; flex-direction:column; gap:.5rem; }
-        .sch-prof-kv-row { display:flex; flex-wrap:wrap; gap:.375rem; }
-        .sch-prof-kv-item { display:flex; gap:.35rem; align-items:baseline; }
-        .sch-prof-kv-label { font-size:.7rem; font-weight:700; color:var(--text-muted); white-space:nowrap; }
-        .sch-prof-kv-val   { font-size:.8rem; color:var(--text); }
+        /* Past details */
+        .sch-past-details { border-top:1px solid var(--border); margin:0 -1.125rem; padding:.5rem 1.125rem; background:var(--surface-3,#f8fafc); }
+        .sch-past-summary { font-size:.75rem; color:var(--text-light); cursor:pointer; list-style:none; font-weight:600; }
+        .sch-past-summary::-webkit-details-marker { display:none; }
+        .sch-past-section { margin-top:.5rem; }
 
+        /* Fallback */
+        .sch-fallback { padding:.875rem 1.125rem; display:flex; flex-direction:column; gap:.75rem; }
+        .sch-fallback-notice {
+          display:flex; align-items:center; gap:.5rem;
+          font-size:.75rem; color:#d97706; background:#fffbeb;
+          border:1px solid #fde68a; border-radius:6px;
+          padding:.5rem .75rem;
+        }
+        .sch-fallback-actions { display:flex; flex-direction:column; gap:.5rem; }
+        .sch-fallback-btn {
+          display:flex; align-items:center; gap:.5rem;
+          padding:.6rem .875rem; border-radius:var(--radius-sm);
+          font-size:.82rem; font-weight:600; text-decoration:none;
+          transition:all .15s; border:none; cursor:pointer;
+        }
+        .sch-fallback-primary {
+          background:var(--primary); color:#fff;
+          justify-content:space-between;
+        }
+        .sch-fallback-primary:hover { background:#1d4ed8; }
+        .sch-fallback-secondary {
+          background:var(--surface); color:var(--text-muted);
+          border:1px solid var(--border);
+        }
+        .sch-fallback-secondary:hover { border-color:var(--primary); color:var(--primary); }
+
+        /* Card footer */
+        .sch-card-footer {
+          display:flex; align-items:center; justify-content:space-between;
+          padding:.625rem 1.125rem;
+          border-top:1px solid var(--border);
+          background:var(--surface-3,#f8fafc);
+        }
         .sch-qnet-link {
           display:inline-flex; align-items:center; gap:.35rem;
           font-size:.78rem; color:var(--primary); text-decoration:none;
-          padding:.3rem .75rem; border:1px solid var(--primary);
-          border-radius:var(--radius-sm); width:fit-content; transition:background .15s;
+          padding:.3rem .65rem; border:1px solid var(--primary);
+          border-radius:var(--radius-sm); transition:background .15s;
         }
         .sch-qnet-link:hover { background:var(--primary-light); }
-        .sch-empty-text { font-size:.85rem; color:var(--text-light); margin:0; }
         .sch-source { font-size:.65rem; color:#94a3b8; margin:0; }
 
+        /* 상태 */
         .sch-loading { display:flex; align-items:center; gap:.75rem; padding:2.5rem; justify-content:center; color:var(--text-muted); font-size:.9rem; }
         .sch-error { display:flex; align-items:center; gap:.625rem; padding:1rem 1.25rem; background:#fef2f2; border:1px solid #fecaca; border-radius:var(--radius-sm); color:#dc2626; font-size:.875rem; }
-        .sch-empty { display:flex; align-items:flex-start; gap:.625rem; padding:2rem; background:var(--surface-2); border:1px dashed var(--border); border-radius:var(--radius-sm); color:var(--text-muted); font-size:.875rem; }
+        .sch-empty {
+          display:flex; align-items:flex-start; gap:.875rem;
+          padding:2rem; background:var(--surface-2);
+          border:1px dashed var(--border); border-radius:var(--radius-sm);
+        }
+        .sch-empty-icon { color:var(--border-strong); margin-top:.15rem; flex-shrink:0; }
+        .sch-empty-title { font-size:.9rem; font-weight:700; color:var(--text); margin:0 0 .3rem; }
+        .sch-empty-hint { font-size:.8rem; color:var(--text-muted); margin:0 0 .625rem; }
+        .sch-empty-link {
+          display:inline-flex; align-items:center; gap:.3rem;
+          font-size:.8rem; color:var(--primary); text-decoration:none;
+          font-weight:600;
+        }
+        .sch-empty-link:hover { text-decoration:underline; }
+
+        /* Guide */
+        .sch-guide-wrap { display:flex; flex-direction:column; gap:1rem; }
+        .sch-guide-header { display:flex; align-items:center; gap:.5rem; }
+        .sch-guide-title { font-size:1rem; font-weight:800; color:var(--text); margin:0; }
+        .sch-guide { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; }
+        @media (max-width:640px) { .sch-guide { grid-template-columns:1fr; } }
+        .sch-guide-card {
+          display:flex; flex-direction:column; gap:.5rem;
+          padding:1rem; background:var(--surface-2);
+          border:1px solid var(--border); border-radius:10px;
+          transition:border-color .15s, box-shadow .15s;
+        }
+        .sch-guide-card:hover { border-color:var(--primary); box-shadow:0 2px 8px rgba(37,99,235,.08); }
+        .sch-guide-icon-wrap {
+          width:38px; height:38px; border-radius:10px;
+          background:var(--primary-light); color:var(--primary);
+          display:flex; align-items:center; justify-content:center;
+        }
+        .sch-guide-card h3 { font-size:.875rem; font-weight:700; color:var(--text); margin:0; }
+        .sch-guide-card p { font-size:.78rem; color:var(--text-muted); margin:0; line-height:1.65; }
+        .sch-api-notice {
+          display:flex; align-items:flex-start; gap:.5rem;
+          padding:.625rem .875rem; font-size:.75rem; color:#d97706;
+          background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius-sm);
+        }
+
         .spin { animation:spin 1s linear infinite; }
         @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
-
-        .sch-guide { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
-        @media (max-width:640px) { .sch-guide { grid-template-columns:1fr; } }
-        .sch-guide-card { display:flex; flex-direction:column; gap:.5rem; padding:1.125rem; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm); }
-        .sch-guide-icon { color:var(--primary); }
-        .sch-guide-card h3 { font-size:.9rem; font-weight:700; color:var(--text); margin:0; }
-        .sch-guide-card p { font-size:.8rem; color:var(--text-muted); margin:0; line-height:1.65; }
       `}</style>
     </div>
   );

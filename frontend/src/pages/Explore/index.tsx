@@ -25,6 +25,7 @@ interface CareerJob {
   salary_high: string;
   employment_rate: string;
   employment_prospect: string;
+  profession: string;
   related_certs: string;
   related_majors: string;
   personality: string;
@@ -117,13 +118,14 @@ function JobCard({ job }: { job: CareerJob }) {
         <div className="ex-card-title-row">
           <span className="ex-card-name">{job.name || '(이름 없음)'}</span>
           <div className="ex-card-badges">
+            {job.profession && (
+              <span className="ex-prof-badge">{job.profession}</span>
+            )}
             {job.employment_rate && (
-              <span className="ex-emp-badge">취업률 {job.employment_rate}%</span>
+              <span className="ex-emp-badge">고용평등 {job.employment_rate}</span>
             )}
             {job.salary_low && (
-              <span className="ex-salary-badge">
-                {job.salary_low}~{job.salary_high || '?'}만원
-              </span>
+              <span className="ex-salary-badge">{job.salary_low}</span>
             )}
           </div>
         </div>
@@ -152,7 +154,7 @@ function JobCard({ job }: { job: CareerJob }) {
           )}
           {job.tasks && (
             <div className="ex-detail-row">
-              <span className="ex-detail-key">주요 업무</span>
+              <span className="ex-detail-key">유사 직업</span>
               <span className="ex-detail-val">{job.tasks}</span>
             </div>
           )}
@@ -180,7 +182,7 @@ function JobCard({ job }: { job: CareerJob }) {
               <span className="ex-detail-val">{job.employment_prospect}</span>
             </div>
           )}
-          {scores?.similar_jobs && (
+          {scores?.similar_jobs && !job.tasks && (
             <div className="ex-detail-row">
               <span className="ex-detail-key">유사 직업</span>
               <span className="ex-detail-val">{scores.similar_jobs}</span>
@@ -764,7 +766,15 @@ const Explore: React.FC = () => {
             <div className="ex-placeholder">
               <BookOpen size={36} className="ex-placeholder-icon" />
               <h3>학과 정보 탐색</h3>
-              <p>학과명을 검색하거나 빈 검색으로 전체 학과를 조회하세요.<br />각 학과를 클릭하면 관련 직업과 자격증을 확인할 수 있습니다.</p>
+              <p>커리어넷 학과 API가 현재 데이터를 제공하지 않아 학과 목록을 표시할 수 없습니다.<br />커리어넷 공식 사이트에서 학과 정보를 확인하세요.</p>
+              <a
+                href="https://www.career.go.kr/cnet/front/major/majorInfo.do"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ex-ext-link"
+              >
+                <ExternalLink size={13} /> 커리어넷 학과정보 바로가기
+              </a>
             </div>
           )}
           {!majorLoading && majorResults.length > 0 && (
@@ -1014,6 +1024,10 @@ const Explore: React.FC = () => {
         }
         .ex-emp-badge {
           font-size: .7rem; background: #fef3c7; color: #d97706;
+          padding: .1rem .45rem; border-radius: 20px;
+        }
+        .ex-prof-badge {
+          font-size: .7rem; background: #f0f4ff; color: #4338ca;
           padding: .1rem .45rem; border-radius: 20px;
         }
         .ex-scores-block { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: .625rem .75rem; margin-bottom: .5rem; display: flex; flex-direction: column; gap: .4rem; }

@@ -26,6 +26,10 @@ _BASE = "https://www.career.go.kr/cnet/openapi/getOpenApi.do"
 _TTL_SECONDS = 300
 _ttl_cache: dict[str, tuple[float, Any]] = {}
 
+# Full job list cache (loaded once, used for client-side search since API ignores searchFilter)
+_full_job_cache: dict[str, tuple[float, list]] = {}
+_FULL_JOB_TTL = 300
+
 
 def _ttl_get(key: str) -> Any | None:
     entry = _ttl_cache.get(key)
@@ -50,6 +54,38 @@ def _params_base(api_key: str, svc_code: str, gubun_code: str, page: int, page_s
     }
 
 
+def _load_all_jobs(api_key: str, timeout: int) -> list[dict]:
+    """전체 직업 목록을 로드하고 5분간 캐싱. 커리어넷 API가 searchFilter를 무시하므로 클라이언트 필터링에 사용."""
+    cache_key = "__all_jobs__"
+    entry = _full_job_cache.get(cache_key)
+    if entry and (time.monotonic() - entry[0]) < _FULL_JOB_TTL:
+        return entry[1]
+
+    all_items: list[dict] = []
+    page_size = 100
+    page = 1
+    while page <= 6:  # max 600 items (실제 약 454개)
+        params = _params_base(api_key, "JOB", "5", page, page_size)
+        try:
+            resp = httpx.get(_BASE, params=params, timeout=timeout)
+            resp.raise_for_status()
+            raw = resp.json()
+        except Exception as e:
+            logger.warning("career_net full job load page=%s error: %s", page, e)
+            break
+        items = _extract_items(raw)
+        if not items:
+            break
+        all_items.extend(items)
+        total = int(items[0].get("totalCount", 0))
+        if len(all_items) >= total:
+            break
+        page += 1
+
+    _full_job_cache[cache_key] = (time.monotonic(), all_items)
+    return all_items
+
+
 def get_job_list(
     q: str | None,
     page: int,
@@ -57,7 +93,7 @@ def get_job_list(
     settings: Settings,
 ) -> dict:
     """커리어넷 직업정보 목록 조회.
-    q: 직업명 검색어 (선택). 미입력 시 전체 목록 반환.
+    q: 직업명 검색어 — API가 서버사이드 검색을 지원하지 않으므로 전체 목록 로드 후 클라이언트 필터링.
     """
     api_key = settings.career_net_api_key
     if not api_key:
@@ -68,28 +104,36 @@ def get_job_list(
     if cached is not None:
         return cached
 
-    params = _params_base(api_key, "JOB", "5", page, page_size)
     if q and q.strip():
-        params["searchFilter"] = q.strip()
-
-    try:
-        resp = httpx.get(_BASE, params=params, timeout=settings.career_net_api_timeout)
-        resp.raise_for_status()
-        raw = resp.json()
-    except httpx.TimeoutException:
-        return err_envelope("EXTERNAL_API_TIMEOUT", "커리어넷 API 응답 시간이 초과됐습니다.")
-    except httpx.HTTPStatusError as e:
-        return err_envelope("EXTERNAL_API_ERROR", f"커리어넷 API 오류: HTTP {e.response.status_code}")
-    except Exception as e:
-        logger.warning("career_net job API error: %s", e)
-        return err_envelope("EXTERNAL_API_ERROR", "직업정보 조회 중 오류가 발생했습니다.")
-
-    items = _extract_items(raw)
-    jobs = [_normalize_job(it) for it in items]
+        # 검색어 있음: 전체 목록 로드 후 직업명으로 클라이언트 필터링
+        all_items = _load_all_jobs(api_key, settings.career_net_api_timeout)
+        q_lower = q.strip().lower()
+        filtered = [it for it in all_items if q_lower in (it.get("job") or "").lower()]
+        total = len(filtered)
+        start = (page - 1) * page_size
+        page_items = filtered[start:start + page_size]
+        jobs = [_normalize_job(it) for it in page_items]
+    else:
+        # 검색어 없음: 표준 페이지네이션
+        params = _params_base(api_key, "JOB", "5", page, page_size)
+        try:
+            resp = httpx.get(_BASE, params=params, timeout=settings.career_net_api_timeout)
+            resp.raise_for_status()
+            raw = resp.json()
+        except httpx.TimeoutException:
+            return err_envelope("EXTERNAL_API_TIMEOUT", "커리어넷 API 응답 시간이 초과됐습니다.")
+        except httpx.HTTPStatusError as e:
+            return err_envelope("EXTERNAL_API_ERROR", f"커리어넷 API 오류: HTTP {e.response.status_code}")
+        except Exception as e:
+            logger.warning("career_net job API error: %s", e)
+            return err_envelope("EXTERNAL_API_ERROR", "직업정보 조회 중 오류가 발생했습니다.")
+        items = _extract_items(raw)
+        total = _extract_total(raw)
+        jobs = [_normalize_job(it) for it in items]
 
     result = ok_envelope({
         "jobs":  jobs,
-        "total": _extract_total(raw),
+        "total": total,
         "page":  page,
         "page_size": page_size,
         "query": q or "",
@@ -189,33 +233,41 @@ def _extract_items(raw: dict) -> list[dict]:
 
 
 def _extract_total(raw: dict) -> int:
+    # API returns totalCount inside each content item, not as a separate field
     try:
         data = raw.get("dataSearch", raw.get("dataMajors", raw))
-        return int(data.get("total", 0))
+        content = data.get("content", [])
+        if isinstance(content, list) and content:
+            return int(content[0].get("totalCount", 0))
+        return 0
     except Exception:
         return 0
 
 
 def _normalize_job(item: dict) -> dict:
+    # Actual CareerNet API fields (gubunCode=5):
+    # job, summary, similarJob, salery(typo), jobdicSeq,
+    # equalemployment, possibility, profession, prospect
     return {
-        "seq":          item.get("seq", ""),
-        "name":         item.get("job", item.get("jobNm", "")),
-        "description":  item.get("jobDsc", ""),
-        "tasks":        item.get("task", ""),
-        "knowledge":    item.get("knowledge", ""),
-        "skills":       item.get("skill", ""),
-        "work_env":     item.get("workEnv", ""),
-        "salary_low":   item.get("salaryLow", ""),
-        "salary_high":  item.get("salaryHigh", ""),
-        "employment_rate":     item.get("emplRate", ""),
-        "employment_prospect": item.get("jobPspt", ""),
-        "related_certs": item.get("relCert", item.get("relatedCert", "")),
-        "related_majors": item.get("relMajor", item.get("relatedMajor", "")),
-        "image_url":    item.get("img", ""),
-        "career_path":  item.get("careerPath", ""),
-        "personality":  item.get("personality", ""),
-        "interest":     item.get("interest", ""),
-        "job_value":    item.get("jobValue", ""),
+        "seq":                 item.get("jobdicSeq", ""),
+        "name":                item.get("job", ""),
+        "description":         item.get("summary", ""),
+        "tasks":               item.get("similarJob", ""),   # 유사직업 재사용
+        "salary_low":          item.get("salery", ""),       # API 오타 "salery"
+        "salary_high":         "",                           # 별도 필드 없음
+        "employment_rate":     item.get("equalemployment", ""),  # 고용평등
+        "employment_prospect": item.get("possibility", ""),  # 미래 전망
+        "profession":          item.get("profession", ""),   # 직종구분
+        "knowledge":    "",
+        "skills":       "",
+        "work_env":     "",
+        "related_certs": "",
+        "related_majors": "",
+        "image_url":    "",
+        "career_path":  "",
+        "personality":  "",
+        "interest":     "",
+        "job_value":    "",
     }
 
 

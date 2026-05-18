@@ -62,8 +62,8 @@ def get_support_link(cert_id: str, settings: SettingsDep) -> dict:
         "cert_id":   cert_id,
         "cert_name": cert_name,
         "links": {
-            "qnet_search": f"https://www.q-net.or.kr/crf005.do?id=crf00503s&jmCd=&jmNm={encoded_name}",
-            "qnet_schedule": "https://www.q-net.or.kr/crf005.do?id=crf00503s",
+            "qnet_search": f"https://www.q-net.or.kr/crf005.do?id=crf00501&gSite=Q&jmNm={encoded_name}",
+            "qnet_schedule": "https://www.q-net.or.kr/crf021.do?id=crf02101&scheType=03",
             "hrd_main": "https://www.hrdkorea.or.kr/",
         },
     })

@@ -106,9 +106,6 @@ const CertCardSimple = memo(({ cert }: { cert: CertCandidate }) => {
           {hasTrend && (
             <span className={`cert-trend ${trendClass(cert.acq_trend)}`}>
               {trendIcon(cert.acq_trend)}
-              {cert.acq_yoy_pct !== null && cert.acq_yoy_pct !== undefined && cert.acq_yoy_pct !== 0
-                ? ` ${cert.acq_yoy_pct > 0 ? '+' : ''}${cert.acq_yoy_pct}%`
-                : ''}
             </span>
           )}
         </div>

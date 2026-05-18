@@ -141,9 +141,9 @@ def get_training_courses(
         return err_envelope("API_KEY_MISSING", "훈련과정 API 키가 설정되지 않았습니다.")
 
     today = date.today()
-    # 조회 기간: 오늘 ~ 3개월 후
-    end_month = (today.month + 3 - 1) % 12 + 1
-    end_year  = today.year + ((today.month + 3 - 1) // 12)
+    # 조회 기간: 오늘 ~ 6개월 후 (더 넓은 기간으로 결과 확보)
+    end_month = (today.month + 6 - 1) % 12 + 1
+    end_year  = today.year + ((today.month + 6 - 1) // 12)
     train_end_dt = f"{end_year}{end_month:02d}01"
 
     params: dict[str, Any] = {
@@ -163,13 +163,13 @@ def get_training_courses(
         if region_code:
             params["srchTraArea1"] = region_code
 
-    if ncs_category:
+    if course_name:
+        # 키워드가 있을 때는 NCS 필터 없이 키워드만 사용 (NCS+키워드 조합은 결과가 급감)
+        params["srchTraProcessNm"] = course_name
+    elif ncs_category:
         ncs_code = NCS_LEVEL1_CODES.get(ncs_category)
         if ncs_code:
             params["srchNcs1"] = ncs_code
-
-    if course_name:
-        params["srchTraProcessNm"] = course_name
 
     if course_type:
         params["crseTracseSe"] = course_type
