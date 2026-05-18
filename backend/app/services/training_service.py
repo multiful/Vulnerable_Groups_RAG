@@ -26,8 +26,10 @@ from backend.app.schemas.envelope import err_envelope, ok_envelope
 logger = logging.getLogger(__name__)
 
 _TRAINING_BASE = "https://www.work24.go.kr/cm/openApi/call/hr/callOpenApiSvcInfo310L01.do"
-_PROCESS_EVAL_BASE = "http://openapi.q-net.or.kr/api/service/rest/ProcessEvalService/getProcessEvalList"
-_JOB_LEARNER_BASE  = "http://openapi.q-net.or.kr/api/service/rest/ProcessEvalService/getJobLearnerList"
+# NOTE: openapi.q-net.or.kr/ProcessEvalService 폐지(2025). B490007 대체 없음.
+# process_eval / job_learner 함수는 graceful unavailable 응답으로 처리.
+_QNET_PROCESS_EVAL_URL = "https://www.q-net.or.kr/man004.do?id=man00401&gSite=Q"
+_QNET_JOB_LEARNER_URL  = "https://www.q-net.or.kr/ilhak001.do"
 
 
 def _build_qnet_url(base: str, api_key_in: str, extra: dict[str, str]) -> str:
@@ -255,54 +257,19 @@ def get_process_eval_courses(
     page_size: int = 20,
 ) -> dict:
     """
-    과정평가형 자격 종목 목록 조회 (시험 부담이 큰 고위험군 대안 경로 제시용).
-    API: Q-Net 과정평가형 종목 목록
+    과정평가형 자격 종목 조회.
+    openapi.q-net.or.kr/ProcessEvalService 폐지(2025), B490007 대체 없음.
+    Q-Net 공식 웹페이지 링크와 안내 메시지를 반환.
     """
-    api_key = settings.hrdkorea_api_key_in
-    if not api_key:
-        return err_envelope("API_KEY_MISSING", "한국산업인력공단 API 키가 설정되지 않았습니다.")
-
-    extra: dict[str, str] = {
-        "returnType": "json",
-        "numOfRows":  str(min(page_size, 100)),
-        "pageNo":     "1",
-    }
-    if keyword:
-        extra["itemNm"] = keyword
-    proc_url = _build_qnet_url(_PROCESS_EVAL_BASE, api_key, extra)
-
-    proc_cache_key = f"process_eval|{keyword}|{page_size}"
-    cached = _cache_get(proc_cache_key)
-    if cached is not None:
-        return cached
-
-    try:
-        resp = httpx.get(proc_url, timeout=settings.hrdkorea_api_timeout)
-        resp.raise_for_status()
-        data = resp.json()
-    except httpx.TimeoutException:
-        return err_envelope("EXTERNAL_API_TIMEOUT", "과정평가형 API 응답 시간이 초과되었습니다.")
-    except Exception as e:
-        logger.warning("process eval API error: %s", e)
-        return err_envelope("EXTERNAL_API_ERROR", "과정평가형 자격 조회 중 오류가 발생했습니다.")
-
-    try:
-        body = data.get("response", {}).get("body", {})
-        items_raw = body.get("items", {})
-        item_list = items_raw.get("item", []) if isinstance(items_raw, dict) else items_raw
-        if isinstance(item_list, dict):
-            item_list = [item_list]
-    except Exception:
-        item_list = []
-
-    result = ok_envelope({
-        "keyword": keyword,
-        "items":   item_list,
-        "total":   len(item_list),
-        "note":    "과정평가형 자격은 교육 이수로 취득 가능 — 시험 부담이 낮습니다.",
+    return ok_envelope({
+        "keyword":    keyword,
+        "items":      [],
+        "total":      0,
+        "api_status": "unavailable",
+        "note":       "과정평가형 자격은 교육 이수로 취득 가능 — 시험 부담이 낮습니다.",
+        "qnet_url":   _QNET_PROCESS_EVAL_URL,
+        "qnet_label": "Q-Net 과정평가형 자격 바로가기",
     })
-    _cache_set(proc_cache_key, result)
-    return result
 
 
 def get_job_learner_courses(
@@ -311,52 +278,16 @@ def get_job_learner_courses(
     page_size: int = 20,
 ) -> dict:
     """
-    일학습병행 과정 지정평가 정보 조회 (항목 11).
-    Q-Net ProcessEvalService/getJobLearnerList API 연동.
-    일을 하면서 자격을 취득하는 고위험군(4~5단계) 대안 경로 안내용.
+    일학습병행 과정 지정평가 정보 조회.
+    openapi.q-net.or.kr/ProcessEvalService 폐지(2025), B490007 대체 없음.
+    Q-Net 공식 웹페이지 링크와 안내 메시지를 반환.
     """
-    api_key = settings.hrdkorea_api_key_in
-    if not api_key:
-        return err_envelope("API_KEY_MISSING", "한국산업인력공단 API 키가 설정되지 않았습니다.")
-
-    extra: dict[str, str] = {
-        "returnType": "json",
-        "numOfRows":  str(min(page_size, 100)),
-        "pageNo":     "1",
-    }
-    if keyword:
-        extra["itemNm"] = keyword
-    jl_url = _build_qnet_url(_JOB_LEARNER_BASE, api_key, extra)
-
-    jl_cache_key = f"job_learner|{keyword}|{page_size}"
-    cached = _cache_get(jl_cache_key)
-    if cached is not None:
-        return cached
-
-    try:
-        resp = httpx.get(jl_url, timeout=settings.hrdkorea_api_timeout)
-        resp.raise_for_status()
-        data = resp.json()
-    except httpx.TimeoutException:
-        return err_envelope("EXTERNAL_API_TIMEOUT", "일학습병행 API 응답 시간이 초과되었습니다.")
-    except Exception as e:
-        logger.warning("job_learner API error: %s", e)
-        return err_envelope("EXTERNAL_API_ERROR", "일학습병행 과정 조회 중 오류가 발생했습니다.")
-
-    try:
-        body = data.get("response", {}).get("body", {})
-        items_raw = body.get("items", {})
-        item_list = items_raw.get("item", []) if isinstance(items_raw, dict) else items_raw
-        if isinstance(item_list, dict):
-            item_list = [item_list]
-    except Exception:
-        item_list = []
-
-    result = ok_envelope({
-        "keyword": keyword,
-        "items":   item_list,
-        "total":   len(item_list),
-        "note":    "일학습병행은 기업 현장 훈련으로 자격을 취득하는 경로입니다.",
+    return ok_envelope({
+        "keyword":    keyword,
+        "items":      [],
+        "total":      0,
+        "api_status": "unavailable",
+        "note":       "일학습병행은 기업 현장 훈련으로 자격을 취득하는 경로입니다.",
+        "qnet_url":   _QNET_JOB_LEARNER_URL,
+        "qnet_label": "Q-Net 일학습병행 바로가기",
     })
-    _cache_set(jl_cache_key, result)
-    return result

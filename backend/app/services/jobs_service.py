@@ -189,9 +189,14 @@ def get_hiring_jobs(
     except httpx.HTTPStatusError as e:
         return err_envelope("EXTERNAL_API_ERROR", f"워크넷 API 오류: HTTP {e.response.status_code}")
     except ValueError as e:
-        # WorkNet API 자체 에러 (예: 유효하지 않은 인증키)
-        logger.warning("worknet API error response: %s", e)
-        return err_envelope("EXTERNAL_API_ERROR", f"워크넷 API 오류: {e}")
+        err_msg = str(e)
+        logger.warning("work24 API error response: %s", err_msg)
+        if "개인회원" in err_msg or "기업" in err_msg:
+            return err_envelope(
+                "ACCOUNT_TYPE_RESTRICTED",
+                "Work24 채용정보 API는 기업회원 전용입니다. 개인 계정으로는 조회할 수 없습니다.",
+            )
+        return err_envelope("EXTERNAL_API_ERROR", f"채용 API 오류: {err_msg}")
     except Exception as e:
         logger.warning("worknet API error: %s", e)
         return err_envelope("EXTERNAL_API_ERROR", "채용정보 조회 중 오류가 발생했습니다.")
