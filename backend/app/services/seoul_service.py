@@ -1,5 +1,5 @@
 # File: seoul_service.py
-# Last Updated: 2026-05-14
+# Last Updated: 2026-05-19
 # Content Hash: SHA256:TBD
 # Role: 서울시 공공데이터 API — 일자리카페, 건강증진센터, 공공서비스 예약
 #
@@ -66,7 +66,7 @@ def get_job_cafes(settings: Settings, gu: str | None = None) -> dict:
 
     url = _seoul_url(api_key, "jobCafe")
     try:
-        resp = httpx.get(url, timeout=settings.seoul_api_timeout)
+        resp = httpx.get(url, timeout=min(settings.seoul_api_timeout, 3))
         resp.raise_for_status()
         data = resp.json()
     except httpx.TimeoutException:
@@ -121,7 +121,7 @@ def get_health_centers(settings: Settings, gu: str | None = None) -> dict:
 
     url = _seoul_url(api_key, "HealthCenterInfo")
     try:
-        resp = httpx.get(url, timeout=settings.seoul_api_timeout)
+        resp = httpx.get(url, timeout=min(settings.seoul_api_timeout, 3))
         resp.raise_for_status()
         data = resp.json()
     except httpx.TimeoutException:
@@ -179,7 +179,7 @@ def get_public_reservations(
 
     url = _seoul_url(api_key, "tvYeyakCOllect")
     try:
-        resp = httpx.get(url, timeout=settings.seoul_api_timeout)
+        resp = httpx.get(url, timeout=min(settings.seoul_api_timeout, 3))
         resp.raise_for_status()
         data = resp.json()
     except httpx.TimeoutException:

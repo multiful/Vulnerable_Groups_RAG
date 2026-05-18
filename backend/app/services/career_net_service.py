@@ -1,11 +1,15 @@
 # File: career_net_service.py
-# Last Updated: 2026-05-14
+# Last Updated: 2026-05-19
 # Content Hash: SHA256:TBD
 # Role: 커리어넷(한국직업능력연구원) 직업정보 + 학과정보 API 연동
 #
 # API base: https://www.career.go.kr/cnet/openapi/getOpenApi.do
 # svcCode=JOB   → 직업정보 (gubunCode=5: 직업별 상세)
 # svcCode=MAJOR → 학과정보 (gubunCode=B: 학과 목록)
+#
+# 지역 제한: 한국 IP에서는 summary/salery/equalemployment 등 전체 필드 반환.
+#            해외 IP(Render)에서는 job(직업명) 필드만 반환, 나머지 빈값.
+#            → description/salary 등 비어있으면 goms_service 로컬 CSV로 보완.
 from __future__ import annotations
 
 import logging
@@ -244,20 +248,43 @@ def _extract_total(raw: dict) -> int:
         return 0
 
 
+def _supplement_from_local(job_name: str) -> dict:
+    """커리어넷이 빈값 반환 시(해외 IP) goms_service 로컬 CSV로 보완."""
+    try:
+        from backend.app.services.goms_service import get_job_info
+        info = get_job_info(job_name)
+        if info:
+            return {
+                "description":         info.get("work_content") or "",
+                "salary_low":          info.get("salary_summary") or info.get("salary") or "",
+                "employment_prospect": info.get("outlook") or "",
+                "pay_score":           info.get("pay_score"),
+                "growth_score":        info.get("growth_score"),
+                "similar_jobs":        info.get("similar_jobs") or "",
+                "aptitude":            info.get("aptitude") or "",
+                "source":              "local_goms",
+            }
+    except Exception:
+        pass
+    return {}
+
+
 def _normalize_job(item: dict) -> dict:
-    # Actual CareerNet API fields (gubunCode=5):
-    # job, summary, similarJob, salery(typo), jobdicSeq,
-    # equalemployment, possibility, profession, prospect
-    return {
+    name = item.get("job", "")
+    description = item.get("summary", "")
+    salary = item.get("salery", "")  # API 오타 "salery"
+    prospect = item.get("possibility", "")
+
+    base = {
         "seq":                 item.get("jobdicSeq", ""),
-        "name":                item.get("job", ""),
-        "description":         item.get("summary", ""),
-        "tasks":               item.get("similarJob", ""),   # 유사직업 재사용
-        "salary_low":          item.get("salery", ""),       # API 오타 "salery"
-        "salary_high":         "",                           # 별도 필드 없음
-        "employment_rate":     item.get("equalemployment", ""),  # 고용평등
-        "employment_prospect": item.get("possibility", ""),  # 미래 전망
-        "profession":          item.get("profession", ""),   # 직종구분
+        "name":                name,
+        "description":         description,
+        "tasks":               item.get("similarJob", ""),
+        "salary_low":          salary,
+        "salary_high":         "",
+        "employment_rate":     item.get("equalemployment", ""),
+        "employment_prospect": prospect,
+        "profession":          item.get("profession", ""),
         "knowledge":    "",
         "skills":       "",
         "work_env":     "",
@@ -268,7 +295,16 @@ def _normalize_job(item: dict) -> dict:
         "personality":  "",
         "interest":     "",
         "job_value":    "",
+        "source":       "career_net",
     }
+
+    # 해외 IP geo-restriction: API가 직업명만 반환할 때 로컬 데이터로 보완
+    if name and not description and not salary:
+        local = _supplement_from_local(name)
+        if local:
+            base.update(local)
+
+    return base
 
 
 def _normalize_major(item: dict) -> dict:

@@ -89,23 +89,17 @@ NCS_LEVEL1_CODES: dict[str, str] = {
 
 
 def _parse_training_xml(xml_text: str) -> list[dict[str, Any]]:
+    """Work24 훈련과정 XML 파싱. 응답 구조: <HRDNet><srchList><scn_list>...</scn_list></srchList></HRDNet>"""
     try:
         root = ET.fromstring(xml_text)
     except ET.ParseError:
         return []
     courses: list[dict[str, Any]] = []
-    for item in root.iter("inst_base_info"):
+    for item in root.iter("scn_list"):
         course: dict[str, Any] = {}
         for child in item:
             course[child.tag] = (child.text or "").strip()
         courses.append(course)
-    # 구조가 다를 경우 fallback
-    if not courses:
-        for item in root.iter("scn_list"):
-            course = {}
-            for child in item:
-                course[child.tag] = (child.text or "").strip()
-            courses.append(course)
     return courses
 
 

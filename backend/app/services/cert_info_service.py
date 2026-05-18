@@ -446,17 +446,44 @@ def get_cert_exam_info(cert_id: str, settings: Settings) -> dict:
 
 
 def get_cert_full_info(cert_id: str, settings: Settings) -> dict:
-    """자격정보 + 시험정보를 합쳐서 단일 응답으로 반환."""
-    item_result = get_cert_item_info(cert_id, settings)
-    exam_result = get_cert_exam_info(cert_id, settings)
+    """자격정보 + 시험정보 + 통계를 합쳐서 단일 응답으로 반환."""
+    cert_names = _load_cert_name_map()
+    cert_name  = cert_names.get(cert_id)
+    if not cert_name:
+        return err_envelope("CERT_NOT_FOUND", f"cert_id '{cert_id}'를 찾을 수 없습니다.")
 
-    cert_name = _load_cert_name_map().get(cert_id, cert_id)
+    detail = _load_cert_master_details().get(cert_id, {})
+    links  = _qnet_links(cert_name)
 
     return ok_envelope({
         "cert_id":   cert_id,
         "cert_name": cert_name,
-        "info":      item_result.get("data", {}).get("info") if item_result.get("success") else None,
-        "exam_info": exam_result.get("data", {}).get("exam_info") if exam_result.get("success") else None,
+        "info": {
+            "qualification_type":  detail.get("cert_type") or "국가기술자격",
+            "level":               detail.get("grade_name"),
+            "issuer":              detail.get("issuer") or "한국산업인력공단",
+            "eligibility":         detail.get("exam_eligibility_info"),
+            "exam_fee_written":    None,
+            "exam_fee_practical":  None,
+            "acquisition_method":  detail.get("exam_type_info"),
+            "website":             links["qnet_search_url"],
+            "source":              "local",
+        },
+        "exam_info": {
+            "written_subjects":     detail.get("exam_subject_info"),
+            "exam_method":          detail.get("exam_type_info"),
+            "exam_frequency":       detail.get("exam_frequency"),
+            "written_pass_score":   "60점 이상 / 과목당 40점 이상" if detail.get("exam_type_info") else None,
+            "practical_pass_score": "60점 이상" if detail.get("exam_type_info") else None,
+            "avg_pass_rate":        detail.get("avg_pass_rate_3yr"),
+            "pass_rate_summary":    detail.get("exam_pass_rate"),
+            "exam_difficulty":      detail.get("exam_difficulty"),
+            "written_avg_pass_rate":   detail.get("written_avg_pass_rate"),
+            "practical_avg_pass_rate": detail.get("practical_avg_pass_rate"),
+            "source":              "local",
+        },
+        **links,
+        "note": "상세 응시자격·수수료·출제기준은 Q-Net 공식 사이트를 확인하세요.",
     })
 
 
