@@ -1,18 +1,22 @@
 # File: map_service.py
-# Last Updated: 2026-05-14
+# Last Updated: 2026-05-19
 # Content Hash: SHA256:TBD
 # Role: 지도 인프라 점 집계 — 일자리카페, 건강증진센터, 훈련기관 좌표 반환
 #
 # 데이터 체인:
-#   일자리카페     → Seoul Open API (seoul_service) → lat/lng 직접 반환
-#   건강증진센터   → Seoul Open API (seoul_service) → lat/lng 직접 반환
-#   훈련기관       → Work24 (training_service) → 주소 → Kakao REST 지오코딩
+#   일자리카페     → Seoul Open API → 실패 시 Kakao 키워드 검색 fallback
+#   건강증진센터   → Seoul Open API → 실패 시 Kakao 키워드 검색 fallback
+#   훈련기관       → Work24 → 주소 → Kakao REST 지오코딩
 #
-# Kakao 지오코딩: GET https://dapi.kakao.com/v2/local/search/address.json
+# Kakao REST APIs:
+#   지오코딩:      GET https://dapi.kakao.com/v2/local/search/address.json
+#   키워드 검색:   GET https://dapi.kakao.com/v2/local/search/keyword.json
+#   카테고리 검색: GET https://dapi.kakao.com/v2/local/search/category.json
 #   Authorization: KakaoAK {KAKAO_REST_API_KEY}
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 import httpx
@@ -22,10 +26,157 @@ from backend.app.schemas.envelope import ok_envelope
 
 logger = logging.getLogger(__name__)
 
-_KAKAO_GEOCODE_URL = "https://dapi.kakao.com/v2/local/search/address.json"
+_KAKAO_GEOCODE_URL  = "https://dapi.kakao.com/v2/local/search/address.json"
+_KAKAO_KEYWORD_URL  = "https://dapi.kakao.com/v2/local/search/keyword.json"
+_KAKAO_CATEGORY_URL = "https://dapi.kakao.com/v2/local/search/category.json"
+
+# 서울 직사각형 범위 (Kakao rect 파라미터용)
+_SEOUL_RECT = "126.7516,37.4133,127.1837,37.7015"
+
+_TTL = 600
+_local_search_cache: dict[str, tuple[float, Any]] = {}
 
 # 세션 내 지오코딩 캐시 (주소 → (lat, lng))
 _geocode_cache: dict[str, tuple[float, float] | None] = {}
+
+
+def _local_cache_get(key: str) -> Any | None:
+    entry = _local_search_cache.get(key)
+    if entry and (time.monotonic() - entry[0]) < _TTL:
+        return entry[1]
+    return None
+
+
+def _local_cache_set(key: str, value: Any) -> None:
+    _local_search_cache[key] = (time.monotonic(), value)
+
+
+def _kakao_keyword_search(
+    query: str,
+    rest_key: str,
+    *,
+    rect: str | None = _SEOUL_RECT,
+    size: int = 15,
+    page: int = 1,
+) -> list[dict[str, Any]]:
+    """
+    Kakao 키워드 로컬 검색.
+    rect: "x1,y1,x2,y2" 직사각형 범위 (경도,위도 순).
+    결과: place_name, address, lat, lng, phone, place_url.
+    """
+    if not query or not rest_key:
+        return []
+    params: dict[str, Any] = {
+        "query": query,
+        "size":  min(size, 15),
+        "page":  page,
+    }
+    if rect:
+        params["rect"] = rect
+    try:
+        r = httpx.get(
+            _KAKAO_KEYWORD_URL,
+            params=params,
+            headers={"Authorization": f"KakaoAK {rest_key}"},
+            timeout=8,
+        )
+        docs = r.json().get("documents", [])
+        return docs
+    except Exception as e:
+        logger.debug("kakao_keyword_search failed for '%s': %s", query, e)
+        return []
+
+
+def _kakao_category_search(
+    category_group_code: str,
+    rest_key: str,
+    *,
+    rect: str | None = _SEOUL_RECT,
+    size: int = 15,
+    page: int = 1,
+) -> list[dict[str, Any]]:
+    """
+    Kakao 카테고리 로컬 검색.
+    category_group_code 예시: PO3=공공기관, SW8=지하철역, HP8=병원, PM9=약국
+    """
+    if not category_group_code or not rest_key:
+        return []
+    params: dict[str, Any] = {
+        "category_group_code": category_group_code,
+        "size": min(size, 15),
+        "page": page,
+    }
+    if rect:
+        params["rect"] = rect
+    try:
+        r = httpx.get(
+            _KAKAO_CATEGORY_URL,
+            params=params,
+            headers={"Authorization": f"KakaoAK {rest_key}"},
+            timeout=8,
+        )
+        docs = r.json().get("documents", [])
+        return docs
+    except Exception as e:
+        logger.debug("kakao_category_search failed: %s", e)
+        return []
+
+
+def _kakao_doc_to_point(doc: dict, point_type: str) -> dict[str, Any]:
+    """Kakao document → 인프라 point dict."""
+    return {
+        "type":    point_type,
+        "name":    doc.get("place_name", ""),
+        "address": doc.get("road_address_name") or doc.get("address_name", ""),
+        "phone":   doc.get("phone", ""),
+        "lat":     float(doc["y"]) if doc.get("y") else None,
+        "lng":     float(doc["x"]) if doc.get("x") else None,
+        "place_url": doc.get("place_url", ""),
+    }
+
+
+def get_kakao_local_search(
+    query: str,
+    settings: Settings,
+    rect: str | None = None,
+    size: int = 15,
+    page: int = 1,
+) -> dict:
+    """
+    Kakao 키워드 로컬 검색 엔드포인트용.
+    query: 검색어 (예: "일자리카페", "고용복지플러스센터", "정신건강증진센터")
+    rect: "x1,y1,x2,y2" 형식 직사각형 범위 (기본값: 서울 전체)
+    """
+    from backend.app.schemas.envelope import err_envelope
+    rest_key = settings.kakao_rest_api_key
+    if not rest_key:
+        return err_envelope("API_KEY_MISSING", "Kakao REST API 키가 설정되지 않았습니다.")
+    if not query or not query.strip():
+        return err_envelope("PARAM_MISSING", "query 파라미터가 필요합니다.")
+
+    cache_key = f"kakao_local|{query}|{rect}|{size}|{page}"
+    cached = _local_cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    docs = _kakao_keyword_search(
+        query.strip(),
+        rest_key,
+        rect=rect or _SEOUL_RECT,
+        size=size,
+        page=page,
+    )
+    places = [_kakao_doc_to_point(d, "kakao_local") for d in docs]
+
+    from backend.app.schemas.envelope import ok_envelope as _ok
+    result = _ok({
+        "query":  query,
+        "places": places,
+        "total":  len(places),
+        "source": "kakao_local_search",
+    })
+    _local_cache_set(cache_key, result)
+    return result
 
 
 def _geocode(address: str, rest_key: str) -> tuple[float, float] | None:
@@ -71,6 +222,8 @@ def get_infra_points(
     """
     from backend.app.services.seoul_service import get_job_cafes, get_health_centers
 
+    rest_key = settings.kakao_rest_api_key
+
     # ── 1. 일자리카페 ──────────────────────────────────────────────────
     job_cafes: list[dict] = []
     cafe_result = get_job_cafes(settings, gu=gu)
@@ -78,9 +231,8 @@ def get_infra_points(
         for c in cafe_result["data"].get("cafes", []):
             lat = _to_float(c.get("lat"))
             lng = _to_float(c.get("lng"))
-            # lat/lng 없으면 주소로 지오코딩 시도
-            if (lat is None or lng is None) and settings.kakao_rest_api_key and c.get("address"):
-                coords = _geocode(c["address"], settings.kakao_rest_api_key)
+            if (lat is None or lng is None) and rest_key and c.get("address"):
+                coords = _geocode(c["address"], rest_key)
                 if coords:
                     lat, lng = coords
             if lat and lng:
@@ -91,6 +243,25 @@ def get_infra_points(
                     "phone":   c.get("phone"),
                     "lat":     lat,
                     "lng":     lng,
+                    "source":  "seoul_api",
+                })
+    # Seoul API 실패 시 Kakao 키워드 검색 fallback
+    if not job_cafes and rest_key:
+        kw = f"일자리카페 {gu}" if gu else "일자리카페"
+        docs = _kakao_keyword_search(kw, rest_key, size=15)
+        for doc in docs:
+            lat = _to_float(doc.get("y"))
+            lng = _to_float(doc.get("x"))
+            if lat and lng:
+                job_cafes.append({
+                    "type":      "job_cafe",
+                    "name":      doc.get("place_name", "일자리카페"),
+                    "address":   doc.get("road_address_name") or doc.get("address_name", ""),
+                    "phone":     doc.get("phone", ""),
+                    "lat":       lat,
+                    "lng":       lng,
+                    "place_url": doc.get("place_url", ""),
+                    "source":    "kakao_fallback",
                 })
 
     # ── 2. 건강증진센터 ────────────────────────────────────────────────
@@ -100,8 +271,8 @@ def get_infra_points(
         for c in health_result["data"].get("centers", []):
             lat = _to_float(c.get("lat"))
             lng = _to_float(c.get("lng"))
-            if (lat is None or lng is None) and settings.kakao_rest_api_key and c.get("address"):
-                coords = _geocode(c["address"], settings.kakao_rest_api_key)
+            if (lat is None or lng is None) and rest_key and c.get("address"):
+                coords = _geocode(c["address"], rest_key)
                 if coords:
                     lat, lng = coords
             if lat and lng:
@@ -112,7 +283,29 @@ def get_infra_points(
                     "phone":   c.get("phone"),
                     "lat":     lat,
                     "lng":     lng,
+                    "source":  "seoul_api",
                 })
+    # Seoul API 실패 시 Kakao fallback: 정신건강증진센터 + 건강증진센터
+    if not health_centers and rest_key:
+        for kw_base in ("정신건강증진센터", "건강증진센터"):
+            kw = f"{kw_base} {gu}" if gu else kw_base
+            docs = _kakao_keyword_search(kw, rest_key, size=15)
+            for doc in docs:
+                lat = _to_float(doc.get("y"))
+                lng = _to_float(doc.get("x"))
+                if lat and lng:
+                    health_centers.append({
+                        "type":      "health_center",
+                        "name":      doc.get("place_name", kw_base),
+                        "address":   doc.get("road_address_name") or doc.get("address_name", ""),
+                        "phone":     doc.get("phone", ""),
+                        "lat":       lat,
+                        "lng":       lng,
+                        "place_url": doc.get("place_url", ""),
+                        "source":    "kakao_fallback",
+                    })
+            if health_centers:
+                break
 
     # ── 3. 훈련기관 (cert_id 기반, geocode) ──────────────────────────
     training_institutes: list[dict] = []
