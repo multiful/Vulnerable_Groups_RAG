@@ -123,10 +123,10 @@ def _normalize_training_course(raw: dict[str, Any]) -> dict[str, Any]:
         "support_amount":   raw.get("govSptAmt"),
         "satisfaction":     raw.get("eiEmplRate3"),
         "employment_rate":  raw.get("eiEmplRate6"),
-        "capacity":         raw.get("totFxnum"),
+        "capacity":         raw.get("totFxnum") or raw.get("yardMan"),
         "remaining":        raw.get("yremFxnum"),
         "tel":              raw.get("telNo"),
-        "homepage":         raw.get("hpAddr"),
+        "homepage":         raw.get("hpAddr") or raw.get("subTitleLink"),
     }
 
 
