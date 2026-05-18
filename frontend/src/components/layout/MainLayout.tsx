@@ -67,6 +67,8 @@ const FLOW_STEPS = [
 function StepIndicator({ pathname }: { pathname: string }) {
   const [searchParams] = useSearchParams();
   const stageParam = searchParams.get('stage');
+  // 진단 흐름 외 진입(예: 전체 자격증에서 카드 클릭)에서는 단계 표시 자체를 숨긴다.
+  if (searchParams.get('from') === 'certs') return null;
   // URL에 stage가 없어도 세션에서 복원하여 done 상태를 올바르게 표시
   const session = loadPipeline();
   const effectiveStage = stageParam || session.stage || '';

@@ -7,7 +7,7 @@
 //   - 카드 클릭 → 해당 자격증의 추천 페이지로 이동 (cert 파라미터 전달)
 import React, { useState, useMemo, useEffect, useDeferredValue, memo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ChevronDown, AlertCircle, Loader2, ArrowRight, Map } from 'lucide-react';
+import { Search, ChevronDown, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
 import { getCertCandidates } from '../../api/client';
 import type { CertCandidate } from '../../types/cert';
 
@@ -75,7 +75,7 @@ const CertCardSimple = memo(({ cert }: { cert: CertCandidate }) => {
 
   return (
     <Link
-      to={`/recommendation?cert=${encodeURIComponent(cert.cert_id)}${cert.primary_domain ? `&domain=${cert.primary_domain}&domainName=${encodeURIComponent(DOMAIN_NAMES[cert.primary_domain] ?? '')}` : ''}`}
+      to={`/recommendation?from=certs&cert=${encodeURIComponent(cert.cert_id)}${cert.primary_domain ? `&domain=${cert.primary_domain}&domainName=${encodeURIComponent(DOMAIN_NAMES[cert.primary_domain] ?? '')}` : ''}`}
       className="card cert-card-ac"
     >
       <div className="cert-top">
@@ -112,9 +112,6 @@ const CertCardSimple = memo(({ cert }: { cert: CertCandidate }) => {
       </div>
       <div className="cert-actions">
         <span className="cert-cta-hint">자세히 보기 <ArrowRight size={12} /></span>
-        <span className="cert-roadmap-hint">
-          <Map size={12} /> 로드맵
-        </span>
       </div>
     </Link>
   );
@@ -306,7 +303,6 @@ const AllCerts: React.FC = () => {
         .trend-flat{background:#f3f4f6;color:#6b7280}
         .cert-actions{display:flex;gap:.75rem;padding-top:.625rem;border-top:1px solid var(--border);margin-top:auto;align-items:center}
         .cert-cta-hint{font-size:.78rem;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;gap:.3rem}
-        .cert-roadmap-hint{margin-left:auto;font-size:.78rem;font-weight:600;color:var(--text-muted);display:inline-flex;align-items:center;gap:.3rem}
         .no-results{grid-column:1/-1;text-align:center;padding:2.5rem 1.25rem;line-height:1.8;display:flex;flex-direction:column;gap:.5rem}
         .no-results-title{font-size:.95rem;font-weight:700;color:var(--text)}
         .no-results-sub{font-size:.85rem;color:var(--text-muted);line-height:1.65}

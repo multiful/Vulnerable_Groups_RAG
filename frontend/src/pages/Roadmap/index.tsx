@@ -11,6 +11,14 @@ import {
 } from 'lucide-react';
 
 /* ── Types ── */
+// 진단 로드맵에서 카드 색을 결정하는 매칭 출처 표시.
+//   'domain'  : 사용자가 고른 관심 도메인 중 하나에만 매칭
+//   'job'     : 사용자가 고른 관심 직무 중 하나에만 매칭
+//   'both'    : 도메인·직무 둘 다 매칭 (카드 좌우 반반 색 분할)
+//   'neither' : 어느 쪽에도 매칭 안 됨 (그레이)
+// 전체 자격증(/certs)에서 진입한 경우엔 매칭이라는 개념이 없으므로 부여하지 않는다.
+type MatchType = 'domain' | 'job' | 'both' | 'neither';
+
 interface RecommendedCert {
   step: number | null;
   cert_id: string;
@@ -27,6 +35,9 @@ interface RecommendedCert {
   is_redundant: boolean;
   achievability: string;
   related_jobs: string[];
+  related_domains?: string[];
+  primary_domain?: string;
+  match_type?: MatchType;
   llm_reason?: string;
 }
 
@@ -88,6 +99,69 @@ function gradeColor(tier: string): string {
 }
 function achievabilityLabel(a: string): string {
   return a === 'immediate' ? '바로 도전 가능' : a === 'near_term' ? '단기 목표' : '장기 목표';
+}
+
+/* 진단 로드맵 색 매핑 — 도메인=라벤더 파스텔, 직무=피치 파스텔, 양쪽=왼쪽 바 위/아래 분할, 미매칭=옅은 그레이. */
+const MATCH_COLOR = {
+  domain:  { border: '#a5b4fc', bg: '#eef2ff', text: '#4338ca', label: '도메인 매칭' },
+  job:     { border: '#fdba74', bg: '#fff7ed', text: '#9a3412', label: '직무 매칭' },
+  both:    { border: '#a5b4fc', bg: '#eef2ff', text: '#4338ca', label: '도메인 + 직무 매칭' },
+  neither: { border: '#e5e7eb', bg: '#f9fafb', text: '#6b7280', label: '단계 매칭' },
+} as const;
+
+function computeMatchType(
+  relatedDomains: string[] | undefined,
+  primaryDomain: string | undefined,
+  relatedJobs: string[] | undefined,
+  domainId: string,
+  jobId: string,
+): MatchType {
+  const dMatch = !!domainId && ((relatedDomains ?? []).includes(domainId) || primaryDomain === domainId);
+  const jMatch = !!jobId    && ((relatedJobs ?? []).includes(jobId));
+  if (dMatch && jMatch) return 'both';
+  if (dMatch) return 'domain';
+  if (jMatch) return 'job';
+  return 'neither';
+}
+
+// 백엔드 응답에 match_type이 없을 때, 후보 자격증 데이터로 lookup해서 채워준다.
+// (백엔드 응답이 도메인 AND 직무 결과를 줘서 대부분 'both'로 표시될 수 있다 — 그건 의도된 동작.)
+async function enrichDataWithMatchType(
+  data: RoadmapData,
+  domainId: string,
+  jobId: string,
+): Promise<RoadmapData> {
+  if (!domainId && !jobId) return data;
+  let lookup: Map<string, { related_domains: string[]; primary_domain: string; related_jobs: string[] }>;
+  try {
+    const all = await getCertCandidates() as unknown as RawCert[];
+    lookup = new Map(all.map(c => [c.cert_id, {
+      related_domains: c.related_domains ?? [],
+      primary_domain: c.primary_domain ?? '',
+      related_jobs:   c.related_jobs ?? [],
+    }]));
+  } catch {
+    return data; // 후보 로드 실패 시 그대로 둠 (색 없이 표시)
+  }
+  return {
+    ...data,
+    roadmap_by_stage: data.roadmap_by_stage.map(s => ({
+      ...s,
+      recommended_certs: s.recommended_certs.map(c => {
+        if (c.match_type) return c;
+        const meta = lookup.get(c.cert_id);
+        return {
+          ...c,
+          related_domains: c.related_domains ?? meta?.related_domains ?? [],
+          primary_domain:  c.primary_domain  ?? meta?.primary_domain,
+          match_type: computeMatchType(
+            meta?.related_domains, meta?.primary_domain, meta?.related_jobs ?? c.related_jobs,
+            domainId, jobId,
+          ),
+        };
+      }),
+    })),
+  };
 }
 function achievabilityColor(a: string): string {
   return a === 'immediate' ? '#10b981' : a === 'near_term' ? '#0ea5e9' : '#f59e0b';
@@ -166,11 +240,15 @@ interface RawCert {
 async function buildLocalRoadmap(riskId: string, domainId: string, riskNum: number, jobId?: string): Promise<RoadmapData> {
   const all = await getCertCandidates() as unknown as RawCert[];
 
+  // 도메인·직무 둘 다 지정되면 합집합(OR), 한쪽만 지정되면 그 한쪽만 매칭하면 됨.
+  // 위험군은 항상 AND로 결합.
   const filtered = all.filter(c => {
-    const domainOk = !domainId || (c.related_domains ?? []).includes(domainId) || c.primary_domain === domainId;
     const riskOk   = !riskId   || (c.recommended_risk_stages ?? []).includes(riskId);
+    if (!riskOk) return false;
+    const domainOk = !domainId || (c.related_domains ?? []).includes(domainId) || c.primary_domain === domainId;
     const jobOk    = !jobId    || (c.related_jobs ?? []).includes(jobId);
-    return domainOk && riskOk && jobOk;
+    if (domainId && jobId) return domainOk || jobOk;
+    return domainOk && jobOk;
   });
 
   const byStage: Record<string, RawCert[]> = {};
@@ -184,17 +262,29 @@ async function buildLocalRoadmap(riskId: string, domainId: string, riskNum: numb
   const startingId = STARTING_STAGE_MAP[riskNum] ?? 'roadmap_stage_0003';
 
   const roadmap_by_stage: ByStageItem[] = LOCAL_STAGES.map(stage => {
-    const certs = (byStage[stage.id] ?? []).slice(0, 6).map((c, i) => ({
+    // both > domain > job > neither 순으로 정렬해서 양쪽 매칭이 우선 노출되도록.
+    const stageCerts = byStage[stage.id] ?? [];
+    const withMatch = stageCerts.map(c => ({
+      raw: c,
+      match: computeMatchType(c.related_domains, c.primary_domain, c.related_jobs, domainId, jobId ?? ''),
+    }));
+    const rank: Record<MatchType, number> = { both: 0, domain: 1, job: 2, neither: 3 };
+    withMatch.sort((a, b) => rank[a.match] - rank[b.match]);
+
+    const certs: RecommendedCert[] = withMatch.slice(0, 6).map((x, i) => ({
       step: i + 1,
-      cert_id: c.cert_id,
-      cert_name: c.cert_name,
-      cert_grade_tier: c.cert_grade_tier ?? '3_기사',
-      avg_pass_rate: c.avg_pass_rate_3yr ?? extractPassRate(c.text_for_dense ?? ''),
+      cert_id: x.raw.cert_id,
+      cert_name: x.raw.cert_name,
+      cert_grade_tier: x.raw.cert_grade_tier ?? '3_기사',
+      avg_pass_rate: x.raw.avg_pass_rate_3yr ?? extractPassRate(x.raw.text_for_dense ?? ''),
       is_bottleneck: false,
       bottleneck_note: null,
       is_redundant: false,
-      achievability: calcAchievability(c.cert_grade_tier ?? '3_기사', riskNum),
-      related_jobs: c.related_jobs ?? [],
+      achievability: calcAchievability(x.raw.cert_grade_tier ?? '3_기사', riskNum),
+      related_jobs: x.raw.related_jobs ?? [],
+      related_domains: x.raw.related_domains ?? [],
+      primary_domain: x.raw.primary_domain,
+      match_type: x.match,
     }));
     return {
       stage,
@@ -228,6 +318,9 @@ const Roadmap: React.FC = () => {
   const jobParam    = searchParams.get('job') ?? '';
   const jobName     = searchParams.get('jobName') ?? '';
   const majorParam  = searchParams.get('major') ?? '';
+  const fromParam   = searchParams.get('from')  ?? '';
+  // 진단 흐름에서만 카드 색·범례 적용 (전체자격증에서 진입한 경우 매칭 개념 없음)
+  const isDiagnosisFlow = fromParam !== 'certs';
 
   const [data, setData]       = useState<RoadmapData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -324,6 +417,23 @@ const Roadmap: React.FC = () => {
     setLoading(true);
     setError(null);
 
+    // 도메인 + 직무 둘 다 지정된 진단 흐름에서는 백엔드 AND 결과가 과도하게 좁아질 수 있어서,
+    // 로컬 OR 결과(합집합 + match_type)를 우선 사용한다.
+    const preferLocalUnion = !!domainParam && !!jobParam;
+    if (preferLocalUnion) {
+      try {
+        const local = await buildLocalRoadmap(riskId, domainParam, riskNum, jobParam);
+        if (compCtrl.signal.aborted) return;
+        setData(local);
+      } catch {
+        if (compCtrl.signal.aborted) return;
+        setError('데이터를 불러오지 못했습니다. 새로고침 해주세요.');
+      } finally {
+        if (!compCtrl.signal.aborted) setLoading(false);
+      }
+      return;
+    }
+
     /* ── 1. DB 우선 렌더 (5초 backend-only timeout) ── */
     let showed = false;
     try {
@@ -343,7 +453,9 @@ const Roadmap: React.FC = () => {
       if (compCtrl.signal.aborted) return;
       const json: ApiResponse = await res.json();
       if (json.success && json.data) {
-        setData(json.data);
+        const enriched = await enrichDataWithMatchType(json.data, domainParam, jobParam);
+        if (compCtrl.signal.aborted) return;
+        setData(enriched);
         setLoading(false);
         showed = true;
       }
@@ -559,6 +671,23 @@ const Roadmap: React.FC = () => {
             ? <><strong>{domainName}</strong> 분야의 단계별 자격증 학습 경로입니다.</>
             : '단계별 자격증 학습 경로를 확인하세요.'}
         </p>
+        {/* 색 범례 — 도메인 또는 직무가 지정된 진단 흐름에서만 노출 (전체자격증 진입은 숨김) */}
+        {isDiagnosisFlow && (domainParam || jobParam) && (
+          <div className="rm-legend" role="note" aria-label="자격증 카드 색 범례">
+            {domainParam && (
+              <span className="rm-legend-item">
+                <span className="rm-legend-swatch" style={{ background: '#a5b4fc' }} />
+                도메인 매칭{domainName ? ` · ${domainName}` : ''}
+              </span>
+            )}
+            {jobParam && (
+              <span className="rm-legend-item">
+                <span className="rm-legend-swatch" style={{ background: '#fdba74' }} />
+                직무 매칭{jobName ? ` · ${jobName}` : ''}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 오늘의 한 행동 */}
@@ -758,9 +887,15 @@ const Roadmap: React.FC = () => {
                           const color    = gradeColor(cert.cert_grade_tier);
                           const aColor   = achievabilityColor(cert.achievability);
                           const isActive = activeCert?.id === cert.cert_id;
+                          // 진단 흐름에서만 색 칠하기 (전체자격증 진입은 cert 파라미터만 있고 도메인·직무 매칭이 없음)
+                          const mt = isDiagnosisFlow ? cert.match_type : undefined;
+                          const matchClass = mt ? ` tl-cert-match-${mt}` : '';
                           return (
                             <React.Fragment key={cert.cert_id}>
-                              <div className={`tl-cert-row${isActive ? ' tl-cert-row-active' : ''}`}>
+                              <div
+                                className={`tl-cert-row${isActive ? ' tl-cert-row-active' : ''}${matchClass}`}
+                                title={mt ? MATCH_COLOR[mt].label : undefined}
+                              >
                                 <button
                                   className="tl-cert-main"
                                   onClick={() => goToCert(cert.cert_id, cert.cert_name)}
@@ -1294,6 +1429,28 @@ const Roadmap: React.FC = () => {
         .tl-cert-row:hover .tl-cert-main { background: var(--primary-light); }
         .tl-cert-row-active .tl-cert-main { background: transparent; }
         .tl-locked .tl-cert-row { opacity: .6; }
+
+        /* ── 진단 로드맵 매칭 색 (왼쪽 4px 바만 색칠, 둘 다 매칭은 바를 위/아래 반반 분할) ── */
+        .tl-cert-match-domain  { border-left: 4px solid #a5b4fc; }
+        .tl-cert-match-job     { border-left: 4px solid #fdba74; }
+        .tl-cert-match-both    {
+          border-left: none;
+          background-image: linear-gradient(180deg, #a5b4fc 0 50%, #fdba74 50% 100%);
+          background-repeat: no-repeat;
+          background-size: 4px 100%;
+          background-position: left top;
+          padding-left: 4px;
+        }
+        .tl-cert-match-neither { border-left: 4px solid #e5e7eb; }
+
+        /* 매칭 색 범례 (헤더 아래) */
+        .rm-legend { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: .625rem; font-size: .75rem; color: var(--text-muted); }
+        .rm-legend-item { display: inline-flex; align-items: center; gap: .375rem; padding: .25rem .55rem; background: var(--surface-2); border-radius: 999px; }
+        .rm-legend-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+        /* hover 시에도 좌측 액센트 톤 보존 */
+        .tl-cert-row.tl-cert-match-domain:hover  { box-shadow: 2px 0 0 0 #a5b4fc; }
+        .tl-cert-row.tl-cert-match-job:hover     { box-shadow: 2px 0 0 0 #fdba74; }
+        .tl-cert-row.tl-cert-match-neither:hover { box-shadow: 2px 0 0 0 #cbd5e1; }
         .tl-drawer-btn {
           flex-shrink: 0; width: 36px; display: flex; align-items: center; justify-content: center;
           background: none; border: none; border-left: 1px solid var(--border);

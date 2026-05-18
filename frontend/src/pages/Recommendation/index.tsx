@@ -785,14 +785,16 @@ const Recommendation: React.FC = () => {
     }
   }, []);
 
+  const fromParam = searchParams.get('from') || '';
   const goToRoadmap = useCallback((certId: string) => {
     const p = new URLSearchParams();
+    if (fromParam)   p.set('from', fromParam);
     if (stageParam)  p.set('stage', stageParam);
     if (domainParam) p.set('domain', domainParam);
     if (domainName)  p.set('domainName', domainName);
     p.set('cert', certId);
     navigate(`/roadmap?${p.toString()}`);
-  }, [stageParam, domainParam, domainName, navigate]);
+  }, [fromParam, stageParam, domainParam, domainName, navigate]);
 
   const evidenceCertName = allCerts.find(c => c.cert_id === evidence.certId)?.cert_name ?? evidence.certId;
 
