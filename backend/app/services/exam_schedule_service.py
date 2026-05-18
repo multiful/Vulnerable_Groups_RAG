@@ -1,13 +1,15 @@
 # File: exam_schedule_service.py
-# Last Updated: 2026-05-14
+# Last Updated: 2026-05-19
 # Content Hash: SHA256:TBD
-# Role: 한국산업인력공단 Q-Net 시험일정 API 조회 — reserved → 활성화
+# Role: 한국산업인력공단 시험일정 API 조회
 #
-# API: 국가자격 시험일정 조회 (Q-Net)
-#   GET https://www.data.go.kr/data/15012808 계열
-#   실제 엔드포인트: http://openapi.q-net.or.kr/api/service/rest/ExamScheduleService/getExamScheduleList
-#   returnType: json
+# API: 국가자격 시험일정 (apis.data.go.kr/B490007)
+#   GET https://apis.data.go.kr/B490007/qualExamSchd/getQualExamSchdList
 #   serviceKey: URL-encoded key (hrdkorea_api_key_in)
+#   필수 파라미터: implYy (연도), dataFormat=json
+#   jmCd 미제공 시 전체 일정 반환 → grade_name(기능사/기사/산업기사 등)으로 클라이언트 필터링
+#
+# 구 엔드포인트(openapi.q-net.or.kr)는 2025년 폐지, 신규 apis.data.go.kr로 이전됨
 from __future__ import annotations
 
 import csv
@@ -29,8 +31,7 @@ logger = logging.getLogger(__name__)
 _PROJECT_ROOT = Path(__file__).parents[3]
 _CERT_MASTER_CSV = _PROJECT_ROOT / "data/processed/master/cert_master.csv"
 
-_QNET_BASE      = "http://openapi.q-net.or.kr/api/service/rest/ExamScheduleService/getExamScheduleList"
-_QNET_PROF_BASE = "http://openapi.q-net.or.kr/api/service/rest/ProfExamScheduleService/getProfExamScheduleList"
+_EXAM_SCHD_BASE = "https://apis.data.go.kr/B490007/qualExamSchd/getQualExamSchdList"
 
 _TTL = 600  # 시험 일정은 자주 안 바뀜 — 10분 캐시
 _sched_cache: dict[str, tuple[float, Any]] = {}
@@ -94,6 +95,7 @@ def _load_cert_info_map() -> dict[str, dict[str, Any]]:
                 "primary_domain": r.get("primary_domain", ""),
                 "exam_frequency": r.get("exam_frequency", ""),
                 "issuer": r.get("issuer", ""),
+                "grade_name": r.get("grade_name", ""),
             }
     return out
 
@@ -163,18 +165,19 @@ def get_exam_schedule(cert_id: str, settings: Settings) -> dict:
     if not api_key:
         return _fallback("key_missing")
 
+    grade_name = cert_info.get("grade_name", "")  # 기능사 / 산업기사 / 기사 / 기능장 / 기술사
+
     sched_cache_key = f"exam_sched|{cert_id}|{current_year}"
     cached = _cache_get(sched_cache_key)
     if cached is not None:
         return cached
 
-    # serviceKey는 이미 URL-인코딩된 값(_IN) → URL에 직접 삽입. params dict로 넘기면 이중 인코딩 발생.
-    url = _build_qnet_url(_QNET_BASE, api_key, {
-        "implYy":     current_year,
-        "itemNm":     cert_name,
-        "returnType": "json",
-        "numOfRows":  "10",
+    # serviceKey는 이미 URL-인코딩된 값(_IN) → URL에 직접 삽입 (이중인코딩 방지)
+    url = _build_qnet_url(_EXAM_SCHD_BASE, api_key, {
+        "dataFormat": "json",
+        "numOfRows":  "50",
         "pageNo":     "1",
+        "implYy":     current_year,
     })
 
     try:
@@ -192,16 +195,17 @@ def get_exam_schedule(cert_id: str, settings: Settings) -> dict:
         return _fallback("unavailable")
 
     try:
-        body = data.get("response", {}).get("body", {})
-        items_raw = body.get("items", {})
-        if isinstance(items_raw, dict):
-            item_list = items_raw.get("item", [])
-            if isinstance(item_list, dict):
-                item_list = [item_list]
-        elif isinstance(items_raw, list):
-            item_list = items_raw
-        else:
+        # 신규 apis.data.go.kr 응답 구조: {"header":{...},"body":{"items":[...]}}
+        header = data.get("header", {})
+        if header.get("resultCode") not in ("00", None, ""):
+            logger.warning("exam_schedule API result error: %s", header.get("resultMsg"))
+            return _fallback("unavailable")
+        item_list = data.get("body", {}).get("items", []) or []
+        if not isinstance(item_list, list):
             item_list = []
+        # grade_name이 있으면 description 필터 (기능사/기사/산업기사 등)
+        if grade_name:
+            item_list = [it for it in item_list if grade_name in it.get("description", "")]
     except Exception:
         item_list = []
 
@@ -273,12 +277,11 @@ def get_professional_exam_schedule(
     if cached is not None:
         return cached
 
-    url = _build_qnet_url(_QNET_PROF_BASE, api_key, {
-        "implYy":     current_year,
-        "jmNm":       cert_name.strip(),
-        "returnType": "json",
-        "numOfRows":  "10",
+    url = _build_qnet_url(_EXAM_SCHD_BASE, api_key, {
+        "dataFormat": "json",
+        "numOfRows":  "50",
         "pageNo":     "1",
+        "implYy":     current_year,
     })
 
     try:
@@ -286,24 +289,21 @@ def get_professional_exam_schedule(
         resp.raise_for_status()
         data = resp.json()
     except httpx.TimeoutException:
-        return err_envelope("EXTERNAL_API_TIMEOUT", "국가전문자격 시험일정 API 응답 시간이 초과되었습니다.")
+        return err_envelope("EXTERNAL_API_TIMEOUT", "시험일정 API 응답 시간이 초과되었습니다.")
     except httpx.HTTPStatusError as e:
-        return err_envelope("EXTERNAL_API_ERROR", f"국가전문자격 시험일정 API 오류: HTTP {e.response.status_code}")
+        return err_envelope("EXTERNAL_API_ERROR", f"시험일정 API 오류: HTTP {e.response.status_code}")
     except Exception as e:
         logger.warning("prof_exam_schedule API error: %s", e)
-        return err_envelope("EXTERNAL_API_ERROR", "국가전문자격 시험일정 조회 중 오류가 발생했습니다.")
+        return err_envelope("EXTERNAL_API_ERROR", "시험일정 조회 중 오류가 발생했습니다.")
 
     try:
-        body = data.get("response", {}).get("body", {})
-        items_raw = body.get("items", {})
-        if isinstance(items_raw, dict):
-            item_list = items_raw.get("item", [])
-            if isinstance(item_list, dict):
-                item_list = [item_list]
-        elif isinstance(items_raw, list):
-            item_list = items_raw
-        else:
+        item_list = data.get("body", {}).get("items", []) or []
+        if not isinstance(item_list, list):
             item_list = []
+        # cert_name 키워드로 description 필터
+        kw = cert_name.strip()
+        filtered = [it for it in item_list if kw in it.get("description", "")]
+        item_list = filtered if filtered else item_list
     except Exception:
         item_list = []
 
@@ -315,7 +315,7 @@ def get_professional_exam_schedule(
         "year":      current_year,
         "schedules": schedules,
         "total":     len(schedules),
-        "note":      "국가전문자격 시험일정 — Q-Net ProfExamScheduleService",
+        "note":      "국가자격 시험일정 (apis.data.go.kr/B490007)",
     })
     _cache_set(prof_cache_key, result)
     return result
