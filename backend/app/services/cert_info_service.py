@@ -15,6 +15,7 @@ from __future__ import annotations
 import csv
 import logging
 import time
+import urllib.parse
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,12 @@ _CERT_MASTER_CSV = _PROJECT_ROOT / "data/processed/master/cert_master.csv"
 
 _QNET_ITEM_INFO = "http://openapi.q-net.or.kr/api/service/rest/InstitutionInfoService/getItemInfo"
 _QNET_EXAM_INFO = "http://openapi.q-net.or.kr/api/service/rest/InstitutionInfoService/getExmInfo"
+
+
+def _build_qnet_url(base: str, api_key_in: str, extra: dict[str, str]) -> str:
+    """이미 URL-인코딩된 serviceKey를 직접 삽입 — params dict 사용 시 이중인코딩 발생."""
+    qs = "&".join(f"{k}={urllib.parse.quote(str(v), safe='')}" for k, v in extra.items())
+    return f"{base}?serviceKey={api_key_in}&{qs}"
 
 _TTL = 3600  # 자격정보는 거의 안 바뀜 — 1시간 캐시
 _cert_info_cache: dict[str, tuple[float, Any]] = {}
@@ -383,14 +390,10 @@ def get_cert_item_info(cert_id: str, settings: Settings) -> dict:
     if cached is not None:
         return cached
 
-    params = {
-        "serviceKey": api_key,
-        "itemNm":     cert_name,
-        "returnType": "json",
-    }
+    url = _build_qnet_url(_QNET_ITEM_INFO, api_key, {"itemNm": cert_name, "returnType": "json"})
 
     try:
-        resp = httpx.get(_QNET_ITEM_INFO, params=params, timeout=settings.hrdkorea_api_timeout)
+        resp = httpx.get(url, timeout=settings.hrdkorea_api_timeout)
         resp.raise_for_status()
         data = resp.json()
     except httpx.TimeoutException:
@@ -430,14 +433,10 @@ def get_cert_exam_info(cert_id: str, settings: Settings) -> dict:
     if cached is not None:
         return cached
 
-    params = {
-        "serviceKey": api_key,
-        "itemNm":     cert_name,
-        "returnType": "json",
-    }
+    url = _build_qnet_url(_QNET_EXAM_INFO, api_key, {"itemNm": cert_name, "returnType": "json"})
 
     try:
-        resp = httpx.get(_QNET_EXAM_INFO, params=params, timeout=settings.hrdkorea_api_timeout)
+        resp = httpx.get(url, timeout=settings.hrdkorea_api_timeout)
         resp.raise_for_status()
         data = resp.json()
     except httpx.TimeoutException:

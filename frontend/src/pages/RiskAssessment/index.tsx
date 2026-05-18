@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { clearPipeline, savePipeline } from '../../utils/pipelineState';
 
+const SURVEY_KEY = 'didim_survey_v1';
+
 /* ─────────────────────────────────────────────
    기획서 F-01 기반 12문항
    관계망 4 · 활동 2 · 노동경제 2 · 정신건강 3 · 자기관리 1
@@ -191,34 +193,62 @@ const RiskAssessment: React.FC = () => {
   const navigate = useNavigate();
 
   const [step, setStep]       = useState<'survey' | 'result'>('survey');
-  const [current, setCurrent] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [safetyFlag, setSafetyFlag] = useState(false);
+  const [current, setCurrent] = useState(() => {
+    try { const s = sessionStorage.getItem(SURVEY_KEY); if (s) return JSON.parse(s).current ?? 0; } catch {}
+    return 0;
+  });
+  const [answers, setAnswers] = useState<Record<string, number>>(() => {
+    try { const s = sessionStorage.getItem(SURVEY_KEY); if (s) return JSON.parse(s).answers ?? {}; } catch {}
+    return {};
+  });
+  const [safetyFlag, setSafetyFlag] = useState<boolean>(() => {
+    try { const s = sessionStorage.getItem(SURVEY_KEY); if (s) return JSON.parse(s).safetyFlag ?? false; } catch {}
+    return false;
+  });
+  const [wasRestored, setWasRestored] = useState(() => {
+    try { const s = sessionStorage.getItem(SURVEY_KEY); if (s) { const p = JSON.parse(s); return (p.current ?? 0) > 0; } } catch {}
+    return false;
+  });
 
   const q = QUESTIONS[current];
   const progress = ((current + 1) / QUESTIONS.length) * 100;
   const answered = answers[q.id] !== undefined;
 
+  function _saveProgress(cur: number, ans: Record<string, number>, sf: boolean) {
+    try { sessionStorage.setItem(SURVEY_KEY, JSON.stringify({ current: cur, answers: ans, safetyFlag: sf })); } catch {}
+  }
+
   function select(score: number) {
-    const newAnswers = { ...answers, [q.id]: score };
+    const newAnswers  = { ...answers, [q.id]: score };
+    const newSafety   = safetyFlag || (!!q.safetyKey && score >= 2);
+    const nextCurrent = current < QUESTIONS.length - 1 ? current + 1 : current;
     setAnswers(newAnswers);
-    if (q.safetyKey && score >= 2) setSafetyFlag(true);
+    if (!safetyFlag && newSafety) setSafetyFlag(true);
+    _saveProgress(nextCurrent, newAnswers, newSafety);
     if (current < QUESTIONS.length - 1) {
-      setTimeout(() => setCurrent(c => c + 1), 260);
+      setTimeout(() => setCurrent((c: number) => c + 1), 260);
     }
   }
 
   function finish() {
+    try { sessionStorage.removeItem(SURVEY_KEY); } catch {}
     setStep('result');
   }
 
   function goNext() {
-    if (current < QUESTIONS.length - 1) setCurrent(c => c + 1);
-    else finish();
+    if (current < QUESTIONS.length - 1) {
+      const next = current + 1;
+      setCurrent(next);
+      _saveProgress(next, answers, safetyFlag);
+    } else finish();
   }
 
   function goPrev() {
-    if (current > 0) setCurrent(c => c - 1);
+    if (current > 0) {
+      const prev = current - 1;
+      setCurrent(prev);
+      _saveProgress(prev, answers, safetyFlag);
+    }
   }
 
   /* ── Result ── */
@@ -388,12 +418,16 @@ const RiskAssessment: React.FC = () => {
         )}
 
         <div className="result-actions">
-          <button className="btn-ghost" onClick={() => { setStep('survey'); setCurrent(0); setAnswers({}); setSafetyFlag(false); }}>
+          <button className="btn-ghost" onClick={() => {
+              try { sessionStorage.removeItem(SURVEY_KEY); } catch {}
+              setStep('survey'); setCurrent(0); setAnswers({}); setSafetyFlag(false);
+            }}>
             <ArrowLeft size={15} /> 다시 진단
           </button>
           <button className="btn-primary" onClick={() => {
               clearPipeline();
               savePipeline({ stage });
+              try { sessionStorage.removeItem(SURVEY_KEY); } catch {}
               navigate(`/interests?stage=${stage}`);
             }}>
             관심 분야 선택하기 <ArrowRight size={15} />
@@ -460,6 +494,17 @@ const RiskAssessment: React.FC = () => {
         <h1 className="page-title">위험군 진단</h1>
         <p className="page-desc">12개 질문에 솔직하게 답해주세요. 결과를 바탕으로 맞춤 자격증을 추천해드립니다.</p>
       </div>
+
+      {/* Restore notice */}
+      {wasRestored && (
+        <div className="survey-restore-bar">
+          <span>💾 이전 진행 상태가 복원되었습니다 ({current + 1}번 문항부터)</span>
+          <button type="button" className="survey-restore-reset-btn" onClick={() => {
+            try { sessionStorage.removeItem(SURVEY_KEY); } catch {}
+            setCurrent(0); setAnswers({}); setSafetyFlag(false); setWasRestored(false);
+          }}>처음부터</button>
+        </div>
+      )}
 
       {/* Progress */}
       <div className="survey-progress-wrap">
@@ -588,6 +633,18 @@ const RiskAssessment: React.FC = () => {
           border-radius:var(--radius-sm); font-size:.82rem; font-weight:700;
           text-decoration:none;
         }
+        .survey-restore-bar {
+          display:flex; align-items:center; justify-content:space-between; gap:.75rem;
+          padding:.55rem .875rem; background:#fffbeb;
+          border:1px solid #fde68a; border-radius:var(--radius-sm);
+          font-size:.8rem; color:#92400e;
+        }
+        .survey-restore-reset-btn {
+          font-size:.75rem; font-weight:600; color:#7c3aed;
+          background:#ede9fe; border:none; border-radius:20px;
+          padding:.2rem .65rem; cursor:pointer; white-space:nowrap;
+        }
+        .survey-restore-reset-btn:hover { background:#ddd6fe; }
       `}</style>
     </div>
   );

@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT = Path(__file__).parents[3]
 _JOB_INFO_CSV = _PROJECT_ROOT / "data/raw/csv/고용24 직업정보상세 요약.csv"
-_WORKNET_BASE = "http://openapi.work.go.kr/opi/opi/opia/wantedApi.do"
+_WORKNET_BASE = "https://www.work24.go.kr/cm/openApi/call/wk/callOpenApiSvcInfo210L01.do"
 
 _TTL = 180  # WorkNet 채용 데이터는 3분 캐시 (너무 오래 캐싱하면 마감 여부가 틀릴 수 있음)
 _jobs_cache: dict[str, tuple[float, Any]] = {}
@@ -82,13 +82,18 @@ def _load_job_info() -> list[dict]:
 
 
 def _parse_worknet_xml(xml_text: str) -> list[dict[str, Any]]:
-    """WorkNet XML 응답 → job 목록. 에러 응답(messageCd != 000) 시 ValueError 발생."""
+    """Work24/WorkNet XML 응답 → job 목록. 에러 응답 시 ValueError 발생."""
     try:
         root = ET.fromstring(xml_text)
     except ET.ParseError:
         return []
 
-    # API 에러 응답 감지 (예: 유효하지 않은 인증키)
+    # Work24 에러 형식: <GO24><error>...</error></GO24>
+    go24_error = root.find("error")
+    if go24_error is not None and go24_error.text:
+        raise ValueError(go24_error.text.strip())
+
+    # WorkNet 에러 형식: <wantedRoot><messageCd>...</messageCd></wantedRoot>
     msg_cd = root.find("messageCd")
     if msg_cd is not None and (msg_cd.text or "").strip() != "000":
         msg_el = root.find("message")
