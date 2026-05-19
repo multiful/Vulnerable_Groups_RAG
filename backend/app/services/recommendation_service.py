@@ -1,5 +1,5 @@
 # File: recommendation_service.py
-# Last Updated: 2026-04-19
+# Last Updated: 2026-05-20
 # Content Hash: SHA256:TBD
 # Role: cert_candidates.jsonl 기반 구조적 추천 + 순서형 로드맵 조립 + DAG 경로 생성
 #
@@ -802,6 +802,8 @@ def recommendations(body: dict[str, Any]) -> dict:
     job_ids: list[str]    = list(body.get("job_ids") or [])
     held_cert_ids: list[str] = list(body.get("held_cert_ids") or [])
     top_n = int(body.get("top_n_per_stage") or 5)
+    # roadmap_sequence 최대 반환 건수 — 기본 100, 클라이언트가 줄일 수 있음
+    sequence_limit = int(body.get("sequence_limit") or 100)
 
     if body.get("domain_names"):
         domain_map = _load_domain_map()
@@ -910,10 +912,11 @@ def recommendations(body: dict[str, Any]) -> dict:
             "선택 도메인에 해당 위험군 직접 매핑 자격증이 없어 전체 도메인 자격증을 로드맵 순서로 제시합니다."
             if used_fallback else None
         ),
-        "roadmap_sequence": sequence,
+        "roadmap_sequence": sequence[:sequence_limit],
         "roadmap_by_stage": by_stage,
         "cert_paths": cert_paths,
         "total_certs_in_roadmap": len(sequence),
+        "sequence_limit_applied": len(sequence) > sequence_limit,
     })
 
 

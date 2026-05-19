@@ -1,5 +1,5 @@
 # File: exam_schedule_service.py
-# Last Updated: 2026-05-19
+# Last Updated: 2026-05-20
 # Content Hash: SHA256:TBD
 # Role: 한국산업인력공단 시험일정 API 조회
 #
@@ -33,7 +33,7 @@ _CERT_MASTER_CSV = _PROJECT_ROOT / "data/processed/master/cert_master.csv"
 
 _EXAM_SCHD_BASE = "https://apis.data.go.kr/B490007/qualExamSchd/getQualExamSchdList"
 
-_TTL = 600  # 시험 일정은 자주 안 바뀜 — 10분 캐시
+_TTL = 3600  # 시험 일정은 하루 단위 변경 — 1시간 캐시 (페이지네이션 비용 상각)
 _sched_cache: dict[str, tuple[float, Any]] = {}
 
 
@@ -114,25 +114,120 @@ def _calc_dday(target_str: str | None) -> int | None:
 
 
 def _format_schedule_item(item: dict[str, Any]) -> dict[str, Any]:
-    """API 응답 item → 프론트 표시용 정제 dict."""
-    reg_start = item.get("docRegStartDt") or item.get("recRegStartDt")
-    reg_end   = item.get("docRegEndDt")   or item.get("recRegEndDt")
-    exam_start = item.get("docExamStartDt") or item.get("pracExamStartDt")
-    exam_end   = item.get("docExamEndDt")   or item.get("pracExamEndDt")
-    pass_dt    = item.get("docPassDt")      or item.get("pracPassDt") or item.get("passAnnounDt")
+    """API 응답 item → 프론트 표시용 정제 dict (필기/실기 분리 포함)."""
+    # 필기
+    doc_reg_s  = item.get("docRegStartDt") or ""
+    doc_reg_e  = item.get("docRegEndDt") or ""
+    doc_exam_s = item.get("docExamStartDt") or ""
+    doc_exam_e = item.get("docExamEndDt") or ""
+    doc_pass   = item.get("docPassDt") or ""
+    # 실기 (pracReg* 사용 — 구 코드의 recReg* 오타 수정)
+    prac_reg_s  = item.get("pracRegStartDt") or ""
+    prac_reg_e  = item.get("pracRegEndDt") or ""
+    prac_exam_s = item.get("pracExamStartDt") or ""
+    prac_exam_e = item.get("pracExamEndDt") or ""
+    prac_pass   = item.get("pracPassDt") or ""
+
+    has_written   = bool(doc_reg_s or doc_exam_s or doc_pass)
+    has_practical = bool(prac_reg_s or prac_exam_s or prac_pass)
+
+    # 통합 정렬/D-Day 기준: 필기 있으면 필기 시작, 없으면 실기 시작
+    reg_start  = doc_reg_s or prac_reg_s
+    exam_start = doc_exam_s or prac_exam_s
+    pass_dt    = doc_pass or prac_pass
 
     return {
-        "impl_year":          item.get("implYy"),
-        "impl_seq":           item.get("implSeq"),
-        "impl_seq_name":      item.get("implSeqNm"),
-        "registration_start": reg_start,
-        "registration_end":   reg_end,
-        "exam_start":         exam_start,
-        "exam_end":           exam_end,
-        "pass_announce_date": pass_dt,
+        "impl_year":     item.get("implYy"),
+        "impl_seq":      item.get("implSeq"),
+        "description":   item.get("description", ""),
+        # 필기 일정 (없으면 null)
+        "written": {
+            "registration_start": doc_reg_s or None,
+            "registration_end":   doc_reg_e or None,
+            "exam_start":         doc_exam_s or None,
+            "exam_end":           doc_exam_e or None,
+            "pass_announce_date": doc_pass or None,
+            "d_day_exam":         _calc_dday(doc_exam_s),
+            "d_day_registration": _calc_dday(doc_reg_s),
+        } if has_written else None,
+        # 실기 일정 (없으면 null)
+        "practical": {
+            "registration_start": prac_reg_s or None,
+            "registration_end":   prac_reg_e or None,
+            "exam_start":         prac_exam_s or None,
+            "exam_end":           prac_exam_e or None,
+            "pass_announce_date": prac_pass or None,
+            "d_day_exam":         _calc_dday(prac_exam_s),
+            "d_day_registration": _calc_dday(prac_reg_s),
+        } if has_practical else None,
+        # 하위 호환 통합 필드
+        "registration_start": reg_start or None,
+        "registration_end":   (doc_reg_e or prac_reg_e) or None,
+        "exam_start":         exam_start or None,
+        "exam_end":           (doc_exam_e or prac_exam_e) or None,
+        "pass_announce_date": pass_dt or None,
         "d_day_exam":         _calc_dday(exam_start),
         "d_day_registration": _calc_dday(reg_start),
     }
+
+
+def _dedup_by_seq(items: list[dict]) -> list[dict]:
+    """같은 implSeq 내 등록 기간만 다른 중복 항목 제거.
+    동일 회차(implSeq)에서 필기 접수 시작일이 가장 이른 항목을 대표로 선택."""
+    seen: dict[int, dict] = {}
+    for it in items:
+        seq = int(it.get("implSeq") or 0)
+        if seq not in seen:
+            seen[seq] = it
+        else:
+            # 더 이른 접수 시작일 항목을 대표로 유지
+            existing_reg = seen[seq].get("docRegStartDt") or seen[seq].get("pracRegStartDt") or "99999999"
+            this_reg = it.get("docRegStartDt") or it.get("pracRegStartDt") or "99999999"
+            if this_reg < existing_reg:
+                seen[seq] = it
+    return list(seen.values())
+
+
+def _fetch_all_exam_schd(api_key: str, year: str, timeout: float) -> list[dict] | None:
+    """연도별 전체 시험일정을 페이지네이션으로 수집.
+    최대 50/page 제한 → totalCount 기준 자동 페이지 순회.
+    오류 시 None 반환 (호출자가 fallback 처리)."""
+    collected: list[dict] = []
+    for page in range(1, 20):  # 안전 상한 20 pages
+        url = _build_qnet_url(_EXAM_SCHD_BASE, api_key, {
+            "dataFormat": "json",
+            "numOfRows":  "50",
+            "pageNo":     str(page),
+            "implYy":     year,
+        })
+        try:
+            resp = httpx.get(url, timeout=timeout)
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception as e:
+            logger.warning("exam_schedule fetch page=%s error: %s", page, e)
+            return None if not collected else collected
+
+        header = data.get("header", {})
+        if header.get("resultCode") not in ("00", None, ""):
+            logger.warning("exam_schedule API error page=%s: %s", page, header.get("resultMsg"))
+            break
+
+        body = data.get("body", {})
+        if not isinstance(body, dict):
+            break
+        items = body.get("items") or []
+        if not isinstance(items, list):
+            break
+        collected.extend(items)
+
+        total = int(body.get("totalCount") or 0)
+        if total > 0 and len(collected) >= total:
+            break
+        if len(items) < 50:
+            break
+
+    return collected or None
 
 
 def get_exam_schedule(cert_id: str, settings: Settings) -> dict:
@@ -172,40 +267,22 @@ def get_exam_schedule(cert_id: str, settings: Settings) -> dict:
     if cached is not None:
         return cached
 
-    # serviceKey는 이미 URL-인코딩된 값(_IN) → URL에 직접 삽입 (이중인코딩 방지)
-    url = _build_qnet_url(_EXAM_SCHD_BASE, api_key, {
-        "dataFormat": "json",
-        "numOfRows":  "50",
-        "pageNo":     "1",
-        "implYy":     current_year,
-    })
-
-    try:
-        resp = httpx.get(url, timeout=settings.hrdkorea_api_timeout)
-        resp.raise_for_status()
-        data = resp.json()
-    except httpx.TimeoutException:
-        logger.warning("exam_schedule API timeout: cert_id=%s", cert_id)
-        return _fallback("unavailable")
-    except httpx.HTTPStatusError as e:
-        logger.warning("exam_schedule API HTTP error: %s cert_id=%s", e.response.status_code, cert_id)
-        return _fallback("unavailable")
-    except Exception as e:
-        logger.warning("exam_schedule API error: %s cert_id=%s", e, cert_id)
-        return _fallback("unavailable")
-
-    try:
-        # 신규 apis.data.go.kr 응답 구조: {"header":{...},"body":{"items":[...]}}
-        header = data.get("header", {})
-        if header.get("resultCode") not in ("00", None, ""):
-            logger.warning("exam_schedule API result error: %s", header.get("resultMsg"))
+    # 전체 페이지 조회 (최대 50/page, totalCount 기준). 연도별 캐시 공유로 비용 상각.
+    year_cache_key = f"exam_schd_all|{current_year}"
+    all_items = _cache_get(year_cache_key)
+    if all_items is None:
+        all_items = _fetch_all_exam_schd(api_key, current_year, settings.hrdkorea_api_timeout)
+        if all_items is None:
             return _fallback("unavailable")
-        item_list = data.get("body", {}).get("items", []) or []
-        if not isinstance(item_list, list):
-            item_list = []
-        # grade_name이 있으면 description 필터 (기능사/기사/산업기사 등)
+        _cache_set(year_cache_key, all_items)
+
+    try:
+        item_list = list(all_items)
+        # grade_name 기준 필터 — " 기사 " 공백 경계로 "산업기사"/"기술사" 오매칭 방지
         if grade_name:
-            item_list = [it for it in item_list if grade_name in it.get("description", "")]
+            padded = f" {grade_name} "
+            item_list = [it for it in item_list if padded in it.get("description", "")]
+        item_list = _dedup_by_seq(item_list)
     except Exception:
         item_list = []
 
@@ -277,33 +354,19 @@ def get_professional_exam_schedule(
     if cached is not None:
         return cached
 
-    url = _build_qnet_url(_EXAM_SCHD_BASE, api_key, {
-        "dataFormat": "json",
-        "numOfRows":  "50",
-        "pageNo":     "1",
-        "implYy":     current_year,
-    })
+    # 연도 전체 캐시 공유 (cert_id 기반 exam_schedule와 동일 캐시 키)
+    year_cache_key = f"exam_schd_all|{current_year}"
+    all_items = _cache_get(year_cache_key)
+    if all_items is None:
+        all_items = _fetch_all_exam_schd(api_key, current_year, settings.hrdkorea_api_timeout)
+        if all_items is None:
+            return err_envelope("EXTERNAL_API_ERROR", "시험일정 조회 중 오류가 발생했습니다.")
+        _cache_set(year_cache_key, all_items)
 
     try:
-        resp = httpx.get(url, timeout=settings.hrdkorea_api_timeout)
-        resp.raise_for_status()
-        data = resp.json()
-    except httpx.TimeoutException:
-        return err_envelope("EXTERNAL_API_TIMEOUT", "시험일정 API 응답 시간이 초과되었습니다.")
-    except httpx.HTTPStatusError as e:
-        return err_envelope("EXTERNAL_API_ERROR", f"시험일정 API 오류: HTTP {e.response.status_code}")
-    except Exception as e:
-        logger.warning("prof_exam_schedule API error: %s", e)
-        return err_envelope("EXTERNAL_API_ERROR", "시험일정 조회 중 오류가 발생했습니다.")
-
-    try:
-        item_list = data.get("body", {}).get("items", []) or []
-        if not isinstance(item_list, list):
-            item_list = []
-        # cert_name 키워드로 description 필터
         kw = cert_name.strip()
-        filtered = [it for it in item_list if kw in it.get("description", "")]
-        item_list = filtered if filtered else item_list
+        filtered = [it for it in all_items if kw in it.get("description", "")]
+        item_list = filtered if filtered else all_items
     except Exception:
         item_list = []
 

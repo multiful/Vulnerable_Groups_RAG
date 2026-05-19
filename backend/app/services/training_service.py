@@ -1,5 +1,5 @@
 # File: training_service.py
-# Last Updated: 2026-05-14
+# Last Updated: 2026-05-20
 # Content Hash: SHA256:TBD
 # Role: 국민내일배움카드 훈련과정 API + 과정평가형 자격 조회
 # cert_id 기반 검색은 cert_lookup_service를 경유한다 (canonical 데이터 연결 원칙)
@@ -236,13 +236,30 @@ def get_training_by_cert_id(
 
     search_params = get_training_search_params(cert_id)
 
-    return get_training_courses(
+    result = get_training_courses(
         settings,
         region=region,
         ncs_category=search_params.get("ncs_category"),
         course_name=search_params.get("course_name"),
         page_size=page_size,
     )
+    # course_name이 너무 구체적이면 결과 0건 → ncs_category 단독으로 재시도
+    if (
+        result.get("success")
+        and result.get("data", {}).get("total", 0) == 0
+        and search_params.get("course_name")
+        and search_params.get("ncs_category")
+    ):
+        result = get_training_courses(
+            settings,
+            region=region,
+            ncs_category=search_params.get("ncs_category"),
+            course_name=None,
+            page_size=page_size,
+        )
+        if result.get("success") and result.get("data"):
+            result["data"]["fallback_note"] = "자격증명 검색 결과가 없어 NCS 분류로 조회했습니다."
+    return result
 
 
 def get_process_eval_courses(
