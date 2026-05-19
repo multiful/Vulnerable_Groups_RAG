@@ -23,8 +23,8 @@
 | 파일 | 행 수 | 상태 |
 |---|---|---|
 | `candidates.jsonl.example` | — | 형식 참고용 예시 — 실제 데이터 아님 |
-| `cert_candidates.csv` | 1,290행 | ✅ `scripts/build_cert_candidates.py` 생성 (21컬럼, content_hash 포함) |
-| `cert_candidates.jsonl` | 1,290행 | ✅ Backend ingestion용 JSONL |
+| `cert_candidates.csv` | 1,287행 | ✅ `scripts/build_cert_candidates.py` 생성 (21컬럼, content_hash 포함) |
+| `cert_candidates.jsonl` | 1,287행 | ✅ Backend ingestion용 JSONL (중복 게임 자격증 3개 제거, 2026-05-20) |
 | `.build_manifest.json` | — | 빌드 증분 manifest (`{candidate_id: content_hash}`) — `HASH_INCREMENTAL_BUILD_GUIDE.md §7.6.1` |
 
 > 생성 스크립트: `scripts/build_cert_candidates.py` (경로 이식성 수정 완료)  

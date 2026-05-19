@@ -87,3 +87,8 @@ copilot-instructions.md
 # 로컬·개인 참고 문서. 내용 무시.
 docs/references/_private/**
 !docs/references/_private/.gitkeep
+
+# Supplement script backup files
+*.bak
+*.bak2
+*.bak3

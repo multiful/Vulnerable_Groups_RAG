@@ -29,8 +29,8 @@
 | `cert_to_roadmap_stage.csv` | 1,290 | ✅ | `scripts/build_all_relations.py` |
 | `cert_prerequisite.csv` | 775 | ✅ cross-domain 이슈 해소 (subject_prefix 그룹, prefix+suffix union-find) | `scripts/build_cert_prerequisite.py` |
 | `cert_ncs_mapping.csv` | 3,573 | ✅ cert 57.6% / ncs 95.0% | `scripts/build_all_relations.py` |
-| `cert_job_mapping.csv` | 4,755 | ✅ cert 94.0% / job 100% | `scripts/build_all_relations.py` |
-| `cert_major_mapping.csv` | 2,066 | ✅ | `scripts/build_cert_major_mapping.py` |
+| `cert_job_mapping.csv` | 4,900+ | ✅ cert 100% / job 100% — 2026-05-20 보강 (소방/섬유/공예/광업/조리/법률/반려동물 등) | `scripts/supplement_data.py` |
+| `cert_major_mapping.csv` | 10,000+ | ✅ 전체 1,287개 자격증 커버리지 달성 — 2026-05-20 도메인 기반 보충 | `scripts/supplement_data.py` |
 | `major_to_domain.csv` | 5,268 | ✅ | — |
 | `job_to_domain.csv` | 151 | ✅ job 100% / domain 42/43 | `scripts/build_all_relations.py` |
 | `risk_stage_to_roadmap_stage.csv` | 5 | ✅ | `scripts/build_all_relations.py` |

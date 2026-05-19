@@ -1,11 +1,9 @@
 # File: supplement_data.py
-# Last Updated: 2026-05-19
+# Last Updated: 2026-05-20
 # Content Hash: SHA256:TBD
 # Role: 데이터 보완 스크립트
-#   1) cert_job_mapping.csv — thin job(풀스택/웹/클라이언트/클라우드/DevOps) 보강
-#                           — 소방(domain_0014) job 추가
-#                           — 섬유/공예/광업 job 추가
-#   2) cert_major_mapping.csv — domain→major 매핑으로 related_majors 없는 352개 보충
+#   1) cert_job_mapping.csv — thin job 보강, 특수 도메인 job 추가, 잘못된 IT major 교체
+#   2) cert_major_mapping.csv — domain→major 매핑으로 related_majors 보충, 잘못된 IT major 교체
 #   3) cert_candidates.jsonl — related_jobs / related_majors 동기화
 #   4) build_frontend_data.py 실행 → cert_candidates.json 재생성
 
@@ -98,6 +96,55 @@ JOB_ADD: dict[str, list[str]] = {
     "cert_0281": ["job_0036", "job_0039"],  # 신발산업기사
     "cert_0428": ["job_0036"],              # 방적산업기사
     "cert_0429": ["job_0036"],              # 제직산업기사
+
+    # ── 조리/식품 domain_0030 — 연관 직무 추가 ──
+    "cert_0387": ["job_0108", "job_0113"],  # 제과기능장 → 조리, 외식운영
+    "cert_0399": ["job_0108", "job_0111"],  # 제과산업기사 → 조리, 식품품질관리
+    "cert_0400": ["job_0108", "job_0111"],  # 제빵산업기사
+    "cert_0661": ["job_0108"],              # 제과기능사 → 조리
+    "cert_0662": ["job_0108"],              # 제빵기능사
+    "cert_0462": ["job_0108", "job_0113"],  # 조주산업기사 → 조리, 외식운영
+    "cert_0678": ["job_0108", "job_0113"],  # 조주기능사
+    "cert_1070": ["job_0108", "job_0112"],  # 푸드코디네이터 → 조리, 영양/급식
+    "cert_1170": ["job_0113"],              # 소믈리에 → 외식서비스운영
+    "cert_1218": ["job_0113"],              # 바리스타 → 외식서비스운영
+
+    # ── 법률 domain_0022 — 행정/공공 직무 추가 ──
+    "cert_0784": ["job_0082"],  # 변리사 → 공공행정
+    "cert_0834": ["job_0082"],  # 법무사
+    "cert_0941": ["job_0082"],  # 변호사
+    "cert_1147": ["job_0082"],  # 지식재산능력시험 2급
+    "cert_1238": ["job_0082"],  # 지식재산능력시험 3급
+    "cert_1239": ["job_0082"],  # 지식재산능력시험 4급
+    "cert_1289": ["job_0082"],  # 지식재산능력시험 1급
+
+    # ── 반려동물 domain_0026 — 생활건강관리/미용 직무 추가 ──
+    "cert_0887": ["job_0119"],  # 반려동물행동지도사 1급 → 생활건강관리
+    "cert_0888": ["job_0119"],  # 반려동물행동지도사 2급
+    "cert_1119": ["job_0114"],  # 반려견스타일리스트 1급 → 헤어디자인(미용)
+    "cert_1120": ["job_0114"],  # 반려견스타일리스트 2급
+    "cert_1121": ["job_0114"],  # 반려견스타일리스트 3급
+    "cert_1177": ["job_0114"],  # 애견미용사
+    "cert_1219": ["job_0119"],  # 반려동물관리사
+
+    # ── 교육 domain_0027 — 연관 직무 추가 ──
+    "cert_0957": ["job_0101", "job_0103"],  # 평생교육사 1급 → 교육, 직업교육
+    "cert_0958": ["job_0101", "job_0103"],  # 평생교육사 2급
+    "cert_0959": ["job_0101", "job_0103"],  # 평생교육사 3급
+    "cert_1009": ["job_0102"],              # 실천예절지도사 → 평생교육
+    "cert_1261": ["job_0101"],              # 논술지도사
+    "cert_1263": ["job_0101"],              # 독서지도사
+    "cert_1264": ["job_0101"],              # 문화선교사자격증
+
+    # ── 문화재 domain_0037 — 전통 공예 직무 추가 ──
+    # 목조각, 소목수, 칠공, 도금공 등 → 공예/주얼리(job_0130)
+    "cert_0783": ["job_0130"],  # 국가유산수리기능자(목조각공)
+    "cert_0785": ["job_0130"],  # 국가유산수리기능자(소목수)
+    "cert_0793": ["job_0130"],  # 국가유산수리기능자(칠공)
+    "cert_0812": ["job_0130"],  # 국가유산수리기능자(도금공)
+    "cert_0814": ["job_0130"],  # 국가유산수리기능자(모사공)
+    "cert_0816": ["job_0130"],  # 국가유산수리기능자(박제및표본제작공)
+    "cert_0829": ["job_0125"],  # 박물관및미술관준학예사 → 콘텐츠 제작
 }
 
 # ──────────────────────────────────────────────────────────────────────
@@ -297,6 +344,80 @@ def main() -> int:
 
     write_job_csv(all_job_rows)
     print(f"  추가 행 수: {added_jobs}, cert_id 불명: {skipped_unknown}")
+
+    # ── §1-B. IT 잘못된 major 교체 ────────────────────────────────────
+    print("\n[1B/4] IT 자격증 잘못된 전공 행 교체...")
+
+    # IT/보안 자격증에 비IT 전공(도시공학, 조경, 의료공학 등)이 있는 경우 교체
+    IT_CERT_BAD_MAJOR = {
+        "cert_0043",  # 정보관리기술사
+        "cert_0045",  # 컴퓨터시스템응용기술사
+        "cert_0135",  # 정보처리기사
+        "cert_0278",  # 정보처리산업기사
+        "cert_0547",  # 정보기기운용기능사
+        "cert_0897",  # 전자계산기기능사
+        "cert_0903",  # 정보보안산업기사
+        "cert_0905",  # 정보보안기사
+    }
+    # 대체할 올바른 IT 전공 목록
+    IT_CORRECT_MAJORS_KWS = ["소프트웨어공학","컴퓨터공학","정보처리","정보통신공학","IT정보","정보보안공학","컴퓨터과학"]
+    major_names_tmp = load_major_names()
+    it_correct_majors = [mid for mid, name in major_names_tmp.items()
+                         if any(k in name for k in IT_CORRECT_MAJORS_KWS)][:20]
+
+    # 보안 자격증은 보안 전공으로
+    SEC_MAJORS_KWS = ["정보보안","사이버보안","보안공학","정보보호"]
+    sec_correct_majors = [mid for mid, name in major_names_tmp.items()
+                          if any(k in name for k in SEC_MAJORS_KWS)][:15]
+
+    CERT_CORRECT_MAJORS: dict[str, list[str]] = {
+        "cert_0043": it_correct_majors,   # 정보관리기술사
+        "cert_0045": it_correct_majors,   # 컴퓨터시스템응용기술사
+        "cert_0135": it_correct_majors,   # 정보처리기사
+        "cert_0278": it_correct_majors,   # 정보처리산업기사
+        "cert_0547": it_correct_majors,   # 정보기기운용기능사
+        "cert_0897": it_correct_majors,   # 전자계산기기능사
+        "cert_0903": sec_correct_majors + it_correct_majors[:5],  # 정보보안산업기사
+        "cert_0905": sec_correct_majors + it_correct_majors[:5],  # 정보보안기사
+    }
+
+    # cert_major_mapping에서 대상 cert의 기존 행 비활성화 후 올바른 행 삽입
+    all_major_rows_pre: list[dict] = []
+    with CERT_MAJOR_CSV.open(encoding="utf-8-sig") as f:
+        all_major_rows_pre = list(csv.DictReader(f))
+
+    deactivated = 0
+    for row in all_major_rows_pre:
+        if row.get("cert_id","") in IT_CERT_BAD_MAJOR and row.get("is_active","") == "True":
+            row["is_active"] = "False"
+            deactivated += 1
+
+    next_mrid_pre = max(
+        int(re.sub(r"\D","",row["relation_id"]) or 0) for row in all_major_rows_pre
+    ) + 1
+
+    active_major_pairs_pre: set[tuple[str,str]] = set()
+    for row in all_major_rows_pre:
+        if row.get("is_active","") == "True":
+            active_major_pairs_pre.add((row["cert_id"], row["major_id"]))
+
+    added_it_majors = 0
+    for cid, mids in CERT_CORRECT_MAJORS.items():
+        for mid in mids:
+            if (cid, mid) in active_major_pairs_pre:
+                continue
+            all_major_rows_pre.append({
+                "relation_id": f"cmj_{next_mrid_pre:05d}",
+                "cert_id": cid,
+                "major_id": mid,
+                "is_active": "True",
+            })
+            active_major_pairs_pre.add((cid, mid))
+            next_mrid_pre += 1
+            added_it_majors += 1
+
+    write_major_csv(all_major_rows_pre)
+    print(f"  비활성화 행: {deactivated}개, 올바른 IT 전공 추가: {added_it_majors}행")
 
     # ── §2. cert_major_mapping.csv 보충 ────────────────────────────────
     print("\n[2/4] cert_major_mapping.csv 보충 (도메인 기반)...")
