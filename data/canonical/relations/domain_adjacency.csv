@@ -1,0 +1,26 @@
+relation_id,source_domain_id,target_domain_id,expansion_type,keywords,note,is_active
+# IT 클러스터 (domain_0001/0002/0003 상호 인접) — keyword 기반 확장
+adj_00001,domain_0002,domain_0001,keyword,정보처리|정보관리|컴퓨터시스템|컴퓨터활용|리눅스|소프트웨어|SW테스트,SW개발 기반 자격 → 데이터/AI 분야 연계,True
+adj_00002,domain_0002,domain_0003,keyword,정보처리|정보관리|컴퓨터시스템|컴퓨터활용|리눅스|PC정비|PC Master,SW개발 기반 자격 → IT인프라/보안 연계,True
+adj_00003,domain_0001,domain_0002,keyword,데이터|SQL|빅데이터,데이터/AI 자격 → 소프트웨어개발 연계,True
+adj_00004,domain_0003,domain_0002,keyword,정보보안,IT인프라/보안 자격 → 소프트웨어개발 연계(보안 코딩),True
+# 의료/복지 인접 클러스터
+adj_00005,domain_0023,domain_0024,keyword,보건|의료|재활|간호|응급,의료 자격 → 사회복지/상담 연계,True
+adj_00006,domain_0024,domain_0023,keyword,복지|상담|재활|요양,사회복지 자격 → 의료/보건 연계,True
+adj_00007,domain_0027,domain_0024,keyword,청소년|아동|특수교육,교육 자격(청소년/아동) → 사회복지 연계,True
+adj_00008,domain_0024,domain_0027,keyword,청소년지도|아동|평생교육,사회복지 자격 → 교육 연계,True
+# 관광/호텔/조리 인접 클러스터
+adj_00009,domain_0030,domain_0029,keyword,조리|제과|제빵|바리스타|소믈리에|조주,조리/식품 자격 → 관광/호텔 연계,True
+adj_00010,domain_0029,domain_0030,keyword,호텔|관광|여행,관광/호텔 자격 → 조리/식품 연계,True
+# 디자인/콘텐츠 인접 클러스터
+adj_00011,domain_0033,domain_0034,keyword,디자인|시각|편집|UI|UX|영상,디자인 자격 → 콘텐츠/미디어 연계,True
+adj_00012,domain_0034,domain_0033,keyword,콘텐츠|영상|미디어|방송|인쇄|출판,콘텐츠 자격 → 디자인 연계,True
+# 금융/경영 인접 클러스터
+adj_00013,domain_0016,domain_0017,keyword,세무|회계|재무|금융|보험,금융/회계 자격 → 경영/사무 연계,True
+adj_00014,domain_0017,domain_0016,keyword,재경|경영|회계|세무,경영/사무 자격 → 금융/회계 연계,True
+# 기계/전기 인접 클러스터 (스마트팩토리·메카트로닉스)
+adj_00015,domain_0005,domain_0006,keyword,전기|전자|반도체|제어,전기/전자 자격 → 기계/제조 연계,True
+adj_00016,domain_0006,domain_0005,keyword,기계|설비|자동화|PLC|제어,기계/제조 자격 → 전기/전자 연계,True
+# 환경/안전 → 기계/화학 연계
+adj_00017,domain_0012,domain_0006,keyword,안전|위험물|산업안전,환경/안전 자격 → 기계/제조 연계,True
+adj_00018,domain_0012,domain_0008,keyword,환경|오염|폐기물|대기|수질,환경 자격 → 화학/바이오 연계,True

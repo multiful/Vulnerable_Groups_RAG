@@ -27,13 +27,15 @@ from backend.app.schemas.envelope import err_envelope, ok_envelope
 logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT = Path(__file__).parents[3]
-_JOB_RAW_MERGED_CSV = _PROJECT_ROOT / "data" / "raw" / "csv" / "job_raw_merged_rows.csv"
-_NCS_MAPPING_CSV = _PROJECT_ROOT / "data" / "raw" / "csv" / "ncs_mapping_rows.csv"
-_JOB_INFO_CSV = _PROJECT_ROOT / "data" / "raw" / "csv" / "고용24 직업정보상세 요약.csv"
-_JOB_ALIAS_CSV      = _PROJECT_ROOT / "data" / "processed" / "mappings" / "job_alias_mapping.csv"
-_JOB_INFO_EXT_CSV   = _PROJECT_ROOT / "data" / "raw" / "csv" / "job_info_rows.csv"
-_DATA_JOBS_ROWS_CSV = _PROJECT_ROOT / "data" / "raw" / "csv" / "data_jobs_rows.csv"
-_CERT_MASTER_CSV    = _PROJECT_ROOT / "data" / "processed" / "master" / "cert_master.csv"
+_JOB_RAW_MERGED_CSV  = _PROJECT_ROOT / "data" / "raw" / "csv" / "job_raw_merged_rows.csv"
+_NCS_MAPPING_CSV     = _PROJECT_ROOT / "data" / "raw" / "csv" / "ncs_mapping_rows.csv"
+_JOB_INFO_CSV        = _PROJECT_ROOT / "data" / "raw" / "csv" / "고용24 직업정보상세 요약.csv"
+_JOB_ALIAS_CSV       = _PROJECT_ROOT / "data" / "processed" / "mappings" / "job_alias_mapping.csv"
+_JOB_INFO_EXT_CSV    = _PROJECT_ROOT / "data" / "raw" / "csv" / "job_info_rows.csv"
+_DATA_JOBS_ROWS_CSV  = _PROJECT_ROOT / "data" / "raw" / "csv" / "data_jobs_rows.csv"
+_CERT_MASTER_CSV     = _PROJECT_ROOT / "data" / "processed" / "master" / "cert_master.csv"
+_JOB_MASTER_CSV      = _PROJECT_ROOT / "data" / "processed" / "master" / "job_master.csv"
+_CERT_JOB_MAP_CSV    = _PROJECT_ROOT / "data" / "canonical" / "relations" / "cert_job_mapping.csv"
 
 # 서비스(숙련직) 직무구분은 서비스·운송 도메인 자격증에서만 유효
 _SERVICE_SKILLED_DOMAINS = frozenset(["모빌리티/운송", "교육/생활서비스", "국방/특수"])
@@ -197,6 +199,100 @@ def _filter_domain_compatible_jobs(jobs: list[str], cert_top_domain: str) -> lis
 
 
 @lru_cache(maxsize=1)
+def _load_job_master() -> dict[str, dict]:
+    """job_role_id → {job_role_name, job_top_group_name} (job_master.csv, active only)."""
+    out: dict[str, dict] = {}
+    if not _JOB_MASTER_CSV.exists():
+        return out
+    try:
+        with _JOB_MASTER_CSV.open(encoding="utf-8-sig") as f:
+            for r in csv.DictReader(f):
+                if r.get("is_active", "TRUE").strip().upper() not in ("TRUE", "1", "YES"):
+                    continue
+                jid = r.get("job_role_id", "").strip()
+                if jid:
+                    out[jid] = {
+                        "job_role_name":      r.get("job_role_name", "").strip(),
+                        "job_top_group_name": r.get("job_top_group_name", "").strip(),
+                    }
+    except Exception as e:
+        logger.warning("job_master.csv 로드 실패: %s", e)
+    return out
+
+
+@lru_cache(maxsize=1)
+def _load_cert_name_to_id() -> dict[str, str]:
+    """cert_name → cert_id (cert_master.csv)."""
+    out: dict[str, str] = {}
+    if not _CERT_MASTER_CSV.exists():
+        return out
+    try:
+        with _CERT_MASTER_CSV.open(encoding="utf-8-sig") as f:
+            for r in csv.DictReader(f):
+                name = (r.get("cert_name") or "").strip()
+                cid = (r.get("cert_id") or "").strip()
+                if name and cid:
+                    out[name] = cid
+    except Exception as e:
+        logger.warning("cert_master cert_name→id 로드 실패: %s", e)
+    return out
+
+
+@lru_cache(maxsize=1)
+def _load_cert_job_canonical() -> dict[str, list[str]]:
+    """cert_id → [job_role_id, ...] (cert_job_mapping.csv, active only)."""
+    out: dict[str, list[str]] = {}
+    if not _CERT_JOB_MAP_CSV.exists():
+        return out
+    try:
+        with _CERT_JOB_MAP_CSV.open(encoding="utf-8-sig") as f:
+            for r in csv.DictReader(f):
+                if r.get("is_active", "TRUE").strip().upper() not in ("TRUE", "1", "YES"):
+                    continue
+                cid = (r.get("cert_id") or "").strip()
+                jid = (r.get("job_role_id") or "").strip()
+                if cid and jid:
+                    out.setdefault(cid, []).append(jid)
+    except Exception as e:
+        logger.warning("cert_job_mapping.csv 로드 실패: %s", e)
+    return out
+
+
+@lru_cache(maxsize=1)
+def _build_cert_related_majors_index() -> dict[str, list[str]]:
+    """cert_name → [major_name, ...] (job_raw_merged major_name 필드 기준, 중복 제거)."""
+    index: dict[str, list[str]] = defaultdict(list)
+    for row in _load_job_raw_merged():
+        cert = row.get("cert_name", "").strip()
+        majors_raw = row.get("major_name", "").strip()
+        if cert and majors_raw:
+            for m in majors_raw.split(","):
+                m = m.strip()
+                if m and m not in index[cert]:
+                    index[cert].append(m)
+    return dict(index)
+
+
+def _enrich_jobs(jobs: list[str]) -> list[dict]:
+    """직업명 목록 → 상세 정보 포함 객체 목록 (job_info_rows 기반)."""
+    ext_map = _load_job_info_ext()
+    duty_map = _load_job_duty_class_map()
+    result = []
+    for job in jobs:
+        ext = ext_map.get(job) or {}
+        result.append({
+            "name":                  job,
+            "duty_class":            duty_map.get(job),
+            "professionalism_score": ext.get("professionalism_score"),
+            "growth_score":          ext.get("growth_score"),
+            "job_security_score":    ext.get("job_security_score"),
+            "salary_summary":        ext.get("salary_summary"),
+            "similar_jobs":          ext.get("similar_jobs"),
+        })
+    return result
+
+
+@lru_cache(maxsize=1)
 def _load_cert_to_jobs_worknet() -> dict[str, list[str]]:
     """자격증명 → [직업명, ...] (data_jobs_rows.csv 워크넷 매핑)."""
     if not _DATA_JOBS_ROWS_CSV.exists():
@@ -326,8 +422,7 @@ def get_major_cert_suggestions(major_name: str) -> list[str]:
 def get_job_info(job_name: str) -> dict[str, Any]:
     """
     직업명 (부분 일치) → 고용24 직업 상세 정보 dict.
-    반환 키: job_name, job_code, salary, satisfaction, outlook, work_content, video_url
-    워크넷 job_info_rows 점수(pay_score 등) 보충.
+    고용24 CSV + job_info_rows 점수 + 직무구분을 합산.
     """
     rows = _load_job_info_csv()
     base: dict[str, Any] = {}
@@ -338,7 +433,7 @@ def get_job_info(job_name: str) -> dict[str, Any]:
                 base = _normalize_job_info_row(row)
                 break
 
-    # Supplement with worknet scores (exact match first, then partial)
+    # Supplement with job_info_rows scores (exact match first, then partial)
     ext_map = _load_job_info_ext()
     ext = ext_map.get(job_name)
     if not ext:
@@ -362,6 +457,16 @@ def get_job_info(job_name: str) -> dict[str, Any]:
             "employment_method":     ext.get("employment_method") or base.get("employment_method"),
         })
 
+    # 직무구분 보충
+    duty_map = _load_job_duty_class_map()
+    if job_name in duty_map:
+        base["duty_class"] = duty_map[job_name]
+    elif not base.get("duty_class"):
+        for k, v in duty_map.items():
+            if job_name in k:
+                base["duty_class"] = v
+                break
+
     return base
 
 
@@ -384,27 +489,65 @@ def _normalize_job_info_row(row: dict[str, str]) -> dict[str, Any]:
 
 # ── Envelope Wrappers ─────────────────────────────────────────────────────────
 
-def get_cert_jobs_envelope(cert_name: str) -> dict[str, Any]:
+def get_cert_jobs_envelope(cert_name: str, limit: int = 30) -> dict[str, Any]:
     """GET /jobs/cert-jobs/{cert_name} 응답용 envelope.
-    job_raw_merged + data_jobs_rows(worknet) 결합 후 도메인 호환성 필터 적용.
+
+    세 가지 데이터 소스를 통합:
+    1. cert_job_mapping → job_master: 캐노니컬 직무 역할 (구조적)
+    2. job_raw_merged: GOMS 기반 실제 직업명
+    3. data_jobs_rows (worknet): 워크넷 실제 직업명
+    도메인 호환성 필터 적용 후 각 직업에 상세 점수·급여 보강.
     """
     if not cert_name or not cert_name.strip():
         return err_envelope("INVALID_INPUT", "cert_name이 비어 있습니다.")
     name = cert_name.strip()
+
+    # ── 1. 캐노니컬 직무 역할 (cert_job_mapping → job_master) ─────────────────
+    cert_id = _load_cert_name_to_id().get(name, "")
+    job_master = _load_job_master()
+    canonical_role_ids = _load_cert_job_canonical().get(cert_id, []) if cert_id else []
+    canonical_roles: list[dict] = []
+    for jid in canonical_role_ids:
+        role = job_master.get(jid)
+        if role:
+            canonical_roles.append({
+                "job_role_id":        jid,
+                "job_role_name":      role["job_role_name"],
+                "job_top_group_name": role["job_top_group_name"],
+            })
+
+    # ── 2. 실제 직업명 (job_raw_merged + worknet, 도메인 필터) ─────────────────
     jobs_goms = get_cert_job_connections(name)
-    # Supplement from worknet (data_jobs_rows.csv)
     jobs_worknet = _load_cert_to_jobs_worknet().get(name, [])
     seen: set[str] = set(jobs_goms)
     extra = [j for j in jobs_worknet if j not in seen]
     jobs_all = jobs_goms + extra
-    # 도메인 호환성 필터: 자격증 top_domain 기준으로 서비스(숙련직) 직업 제거
     cert_top_domain = _load_cert_top_domain_map().get(name, "")
     jobs_all = _filter_domain_compatible_jobs(jobs_all, cert_top_domain)
+    total_unfiltered = len(jobs_all)
+    if limit > 0:
+        jobs_all = jobs_all[:limit]
+
+    # ── 3. 직업 상세 보강 (job_info_rows: 점수·급여) ─────────────────────────
+    jobs_detail = _enrich_jobs(jobs_all)
+
+    # ── 4. 연관 전공 (job_raw_merged major_name — 가장 정확한 소스) ──────────
+    related_majors = _build_cert_related_majors_index().get(name, [])
+
     return ok_envelope({
-        "cert_name": name,
-        "jobs":      jobs_all,
-        "total":     len(jobs_all),
-        "sources":   ["job_raw_merged", "worknet_data_jobs"],
+        "cert_name":      name,
+        "cert_id":        cert_id or None,
+        # 캐노니컬 직무 역할 (구조화된 taxonomy)
+        "canonical_roles":  canonical_roles,
+        "canonical_total":  len(canonical_roles),
+        # 실제 직업명 목록 (기존 호환 유지)
+        "jobs":              jobs_all,
+        "jobs_detail":       jobs_detail,
+        "total":             len(jobs_all),
+        "total_unfiltered":  total_unfiltered,
+        # 연관 전공
+        "related_majors": related_majors,
+        "sources":        ["cert_job_mapping", "job_raw_merged", "worknet_data_jobs"],
     })
 
 

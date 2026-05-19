@@ -268,6 +268,8 @@ interface ExecState {
   certJobsList: string[];
   certJobsLoading: boolean;
   certJobsFetched: boolean;
+  canonicalRoles: Array<{ job_role_id: string; job_role_name: string; job_top_group_name: string }>;
+  relatedMajors: string[];
   selectedJobName: string | null;
   jobDetailData: {
     job_name: string; salary: string; outlook: string; work_content: string;
@@ -284,13 +286,15 @@ interface ExecState {
 
 /* ── Memoized cert card ── */
 const CertCard = memo(({
-  cert, onEvidence, onDag, onRoadmap, isSelected,
+  cert, onEvidence, onDag, onRoadmap, isSelected, matchLabel, isCrossDomain,
 }: {
   cert: CertCandidate;
   onEvidence: (id: string) => void;
   onDag: (id: string) => void;
   onRoadmap: (id: string) => void;
   isSelected?: boolean;
+  matchLabel?: string | null;
+  isCrossDomain?: boolean;
 }) => {
   const summary = buildCertSummary(cert);
   const passRate = cert.avg_pass_rate_3yr ?? (() => {
@@ -324,6 +328,13 @@ const CertCard = memo(({
             {GRADE_LABEL[cert.cert_grade_tier] ?? cert.cert_grade_tier}
           </span>
           <span className="cert-issuer">{cert.issuer}</span>
+          {matchLabel && (
+            <span
+              className="cert-match-tag"
+              data-cross={isCrossDomain ? 'true' : undefined}
+              title={isCrossDomain ? '주 분야가 다르지만 관련 분야로 표시됨' : `'${matchLabel}' 조건으로 매칭`}
+            >{matchLabel}</span>
+          )}
         </div>
         <h3 className="cert-name">{cert.cert_name}</h3>
         <p className="cert-summary">{summary}</p>
@@ -375,6 +386,8 @@ const Recommendation: React.FC = () => {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGrade, setSelectedGrade] = useState('');
+  const [sortBy, setSortBy] = useState<'default' | 'passrate_desc' | 'grade_desc' | 'name_asc'>('default');
+  const [expandedJobsCerts, setExpandedJobsCerts] = useState<Set<string>>(new Set());
   const deferredQuery = useDeferredValue(searchQuery);
 
   const [evidence, setEvidence] = useState<EvidenceState>({
@@ -400,6 +413,7 @@ const Recommendation: React.FC = () => {
     sessionRatesData: null, sessionRatesLoading: false, sessionRatesFetched: false,
     jobLearnerItems: [], jobLearnerLoading: false, jobLearnerFetched: false,
     certJobsList: [], certJobsLoading: false, certJobsFetched: false,
+    canonicalRoles: [], relatedMajors: [],
     selectedJobName: null, jobDetailData: null, jobDetailLoading: false,
     processEvalItems: [], processEvalLoading: false, processEvalFetched: false,
   });
@@ -413,7 +427,7 @@ const Recommendation: React.FC = () => {
   const certStatsCacheRef = useRef<Record<string, CertStatsData | null>>({});
   const certExplainCacheRef = useRef<Record<string, string | null>>({});
   const jobLearnerCacheRef = useRef<Record<string, JobLearnerItem[]>>({});
-  const certJobsCacheRef = useRef<Record<string, string[]>>({});
+  const certJobsCacheRef = useRef<Record<string, { jobs: string[]; canonicalRoles: ExecState['canonicalRoles']; relatedMajors: string[] }>>({});
   const processEvalCacheRef = useRef<Record<string, Array<{ [key: string]: unknown }>>>({});
 
   useEffect(() => {
@@ -441,11 +455,18 @@ const Recommendation: React.FC = () => {
   const riskLabel = RISK_LABEL[stageParam] ?? '';
 
   const filtered = useMemo(() => {
-    return allCerts.filter(cert => {
-      if (riskId      && !cert.recommended_risk_stages.includes(riskId))  return false;
-      if (domainParam && !cert.related_domains.includes(domainParam))      return false;
-      if (jobParam    && !cert.related_jobs.includes(jobParam))            return false;
-      if (selectedGrade && cert.cert_grade_tier !== selectedGrade)         return false;
+    const base = allCerts.filter(cert => {
+      // 위험군은 항상 AND
+      if (riskId && !cert.recommended_risk_stages.includes(riskId)) return false;
+      // 도메인+직무 둘 다 지정되면 OR (로드맵과 동일 로직). 한쪽만이면 해당 조건만 AND.
+      const domainOk = !domainParam || cert.related_domains.includes(domainParam) || cert.primary_domain === domainParam;
+      const jobOk    = !jobParam    || cert.related_jobs.includes(jobParam);
+      if (domainParam && jobParam) {
+        if (!domainOk && !jobOk) return false;
+      } else {
+        if (!domainOk || !jobOk) return false;
+      }
+      if (selectedGrade && cert.cert_grade_tier !== selectedGrade) return false;
       const q = deferredQuery;
       if (q) {
         const ql = q.toLowerCase();
@@ -459,7 +480,44 @@ const Recommendation: React.FC = () => {
       }
       return true;
     });
-  }, [allCerts, riskId, domainParam, jobParam, selectedGrade, deferredQuery]);
+    // 기본 정렬: domain+job 동시 지정 시 both > domain > job 매칭 우선 노출
+    const matchRank = (cert: CertCandidate): number => {
+      if (!domainParam || !jobParam) return 0;
+      const dOk = cert.related_domains.includes(domainParam) || cert.primary_domain === domainParam;
+      const jOk = cert.related_jobs.includes(jobParam);
+      if (dOk && jOk) return 0;
+      if (dOk) return 1;
+      if (jOk) return 2;
+      return 3;
+    };
+    if (sortBy === 'default' && domainParam && jobParam) {
+      return [...base].sort((a, b) => matchRank(a) - matchRank(b));
+    }
+    // 도메인만 선택 시 주 도메인 자격증 우선, 관련 도메인 자격증 후순위
+    if (sortBy === 'default' && domainParam && !jobParam) {
+      return [...base].sort((a, b) => {
+        const aPrimary = a.primary_domain === domainParam ? 0 : 1;
+        const bPrimary = b.primary_domain === domainParam ? 0 : 1;
+        return aPrimary - bPrimary;
+      });
+    }
+    if (sortBy === 'default') return base;
+    return [...base].sort((a, b) => {
+      if (sortBy === 'passrate_desc') {
+        const ar = a.avg_pass_rate_3yr ?? -1;
+        const br = b.avg_pass_rate_3yr ?? -1;
+        return br - ar;
+      }
+      if (sortBy === 'grade_desc') {
+        const g = (t: string) => parseInt(t.charAt(0), 10) || 0;
+        return g(b.cert_grade_tier) - g(a.cert_grade_tier);
+      }
+      if (sortBy === 'name_asc') {
+        return a.cert_name.localeCompare(b.cert_name, 'ko');
+      }
+      return 0;
+    });
+  }, [allCerts, riskId, domainParam, jobParam, selectedGrade, deferredQuery, sortBy]);
 
   const featuredCert = useMemo(
     () => allCerts.find(c => c.cert_id === certIdParam) ?? null,
@@ -611,6 +669,7 @@ const Recommendation: React.FC = () => {
       ...prev, loading: true, certId, fetched: false, activeTab: 'schedule',
       jobLearnerFetched: false, jobLearnerLoading: false, jobLearnerItems: [],
       certJobsFetched: false, certJobsLoading: false, certJobsList: [],
+      canonicalRoles: [], relatedMajors: [],
       selectedJobName: null, jobDetailData: null, jobDetailLoading: false,
       processEvalFetched: false, processEvalLoading: false, processEvalItems: [],
       certInfoData: null, certInfoLoading: false, certInfoFetched: false,
@@ -769,7 +828,14 @@ const Recommendation: React.FC = () => {
   const fetchCertJobs = useCallback(async (certId: string, certName: string) => {
     const cached = certJobsCacheRef.current[certId];
     if (cached) {
-      setExec(prev => ({ ...prev, certJobsList: cached, certJobsLoading: false, certJobsFetched: true }));
+      setExec(prev => ({
+        ...prev,
+        certJobsList: cached.jobs,
+        canonicalRoles: cached.canonicalRoles,
+        relatedMajors: cached.relatedMajors,
+        certJobsLoading: false,
+        certJobsFetched: true,
+      }));
       return;
     }
     setExec(prev => ({ ...prev, certJobsLoading: true, certJobsFetched: false }));
@@ -777,11 +843,13 @@ const Recommendation: React.FC = () => {
       const res = await fetch(`/api/v1/jobs/cert-jobs/${encodeURIComponent(certName)}`);
       const json = await res.json();
       const jobs: string[] = json.success ? (json.data?.jobs ?? []) : [];
-      certJobsCacheRef.current[certId] = jobs;
-      setExec(prev => ({ ...prev, certJobsList: jobs, certJobsLoading: false, certJobsFetched: true }));
+      const canonicalRoles: ExecState['canonicalRoles'] = json.success ? (json.data?.canonical_roles ?? []) : [];
+      const relatedMajors: string[] = json.success ? (json.data?.related_majors ?? []) : [];
+      certJobsCacheRef.current[certId] = { jobs, canonicalRoles, relatedMajors };
+      setExec(prev => ({ ...prev, certJobsList: jobs, canonicalRoles, relatedMajors, certJobsLoading: false, certJobsFetched: true }));
     } catch {
-      certJobsCacheRef.current[certId] = [];
-      setExec(prev => ({ ...prev, certJobsList: [], certJobsLoading: false, certJobsFetched: true }));
+      certJobsCacheRef.current[certId] = { jobs: [], canonicalRoles: [], relatedMajors: [] };
+      setExec(prev => ({ ...prev, certJobsList: [], canonicalRoles: [], relatedMajors: [], certJobsLoading: false, certJobsFetched: true }));
     }
   }, []);
 
@@ -859,7 +927,7 @@ const Recommendation: React.FC = () => {
 
       {showEvidence && (
         <div className="modal-backdrop" onClick={() => setShowEvidence(false)} role="presentation">
-        <div className="evidence-panel modal-card card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+        <div className="evidence-modal modal-card card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
           <div className="ev-header">
             <div className="ev-header-left">
               <BookOpen size={15} style={{ color: 'var(--primary)', flexShrink: 0 }} />
@@ -867,6 +935,7 @@ const Recommendation: React.FC = () => {
             </div>
             <button className="ev-close" onClick={() => setShowEvidence(false)} aria-label="닫기"><X size={15} /></button>
           </div>
+          <div className="evidence-panel">
 
           {/* AI 추천 이유 — 패널 최상단의 핵심 결론 */}
           {certExplain.certId === evidence.certId && (certExplain.loading || certExplain.text) && (
@@ -1685,19 +1754,46 @@ const Recommendation: React.FC = () => {
                           {exec.certJobsLoading && (
                             <div className="exec-loading"><Loader2 size={14} className="ev-spin" /> 연관 직업 조회 중…</div>
                           )}
+
+                          {/* 캐노니컬 직무 역할 (cert_job_mapping 기반) */}
+                          {exec.certJobsFetched && exec.canonicalRoles.length > 0 && (() => {
+                            const groups = exec.canonicalRoles.reduce<Record<string, string[]>>((acc, r) => {
+                              (acc[r.job_top_group_name] ??= []).push(r.job_role_name);
+                              return acc;
+                            }, {});
+                            return (
+                              <div className="certinfo-block">
+                                <p className="certinfo-block-title">직무 유형 ({exec.canonicalRoles.length}개)</p>
+                                {Object.entries(groups).map(([group, roles]) => (
+                                  <div key={group} className="certinfo-role-group">
+                                    <span className="certinfo-role-group-label">{group}</span>
+                                    <div className="certinfo-job-tags" style={{ marginTop: 4 }}>
+                                      {roles.map((r, i) => (
+                                        <span key={i} className="certinfo-job-tag">{r}</span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
+
                           {exec.certJobsFetched && exec.certJobsList.length > 0 && (
                             <div className="certinfo-block">
                               <p className="certinfo-block-title">연관 직업 ({exec.certJobsList.length}개) <span className="certinfo-job-hint">직업 클릭 → 상세 보기</span></p>
                               <div className="certinfo-job-tags">
-                                {exec.certJobsList.slice(0, 18).map((job, i) => (
+                                {exec.certJobsList.slice(0, expandedJobsCerts.has(exec.certId) ? undefined : 18).map((job, i) => (
                                   <button
                                     key={i}
                                     className={`certinfo-job-tag certinfo-job-btn${exec.selectedJobName === job ? ' certinfo-job-selected' : ''}`}
                                     onClick={() => fetchJobDetail(job)}
                                   >{job}</button>
                                 ))}
-                                {exec.certJobsList.length > 18 && (
-                                  <span className="certinfo-job-tag certinfo-job-more">+{exec.certJobsList.length - 18}개</span>
+                                {!expandedJobsCerts.has(exec.certId) && exec.certJobsList.length > 18 && (
+                                  <button
+                                    className="certinfo-job-more-btn"
+                                    onClick={() => setExpandedJobsCerts(prev => new Set([...prev, exec.certId]))}
+                                  >+{exec.certJobsList.length - 18}개 더 보기</button>
                                 )}
                               </div>
                               {exec.jobDetailLoading && (
@@ -1813,6 +1909,21 @@ const Recommendation: React.FC = () => {
                               <p className="certinfo-src">고용24 · NCS</p>
                             </div>
                           )}
+
+                          {/* 연관 전공 */}
+                          {exec.certJobsFetched && exec.relatedMajors.length > 0 && (
+                            <div className="certinfo-block">
+                              <p className="certinfo-block-title">연관 전공 ({exec.relatedMajors.length}개)</p>
+                              <div className="certinfo-job-tags">
+                                {exec.relatedMajors.slice(0, 16).map((m, i) => (
+                                  <span key={i} className="certinfo-job-tag">{m}</span>
+                                ))}
+                                {exec.relatedMajors.length > 16 && (
+                                  <span className="certinfo-job-tag certinfo-job-more">+{exec.relatedMajors.length - 16}개</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )
                   }
@@ -1890,6 +2001,7 @@ const Recommendation: React.FC = () => {
               </>
             )}
           </div>
+          </div>
         </div>
         </div>
       )}
@@ -1897,8 +2009,13 @@ const Recommendation: React.FC = () => {
       <div className="card filter-card">
         <div className="search-wrapper">
           <Search size={16} className="search-icon" />
-          <input type="text" className="input search-input" placeholder="자격증명 검색…"
+          <input type="text" className="input search-input" placeholder="자격증명, 발급기관, 분야 검색…"
             value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+          {searchQuery && (
+            <button className="search-clear" onClick={() => setSearchQuery('')} aria-label="검색어 지우기">
+              <X size={14} />
+            </button>
+          )}
         </div>
         <div className="filter-row">
           <div className="filter-group">
@@ -1911,6 +2028,18 @@ const Recommendation: React.FC = () => {
                 <option value="3_기사">기사</option>
                 <option value="4_기술사">기술사</option>
                 <option value="5_기능장">기능장</option>
+              </select>
+              <ChevronDown size={14} className="select-arrow" />
+            </div>
+          </div>
+          <div className="filter-group">
+            <label className="filter-label">정렬</label>
+            <div className="select-wrap">
+              <select className="select" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
+                <option value="default">기본순</option>
+                <option value="passrate_desc">합격률 높은 순</option>
+                <option value="grade_desc">등급 높은 순</option>
+                <option value="name_asc">이름순</option>
               </select>
               <ChevronDown size={14} className="select-arrow" />
             </div>
@@ -1935,38 +2064,51 @@ const Recommendation: React.FC = () => {
           <>
             <div className="result-count-row">
               <p className="result-count">추천 자격증 <span className="count-num">{filtered.length}</span>건</p>
+              {domainParam && jobParam && (
+                <span className="result-cap-hint" style={{ background: '#f0fdf4', borderColor: 'rgba(16,185,129,.25)', color: '#065f46' }}>
+                  분야 OR 직무 합산 결과
+                </span>
+              )}
               {filtered.length > 60 && (
                 <span className="result-cap-hint">상위 60건 표시 · 검색어나 등급 필터로 좁히세요</span>
               )}
             </div>
             <div className="cert-grid-scroll">
               <div className="cert-grid">
-                {filtered.slice(0, 60).map(cert => (
-                  <CertCard
-                    key={cert.candidate_id}
-                    cert={cert}
-                    onEvidence={fetchEvidence}
-                    onDag={fetchDag}
-                    onRoadmap={goToRoadmap}
-                    isSelected={evidence.certId === cert.cert_id && showEvidence}
-                  />
-                ))}
+                {filtered.slice(0, 60).map(cert => {
+                  // domain+job 둘 다 선택 시 어느 조건으로 매칭됐는지 뱃지
+                  let matchLabel: string | null = null;
+                  const isPrimaryDomainMatch = cert.primary_domain === domainParam;
+                  const isRelatedDomainMatch = !isPrimaryDomainMatch && cert.related_domains.includes(domainParam ?? '');
+                  if (domainParam && jobParam) {
+                    const dOk = isPrimaryDomainMatch || isRelatedDomainMatch;
+                    const jOk = cert.related_jobs.includes(jobParam);
+                    if (!dOk && jOk) matchLabel = jobName || jobParam;
+                    else if (dOk && !jOk) matchLabel = domainName || domainParam;
+                    // dOk && jOk → both match, no label needed
+                  } else if (domainParam && isRelatedDomainMatch) {
+                    // 교차 도메인 확장으로 표시된 자격증
+                    matchLabel = '관련 분야';
+                  }
+                  return (
+                    <CertCard
+                      key={cert.candidate_id}
+                      cert={cert}
+                      onEvidence={fetchEvidence}
+                      onDag={fetchDag}
+                      onRoadmap={goToRoadmap}
+                      isSelected={evidence.certId === cert.cert_id && showEvidence}
+                      matchLabel={matchLabel}
+                      isCrossDomain={isRelatedDomainMatch}
+                    />
+                  );
+                })}
                 {filtered.length === 0 && (
                   <div className="no-results">
-                    {jobParam && domainParam ? (
-                      <>
-                        <p className="no-results-title">"{domainName}" 분야와 "{jobName}" 직무가 겹치는 자격증이 없습니다.</p>
-                        <p className="no-results-sub">
-                          선택한 도메인과 직무가 서로 다른 분야에 속해 있을 수 있습니다.<br />
-                          직무 선택 없이 도메인만으로 다시 검색해보세요.
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="no-results-title">조건에 맞는 자격증이 없습니다.</p>
-                        <p className="no-results-sub">검색어나 등급 필터를 바꿔보세요.</p>
-                      </>
-                    )}
+                    <>
+                      <p className="no-results-title">조건에 맞는 자격증이 없습니다.</p>
+                      <p className="no-results-sub">검색어나 등급 필터를 바꿔보세요.</p>
+                    </>
                   </div>
                 )}
               </div>
@@ -1994,9 +2136,9 @@ const Recommendation: React.FC = () => {
           background:rgba(15,23,42,.55);
           backdrop-filter:blur(2px);
           -webkit-backdrop-filter:blur(2px);
-          display:flex;align-items:flex-start;justify-content:center;
-          padding:4vh 1rem;
-          overflow-y:auto;
+          display:flex;align-items:center;justify-content:center;
+          padding:2vh 1rem;
+          overflow:hidden;
           animation:modal-fade-in .18s ease-out;
         }
         @keyframes modal-fade-in{from{opacity:0}to{opacity:1}}
@@ -2008,7 +2150,24 @@ const Recommendation: React.FC = () => {
           from{opacity:0;transform:translateY(12px) scale(.98)}
           to{opacity:1;transform:translateY(0) scale(1)}
         }
-        .evidence-panel{padding:1.25rem;display:flex;flex-direction:column;gap:.875rem;border-left:3px solid var(--primary)}
+        .evidence-modal{
+          max-height:90vh;display:flex;flex-direction:column;overflow:hidden;
+          border-left:3px solid var(--primary);
+        }
+        .ev-header{
+          display:flex;align-items:center;justify-content:space-between;gap:.75rem;
+          flex-shrink:0;padding:.875rem 1.25rem;
+          border-bottom:1px solid var(--border);
+          background:var(--surface);
+          border-radius:var(--radius-md) var(--radius-md) 0 0;
+        }
+        .evidence-panel{
+          flex:1;overflow-y:auto;padding:1.25rem;
+          display:flex;flex-direction:column;gap:.875rem;
+          scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;
+        }
+        .evidence-panel::-webkit-scrollbar{width:5px}
+        .evidence-panel::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:99px}
 
         /* 모달 안 영상 섹션 */
         .modal-videos-section{margin-top:.25rem;padding-top:1rem;border-top:1px dashed var(--border);display:flex;flex-direction:column;gap:.75rem}
@@ -2027,7 +2186,6 @@ const Recommendation: React.FC = () => {
         .btn-videos-cta:hover .btn-videos-hint{opacity:1}
         .modal-videos-header{display:flex;align-items:center;gap:.45rem}
         .modal-videos-title{font-size:.85rem;font-weight:700;color:var(--text)}
-        .ev-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem}
         .ev-header-left{display:flex;align-items:center;gap:.5rem;flex:1;min-width:0}
         .ev-title{font-size:.875rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .ev-close{background:none;border:none;cursor:pointer;color:var(--text-light);padding:.2rem;flex-shrink:0;transition:color .15s}
@@ -2061,6 +2219,10 @@ const Recommendation: React.FC = () => {
         .ev-link{display:inline-flex;align-items:center;gap:.25rem;font-size:.75rem;color:var(--secondary);text-decoration:none;margin-left:auto}
         .ev-link:hover{text-decoration:underline}
         .ev-snippet{font-size:.855rem;color:var(--text-muted);line-height:1.7;border-left:3px solid var(--primary-light);padding-left:.75rem}
+        .cert-match-tag{margin-left:auto;padding:.1rem .45rem;background:#f0fdf4;border:1px solid rgba(16,185,129,.3);border-radius:var(--radius-xs);font-size:.62rem;font-weight:700;color:#065f46;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px}
+        .cert-match-tag[data-cross="true"]{background:#eff6ff;border-color:rgba(37,99,235,.25);color:var(--primary)}
+        .search-clear{position:absolute;right:.5rem;background:none;border:none;cursor:pointer;color:var(--text-light);display:flex;align-items:center;padding:.25rem;transition:color .15s;border-radius:var(--radius-xs)}
+        .search-clear:hover{color:var(--danger)}
         .filter-card{padding:1.25rem;display:flex;flex-direction:column;gap:.875rem}
         .filter-row{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end}
         .filter-group{display:flex;flex-direction:column;gap:.375rem}
@@ -2300,6 +2462,8 @@ const Recommendation: React.FC = () => {
         .certinfo-job-btn:hover{background:#0369a1;color:#fff;border-color:#0369a1}
         .certinfo-job-selected{background:#0369a1!important;color:#fff!important;border-color:#0369a1!important}
         .certinfo-job-more{background:#f8fafc;border-color:#e2e8f0;color:#64748b}
+        .certinfo-job-more-btn{padding:.2rem .75rem;background:#f8fafc;border:1.5px dashed #94a3b8;border-radius:99px;font-size:.75rem;color:#64748b;cursor:pointer;transition:all .15s;font-weight:600}
+        .certinfo-job-more-btn:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary)}
         .certinfo-job-hint{font-size:.62rem;font-weight:500;color:#94a3b8;text-transform:none;letter-spacing:0}
         .jd-scores{display:flex;flex-direction:column;gap:.25rem;background:#e0f2fe;border-radius:6px;padding:.5rem .625rem;margin-bottom:.25rem}
         .jd-score-item{display:grid;grid-template-columns:60px 1fr 24px;align-items:center;gap:.35rem}

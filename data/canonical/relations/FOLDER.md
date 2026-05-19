@@ -25,6 +25,7 @@
 | 파일 | 행 수 | 상태 | 생성 스크립트 |
 |---|---|---|---|
 | `cert_domain_mapping.csv` | 1,290 | ✅ | `scripts/build_cert_domain_mapping.py` |
+| `domain_adjacency.csv` | 18 | ✅ 교차 도메인 확장 규칙 (IT/의료/관광/디자인/금융/기계/환경 8클러스터) | 수동 작성; `scripts/build_frontend_data.py`가 runtime 로드 |
 | `cert_to_roadmap_stage.csv` | 1,290 | ✅ | `scripts/build_all_relations.py` |
 | `cert_prerequisite.csv` | 775 | ✅ cross-domain 이슈 해소 (subject_prefix 그룹, prefix+suffix union-find) | `scripts/build_cert_prerequisite.py` |
 | `cert_ncs_mapping.csv` | 3,573 | ✅ cert 57.6% / ncs 95.0% | `scripts/build_all_relations.py` |
