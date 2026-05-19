@@ -1,5 +1,5 @@
 # File: goms_service.py
-# Last Updated: 2026-05-15
+# Last Updated: 2026-05-19
 # Content Hash: SHA256:TBD
 # Role: GOMS 분석 기반 자격증-직무-전공 연결 서비스
 #
@@ -242,18 +242,9 @@ def _build_major_to_certs_ncs_index() -> dict[str, list[str]]:
 def get_cert_job_connections(cert_name: str) -> list[str]:
     """
     자격증 이름 → 연관 직업명 목록.
-    job_raw_merged (완전 일치) + ncs_mapping (완전 일치) 결합.
+    job_raw_merged 기준. ncs_mapping 직업 필드는 도메인 혼합이 심해 제외.
     """
-    jobs_merged = _build_cert_to_jobs_index().get(cert_name, [])
-    jobs_ncs = _build_cert_to_jobs_ncs_index().get(cert_name, [])
-    # deduplicate, preserve order
-    seen: set[str] = set()
-    result: list[str] = []
-    for job in jobs_merged + jobs_ncs:
-        if job not in seen:
-            seen.add(job)
-            result.append(job)
-    return result
+    return list(_build_cert_to_jobs_index().get(cert_name, []))
 
 
 def get_major_cert_suggestions(major_name: str) -> list[str]:
@@ -350,7 +341,7 @@ def get_cert_jobs_envelope(cert_name: str) -> dict[str, Any]:
         "cert_name": name,
         "jobs":      jobs_all,
         "total":     len(jobs_all),
-        "sources":   ["job_raw_merged", "ncs_mapping", "worknet_data_jobs"],
+        "sources":   ["job_raw_merged", "worknet_data_jobs"],
     })
 
 

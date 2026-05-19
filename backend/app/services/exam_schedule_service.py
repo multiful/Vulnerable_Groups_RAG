@@ -140,6 +140,7 @@ def _format_schedule_item(item: dict[str, Any]) -> dict[str, Any]:
         "impl_year":     item.get("implYy"),
         "impl_seq":      item.get("implSeq"),
         "description":   item.get("description", ""),
+        "impl_seq_name": item.get("description", ""),  # frontend compat alias
         # 필기 일정 (없으면 null)
         "written": {
             "registration_start": doc_reg_s or None,
