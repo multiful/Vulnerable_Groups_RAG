@@ -39,6 +39,7 @@ FastAPI 라우트 핸들러를 모듈별로 둔다. 각 파일은 `APIRouter`를
 | `training.py` | `GET /api/v1/training/courses`, `GET /api/v1/training/courses/by-cert/{cert_id}`, `GET /api/v1/training/process-eval` | ✅ |
 | `seoul.py` | `GET /api/v1/seoul/job-cafes`, `GET /api/v1/seoul/health-centers`, `GET /api/v1/seoul/reservations` | ✅ |
 | `action.py` | `GET /api/v1/actions/today` | ✅ |
+| `support.py` | `GET /api/v1/support/bundle` | ✅ |
 | `map.py` | `GET /api/v1/map/infra` | ✅ |
 | `jobs_info.py` | `GET /api/v1/jobs/cert-jobs/{cert_name}`, `GET /api/v1/jobs/info/{job_name}`, `GET /api/v1/jobs/major-certs/{major_name}` | ✅ |
 | `career_net.py` | `GET /api/v1/career-net/jobs`, `GET /api/v1/career-net/jobs/{seq}`, `GET /api/v1/career-net/majors` | ✅ |
@@ -57,12 +58,13 @@ FastAPI 라우트 핸들러를 모듈별로 둔다. 각 파일은 `APIRouter`를
 | 훈련과정 (Work24) | 3 |
 | 서울시 공공데이터 | 3 |
 | 오늘의 행동 | 1 |
+| 취업지원 번들 | 1 |
 | 기타 (health, admin) | 3 |
 | GOMS/NCS 직업정보 | 3 |
 | 커리어넷 직업/학과 | 3 |
 | Q-Net 자격/시험 상세 | 3 |
 | NCS 능력단위 조회 | 2 |
-| **합계** | **34** |
+| **합계** | **35** |
 
 ---
 

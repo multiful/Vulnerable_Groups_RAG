@@ -1,7 +1,7 @@
 # API_SPEC.md
 
 > **파일명**: API_SPEC.md  
-> **최종 수정일**: 2026-05-14  
+> **최종 수정일**: 2026-05-25  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: API 계약, request/response, 오류 형식 정의 문서  
 > **문서 우선순위**: 6  
@@ -168,6 +168,7 @@ application/json
 | F-17 | GET | `/seoul/health-centers` | **활성** | 서울시 건강증진센터 |
 | F-18 | GET | `/seoul/reservations` | **활성** | 서울시 공공서비스 예약 |
 | F-19 | GET | `/actions/today` | **활성** | 오늘의 한 가지 행동 추천 |
+| F-17 | GET | `/support/bundle` | **활성** | 취업지원 자원 번들 조회 |
 
 ---
 
@@ -736,6 +737,105 @@ WorkNet 실시간 채용정보 목록 조회.
 
 ---
 
+## 8.10 GET /support/bundle
+
+### 목적
+위험군 단계와 관심 도메인·직무를 기반으로 취업지원 자원(채용정보·훈련과정·일자리카페·과정평가형)을 번들로 조회한다. Step 3 로드맵 화면에서 자격증 추천과 함께 시각적으로 구분된 섹션으로 표시된다.
+
+### Query Parameters
+| 필드명 | 필수 | 타입 | 설명 |
+|---|---:|---|---|
+| `risk_stage_id` | Y | string | 위험군 단계 ID (예: `risk_0004`) |
+| `domain_id` | N | string | 관심 도메인 ID (예: `domain_0001`) |
+| `job_ids` | N | string | 관심 직무 ID 쉼표 구분 (예: `job_0001,job_0002`) |
+| `cert_ids` | N | string | 연결 자격증 ID 쉼표 구분 (NCS 파생 활용) |
+| `region` | N | string | 지역명 (예: `서울`) |
+
+### 위험군별 활성 자원 유형
+| 위험군 단계 | 지원 수준 | 활성 자원 |
+|---|---|---|
+| 1단계 | `partial` | `hiring` |
+| 2~3단계 | `standard` | `hiring`, `training` |
+| 4~5단계 | `full` | `hiring`, `training`, `job_cafe`, `process_eval` |
+
+### Response Body 예시
+```json
+{
+  "success": true,
+  "data": {
+    "risk_stage_id": "risk_0004",
+    "support_level": "full",
+    "resource_types": ["hiring", "training", "job_cafe", "process_eval"],
+    "bundles": [
+      {
+        "resource_type": "hiring",
+        "label": "채용정보",
+        "color_theme": "teal",
+        "count": 5,
+        "items": [
+          {
+            "title": "데이터 분석가 모집",
+            "company": "(주)테크컴퍼니",
+            "employment_type": "정규직",
+            "close_date": "20260610",
+            "url": "https://www.work.go.kr/..."
+          }
+        ]
+      },
+      {
+        "resource_type": "training",
+        "label": "훈련과정",
+        "color_theme": "teal",
+        "count": 3,
+        "items": [
+          {
+            "course_name": "빅데이터 분석 국민내일배움카드 과정",
+            "institution_name": "○○직업전문학교",
+            "train_start": "20260601",
+            "train_end": "20260831",
+            "cost": "0",
+            "employment_rate": "72.3",
+            "course_url": "https://..."
+          }
+        ]
+      },
+      {
+        "resource_type": "job_cafe",
+        "label": "일자리카페",
+        "color_theme": "teal",
+        "count": 2,
+        "items": [
+          {
+            "name": "강남 일자리카페",
+            "address": "서울특별시 강남구 ...",
+            "tel": "02-000-0000"
+          }
+        ]
+      },
+      {
+        "resource_type": "process_eval",
+        "label": "과정평가형 자격",
+        "color_theme": "teal",
+        "count": 1,
+        "items": []
+      }
+    ]
+  },
+  "meta": {
+    "request_id": "req_sb_001",
+    "version": "v1"
+  },
+  "error": null
+}
+```
+
+### 주요 오류
+- `MISSING_REQUIRED_FIELD` — `risk_stage_id` 없을 때
+- `INVALID_INPUT` — 허용 범위 밖 `risk_stage_id`
+- 개별 자원 조회 실패는 오류로 처리하지 않고 해당 번들 `items: []` + `error` 필드로 반환
+
+---
+
 ## 9. reserved Endpoint (현재 없음)
 
 기존 reserved 상태의 `/schedules/*`, `/links/*` endpoint는 모두 활성화되었다.
@@ -789,9 +889,9 @@ WorkNet 실시간 채용정보 목록 조회.
 
 이 문서는 프론트엔드와 백엔드 사이의 API 계약을 정의한다.
 
-현재 활성 API는 총 24개이며, 크게 아래 5개 영역으로 구분된다.
+현재 활성 API는 총 25개이며, 크게 아래 5개 영역으로 구분된다.
 
-1. **추천/로드맵 사용자 흐름** — `/recommendations`, `/roadmaps`, `/actions/today`
+1. **추천/로드맵 사용자 흐름** — `/recommendations`, `/roadmaps`, `/actions/today`, `/support/bundle`
 2. **실행 레이어** — `/schedules/*`, `/jobs/*`, `/training/*`, `/seoul/*`
 3. **설명 근거** — `/recommendations/evidence`, `/certs/{id}/videos`
 4. **Canonical data 관리** — `/admin/*`

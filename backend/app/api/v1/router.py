@@ -23,6 +23,7 @@ from backend.app.api.v1.routes import (
     roadmap,
     schedule,
     seoul,
+    support,
     training,
 )
 
@@ -44,3 +45,4 @@ api_router.include_router(career_net.router, tags=["career_net"])
 api_router.include_router(cert_info.router, tags=["cert_info"])
 api_router.include_router(ncs.router, tags=["ncs"])
 api_router.include_router(chat.router, tags=["chat"])
+api_router.include_router(support.router, tags=["support"])

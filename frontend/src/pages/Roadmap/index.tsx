@@ -167,6 +167,49 @@ function achievabilityColor(a: string): string {
   return a === 'immediate' ? '#10b981' : a === 'near_term' ? '#0ea5e9' : '#f59e0b';
 }
 
+/* ── Support Bundle Types ── */
+interface SupportItem {
+  // hiring
+  title?: string; company?: string; employment_type?: string; close_date?: string; url?: string;
+  // training
+  course_name?: string; institution_name?: string; train_start?: string; train_end?: string;
+  cost?: string; employment_rate?: string; course_url?: string;
+  // job_cafe
+  name?: string; address?: string; gu?: string; phone?: string; open_hours?: string; services?: string; homepage?: string;
+  // process_eval
+  label?: string; link_label?: string;
+  [key: string]: string | undefined;
+}
+
+interface SupportBundleEntry {
+  resource_type: 'hiring' | 'training' | 'job_cafe' | 'process_eval';
+  label: string;
+  color_theme: string;
+  count: number;
+  items: SupportItem[];
+  error?: string;
+}
+
+interface SupportBundle {
+  risk_stage_id: string;
+  support_level: 'partial' | 'standard' | 'full';
+  resource_types: string[];
+  bundles: SupportBundleEntry[];
+}
+
+const SUPPORT_LEVEL_LABEL: Record<string, string> = {
+  partial:  '취업 정보 일부 지원',
+  standard: '역량 강화 지원',
+  full:     '취업지원 다지원',
+};
+
+const SUPPORT_RESOURCE_ICON: Record<string, string> = {
+  hiring:       '💼',
+  training:     '🎓',
+  job_cafe:     '📍',
+  process_eval: '✅',
+};
+
 const RISK_LABELS: Record<string, string> = {
   '1': '1단계 (취업 안정권)', '2': '2단계 (준비 활성)',
   '3': '3단계 (준비 정체)',   '4': '4단계 (고위험군)',
@@ -329,6 +372,9 @@ const Roadmap: React.FC = () => {
 
   const [todayAction, setTodayAction]           = useState<TodayActionData | null>(null);
   const [todayActionLoading, setTodayActionLoading] = useState(false);
+
+  const [supportBundle, setSupportBundle]           = useState<SupportBundle | null>(null);
+  const [supportExpanded, setSupportExpanded]       = useState<Record<string, boolean>>({});
 
   // 탭: 'base' | 'ai'
   const [activeTab, setActiveTab] = useState<'base' | 'ai'>('base');
@@ -523,6 +569,21 @@ const Roadmap: React.FC = () => {
     }
   }, [riskId]);
 
+  const fetchSupportBundle = useCallback(async (certIds: string[]) => {
+    if (!riskId) return;
+    try {
+      const params = new URLSearchParams({ risk_stage_id: riskId });
+      if (domainParam) params.set('domain_id', domainParam);
+      if (domainName)  params.set('domain_name', domainName);
+      if (jobParam)    params.set('job_ids', jobParam);
+      if (jobName)     params.set('job_names', jobName);
+      if (certIds.length > 0) params.set('cert_ids', certIds.slice(0, 5).join(','));
+      const res = await fetch(`/api/v1/support/bundle?${params.toString()}`);
+      const json = await res.json();
+      if (json.success && json.data) setSupportBundle(json.data as SupportBundle);
+    } catch { /* silent — support bundle은 핵심 흐름에 영향 없음 */ }
+  }, [riskId, domainParam, domainName, jobParam, jobName]);
+
   useEffect(() => {
     fetchRoadmap();
     return () => { roadmapAbortRef.current?.abort(); };
@@ -532,6 +593,7 @@ const Roadmap: React.FC = () => {
     if (!data || !riskId) return;
     const certIds = (data.roadmap_sequence ?? []).slice(0, 3).map(c => c.cert_id);
     fetchTodayAction(certIds);
+    fetchSupportBundle(certIds);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, riskId]);
 
@@ -1238,6 +1300,121 @@ const Roadmap: React.FC = () => {
       </div>
       )}
 
+      {/* 취업지원 자원 번들 */}
+      {supportBundle && supportBundle.bundles.length > 0 && (
+        <div className="rm-support-wrap">
+          <div className="rm-support-header">
+            <div className="rm-support-title-row">
+              <span className="rm-support-icon">🤝</span>
+              <h2 className="rm-support-title">취업지원 자원</h2>
+              <span className="rm-support-level-badge">{SUPPORT_LEVEL_LABEL[supportBundle.support_level] ?? ''}</span>
+            </div>
+            <p className="rm-support-desc">
+              위험군 단계에 맞춰 자격증 공부와 함께 활용할 수 있는 지원 자원입니다.
+            </p>
+          </div>
+          <div className="rm-support-bundles">
+            {supportBundle.bundles.map(bundle => {
+              const isExp = !!supportExpanded[bundle.resource_type];
+              const PREVIEW = 3;
+              const shown  = isExp ? bundle.items : bundle.items.slice(0, PREVIEW);
+              const extra  = bundle.items.length - PREVIEW;
+              return (
+                <div key={bundle.resource_type} className="rm-support-bundle">
+                  <div className="rm-support-bundle-header">
+                    <span className="rm-support-bundle-icon">{SUPPORT_RESOURCE_ICON[bundle.resource_type] ?? '📌'}</span>
+                    <span className="rm-support-bundle-label">{bundle.label}</span>
+                    {bundle.count > 0 && (
+                      <span className="rm-support-bundle-count">{bundle.count}건</span>
+                    )}
+                  </div>
+                  {bundle.error && bundle.items.length === 0 ? (
+                    <p className="rm-support-unavailable">{bundle.error}</p>
+                  ) : bundle.items.length === 0 ? (
+                    <p className="rm-support-unavailable">조회 결과가 없습니다.</p>
+                  ) : (
+                    <>
+                      <div className="rm-support-items">
+                        {shown.map((item, i) => {
+                          if (bundle.resource_type === 'hiring') return (
+                            <a key={i} className="rm-support-item rm-support-item-link"
+                               href={item.url || '#'} target="_blank" rel="noopener noreferrer">
+                              <div className="rm-support-item-main">
+                                <span className="rm-support-item-title">{item.title || '채용공고'}</span>
+                                {item.company && <span className="rm-support-item-sub">{item.company}</span>}
+                              </div>
+                              <div className="rm-support-item-meta">
+                                {item.employment_type && <span className="rm-support-tag">{item.employment_type}</span>}
+                                {item.close_date && (
+                                  <span className="rm-support-tag rm-support-tag-date">
+                                    ~{item.close_date.slice(0, 4)}.{item.close_date.slice(4, 6)}.{item.close_date.slice(6, 8)}
+                                  </span>
+                                )}
+                              </div>
+                            </a>
+                          );
+                          if (bundle.resource_type === 'training') return (
+                            <a key={i} className="rm-support-item rm-support-item-link"
+                               href={item.course_url || '#'} target="_blank" rel="noopener noreferrer">
+                              <div className="rm-support-item-main">
+                                <span className="rm-support-item-title">{item.course_name || '훈련과정'}</span>
+                                {item.institution_name && <span className="rm-support-item-sub">{item.institution_name}</span>}
+                              </div>
+                              <div className="rm-support-item-meta">
+                                {item.cost === '0' && <span className="rm-support-tag rm-support-tag-free">무료</span>}
+                                {item.employment_rate && (
+                                  <span className="rm-support-tag">취업률 {parseFloat(item.employment_rate).toFixed(0)}%</span>
+                                )}
+                              </div>
+                            </a>
+                          );
+                          if (bundle.resource_type === 'job_cafe') return (
+                            <div key={i} className="rm-support-item">
+                              <div className="rm-support-item-main">
+                                <span className="rm-support-item-title">{item.name || '일자리카페'}</span>
+                                {item.address && <span className="rm-support-item-sub">{item.address}</span>}
+                              </div>
+                              <div className="rm-support-item-meta">
+                                {item.gu && <span className="rm-support-tag">{item.gu}</span>}
+                                {item.phone && <span className="rm-support-tag">{item.phone}</span>}
+                              </div>
+                            </div>
+                          );
+                          if (bundle.resource_type === 'process_eval') return (
+                            <a key={i} className="rm-support-item rm-support-item-link"
+                               href={item.url || '#'} target="_blank" rel="noopener noreferrer">
+                              <div className="rm-support-item-main">
+                                <span className="rm-support-item-title">{item.label || '과정평가형 자격'}</span>
+                                <span className="rm-support-item-sub">시험 없이 교육 이수로 취득 가능</span>
+                              </div>
+                              {item.link_label && (
+                                <span className="rm-support-tag rm-support-tag-link">{item.link_label} →</span>
+                              )}
+                            </a>
+                          );
+                          return null;
+                        })}
+                      </div>
+                      {extra > 0 && (
+                        <button
+                          className="rm-support-expand-btn"
+                          onClick={() => setSupportExpanded(prev => ({ ...prev, [bundle.resource_type]: !isExp }))}
+                          type="button"
+                        >
+                          {isExp
+                            ? <><ChevronUp size={12} /> 접기</>
+                            : <><ChevronDown size={12} /> {extra}개 더 보기</>}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="rm-footer">
         <button className="btn-ghost" onClick={() => navigate(-1)}>
@@ -1634,6 +1811,98 @@ const Roadmap: React.FC = () => {
           cursor: pointer; transition: all .15s;
         }
         .rm-today-cta:hover { background: var(--primary-light); border-color: var(--primary); }
+
+        /* ── Support Bundle ── */
+        .rm-support-wrap {
+          display: flex; flex-direction: column; gap: 1rem;
+          background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+          border: 1px solid rgba(20,184,166,.28);
+          border-radius: var(--radius-sm); padding: 1.25rem 1.5rem;
+        }
+        .rm-support-header { display: flex; flex-direction: column; gap: .35rem; }
+        .rm-support-title-row {
+          display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+        }
+        .rm-support-icon { font-size: 1.05rem; }
+        .rm-support-title {
+          font-size: .95rem; font-weight: 800; color: #0f766e; margin: 0;
+        }
+        .rm-support-level-badge {
+          font-size: .65rem; font-weight: 700; letter-spacing: .06em;
+          background: rgba(20,184,166,.15); color: #0f766e;
+          padding: .15rem .55rem; border-radius: var(--radius-full);
+        }
+        .rm-support-desc {
+          font-size: .79rem; color: #0f766e; margin: 0; opacity: .8;
+        }
+        .rm-support-bundles {
+          display: flex; flex-direction: column; gap: .75rem;
+        }
+        .rm-support-bundle {
+          background: rgba(255,255,255,.7); border: 1px solid rgba(20,184,166,.2);
+          border-radius: var(--radius-xs); padding: .85rem 1rem;
+          display: flex; flex-direction: column; gap: .6rem;
+        }
+        .rm-support-bundle-header {
+          display: flex; align-items: center; gap: .5rem;
+        }
+        .rm-support-bundle-icon { font-size: .95rem; }
+        .rm-support-bundle-label {
+          font-size: .82rem; font-weight: 700; color: #0f766e;
+        }
+        .rm-support-bundle-count {
+          font-size: .7rem; font-weight: 600; color: #0f766e;
+          background: rgba(20,184,166,.12); padding: .1rem .45rem;
+          border-radius: var(--radius-full); margin-left: auto;
+        }
+        .rm-support-items { display: flex; flex-direction: column; gap: .5rem; }
+        .rm-support-item {
+          display: flex; align-items: flex-start; justify-content: space-between;
+          gap: .5rem; padding: .55rem .75rem;
+          background: var(--surface); border: 1px solid rgba(20,184,166,.15);
+          border-radius: var(--radius-xs); flex-wrap: wrap;
+        }
+        .rm-support-item-link {
+          text-decoration: none; cursor: pointer;
+          transition: border-color .15s, background .15s;
+        }
+        .rm-support-item-link:hover {
+          border-color: rgba(20,184,166,.4); background: #f0fdfa;
+        }
+        .rm-support-item-main {
+          display: flex; flex-direction: column; gap: .2rem; flex: 1; min-width: 0;
+        }
+        .rm-support-item-title {
+          font-size: .82rem; font-weight: 600; color: var(--text);
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .rm-support-item-sub {
+          font-size: .73rem; color: var(--text-muted);
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .rm-support-item-meta {
+          display: flex; gap: .35rem; flex-wrap: wrap; align-items: center; flex-shrink: 0;
+        }
+        .rm-support-tag {
+          font-size: .67rem; font-weight: 600;
+          background: rgba(20,184,166,.1); color: #0f766e;
+          padding: .1rem .45rem; border-radius: var(--radius-full);
+          white-space: nowrap;
+        }
+        .rm-support-tag-free { background: rgba(16,185,129,.15); color: #047857; }
+        .rm-support-tag-date { background: rgba(99,102,241,.1); color: #4338ca; }
+        .rm-support-tag-link { background: rgba(20,184,166,.15); color: #0f766e; cursor: pointer; }
+        .rm-support-unavailable {
+          font-size: .78rem; color: var(--text-muted); font-style: italic; margin: 0;
+        }
+        .rm-support-expand-btn {
+          font-size: .75rem; font-weight: 600; color: #0f766e;
+          background: none; border: 1px solid rgba(20,184,166,.3);
+          border-radius: var(--radius-xs); padding: .25rem .75rem;
+          cursor: pointer; display: inline-flex; align-items: center; gap: .35rem;
+          align-self: flex-start; transition: all .15s;
+        }
+        .rm-support-expand-btn:hover { background: rgba(20,184,166,.08); }
       `}</style>
     </div>
   );
