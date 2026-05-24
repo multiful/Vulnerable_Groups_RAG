@@ -50,11 +50,15 @@ def _cache_set(key: str, value: Any) -> None:
 
 def _build_qnet_url(base: str, api_key_in: str, extra: dict[str, str]) -> str:
     """
-    hrdkorea_api_key_in(이미 URL-인코딩된 키)를 URL에 직접 삽입하고
-    나머지 파라미터는 별도 인코딩. httpx params dict로 넘기면 이중 인코딩 발생.
+    serviceKey를 URL에 삽입. 이미 URL-인코딩된 키와 raw 키 모두 처리:
+    decode → encode 단계로 이중 인코딩을 방지하면서 항상 올바른 인코딩 보장.
     """
+    try:
+        key = urllib.parse.quote(urllib.parse.unquote(api_key_in), safe='')
+    except Exception:
+        key = api_key_in
     qs = "&".join(f"{k}={urllib.parse.quote(str(v), safe='')}" for k, v in extra.items())
-    return f"{base}?serviceKey={api_key_in}&{qs}"
+    return f"{base}?serviceKey={key}&{qs}"
 
 
 def _qnet_links(cert_name: str) -> dict[str, str]:
@@ -257,7 +261,10 @@ def get_exam_schedule(cert_id: str, settings: Settings) -> dict:
             **links,
         })
 
+    # hrdkorea_api_key_in(URL-인코딩 키) 우선, 없으면 hrdkorea_api_key_de(raw 키)를 인코딩해서 사용
     api_key = settings.hrdkorea_api_key_in
+    if not api_key and settings.hrdkorea_api_key_de:
+        api_key = urllib.parse.quote(settings.hrdkorea_api_key_de, safe='')
     if not api_key:
         return _fallback("key_missing")
 
@@ -340,6 +347,8 @@ def get_professional_exam_schedule(
     의사·변호사·건축사 등 국가전문자격 시험일정 조회.
     """
     api_key = settings.hrdkorea_api_key_in
+    if not api_key and settings.hrdkorea_api_key_de:
+        api_key = urllib.parse.quote(settings.hrdkorea_api_key_de, safe='')
     if not api_key:
         return err_envelope(
             "API_KEY_MISSING",

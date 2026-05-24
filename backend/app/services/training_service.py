@@ -202,6 +202,16 @@ def get_training_courses(
 
     courses = [_normalize_training_course(c) for c in raw_courses]
 
+    # 동일 과정이 회차별로 중복 조회되는 경우 제거 (course_name + institution_name 기준)
+    seen: set[tuple[str, str]] = set()
+    unique_courses: list[dict[str, Any]] = []
+    for c in courses:
+        key = (c.get("course_name") or "", c.get("institution_name") or "")
+        if key not in seen:
+            seen.add(key)
+            unique_courses.append(c)
+    courses = unique_courses
+
     result = ok_envelope({
         "query": {
             "region":       region,

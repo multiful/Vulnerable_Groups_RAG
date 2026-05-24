@@ -133,6 +133,19 @@ function gradeColor(tier: string): string {
   return '#94a3b8';
 }
 
+function fmtDate(s: string | null): string {
+  if (!s) return '';
+  const c = s.replace(/-/g, '');
+  if (c.length === 8) return `${c.slice(0,4)}.${c.slice(4,6)}.${c.slice(6,8)}`;
+  return s;
+}
+function fmtDateRange(start: string | null, end: string | null): string {
+  if (!start) return '';
+  const s = fmtDate(start);
+  const e = end && end !== start ? ` ~ ${fmtDate(end)}` : '';
+  return `${s}${e}`;
+}
+
 interface EvidenceRow {
   doc_id: string;
   chunk_id: string;
@@ -185,6 +198,15 @@ interface VideosState {
   cacheHit: boolean;
 }
 
+interface ExamSubItem {
+  registration_start: string | null;
+  registration_end: string | null;
+  exam_start: string | null;
+  exam_end: string | null;
+  pass_announce_date: string | null;
+  d_day_exam: number | null;
+  d_day_registration: number | null;
+}
 interface ExamItem {
   impl_seq_name: string | null;
   registration_start: string | null;
@@ -194,6 +216,8 @@ interface ExamItem {
   pass_announce_date: string | null;
   d_day_exam: number | null;
   d_day_registration: number | null;
+  written?: ExamSubItem | null;
+  practical?: ExamSubItem | null;
 }
 interface CertStatsData {
   written_avg_pass_rate: number | null;
@@ -246,6 +270,7 @@ interface SessionRatesData {
 interface ExecState {
   loading: boolean;
   schedule: ExamItem[];
+  scheduleApiStatus: 'ok' | 'unavailable' | 'key_missing' | null;
   hiringTotal: number;
   hiringItems: Array<{ title: string; company: string; url: string; close_date: string }>;
   trainingTotal: number;
@@ -406,7 +431,7 @@ const Recommendation: React.FC = () => {
   }>({ loading: false, text: null, certId: '', error: null });
 
   const [exec, setExec] = useState<ExecState>({
-    loading: false, schedule: [], hiringTotal: 0, hiringItems: [],
+    loading: false, schedule: [], scheduleApiStatus: null, hiringTotal: 0, hiringItems: [],
     trainingTotal: 0, trainingItems: [], certId: '', fetched: false, activeTab: 'schedule',
     certInfoData: null, certInfoLoading: false, certInfoFetched: false,
     certStatsData: null, certStatsLoading: false, certStatsFetched: false,
@@ -422,7 +447,7 @@ const Recommendation: React.FC = () => {
   const [, startTransition] = useTransition();
   const evidenceCacheRef = useRef<Record<string, EvidenceRow[]>>({});
   const dagCacheRef = useRef<Record<string, { predecessors: RelatedCert[]; successors: RelatedCert[] }>>({});
-  const execCacheRef = useRef<Record<string, Pick<ExecState, 'schedule' | 'hiringTotal' | 'hiringItems' | 'trainingTotal' | 'trainingItems'>>>({});
+  const execCacheRef = useRef<Record<string, Pick<ExecState, 'schedule' | 'scheduleApiStatus' | 'hiringTotal' | 'hiringItems' | 'trainingTotal' | 'trainingItems'>>>({});
   const certInfoCacheRef = useRef<Record<string, CertInfoData | null>>({});
   const certStatsCacheRef = useRef<Record<string, CertStatsData | null>>({});
   const certExplainCacheRef = useRef<Record<string, string | null>>({});
@@ -667,6 +692,7 @@ const Recommendation: React.FC = () => {
     }
     setExec(prev => ({
       ...prev, loading: true, certId, fetched: false, activeTab: 'schedule',
+      scheduleApiStatus: null,
       jobLearnerFetched: false, jobLearnerLoading: false, jobLearnerItems: [],
       certJobsFetched: false, certJobsLoading: false, certJobsList: [],
       canonicalRoles: [], relatedMajors: [],
@@ -685,11 +711,12 @@ const Recommendation: React.FC = () => {
     const jobsData  = jobsRes.status === 'fulfilled'  && jobsRes.value.success  ? jobsRes.value.data  : null;
     const trainData = trainRes.status === 'fulfilled' && trainRes.value.success ? trainRes.value.data : null;
     const execResult = {
-      schedule:      (schedData?.schedules ?? []).slice(0, 4),
-      hiringTotal:   jobsData?.total  ?? 0,
-      hiringItems:   (jobsData?.jobs ?? []).slice(0, 5),
-      trainingTotal: trainData?.total ?? 0,
-      trainingItems: (trainData?.courses ?? []).slice(0, 5),
+      schedule:           (schedData?.schedules ?? []).slice(0, 4),
+      scheduleApiStatus:  (schedData?.api_status ?? 'unavailable') as ExecState['scheduleApiStatus'],
+      hiringTotal:        jobsData?.total  ?? 0,
+      hiringItems:        (jobsData?.jobs ?? []).slice(0, 5),
+      trainingTotal:      trainData?.total ?? 0,
+      trainingItems:      (trainData?.courses ?? []).slice(0, 5),
     };
     execCacheRef.current[certId] = execResult;
     setExec(prev => ({ ...prev, ...execResult, loading: false, certId, fetched: true }));
@@ -1394,43 +1421,128 @@ const Recommendation: React.FC = () => {
               <div className="exec-section">
                 <p className="exec-section-title">시험 일정</p>
                 {!exec.loading && exec.fetched && (
-                  exec.schedule.length === 0
-                    ? <p className="exec-empty">현재 예정된 시험 일정이 없습니다.</p>
-                    : <div className="exec-list">
-                        {exec.schedule.map((s, i) => (
-                          <div key={i} className="exec-sched-row">
-                            <div className="exec-sched-left">
+                  exec.schedule.length === 0 ? (
+                    <div className="exec-sched-empty-wrap">
+                      <p className="exec-empty">
+                        {exec.scheduleApiStatus !== 'ok'
+                          ? 'Q-Net API를 일시적으로 조회할 수 없습니다.'
+                          : '현재 예정된 시험 일정이 없습니다.'}
+                      </p>
+                      {evidenceCertName && (
+                        <div className="exec-qnet-fallback">
+                          <a
+                            href={`https://www.q-net.or.kr/crf005.do?id=crf00501&gSite=Q&jmNm=${encodeURIComponent(evidenceCertName)}`}
+                            target="_blank" rel="noreferrer"
+                            className="exec-qnet-fallback-primary"
+                          >
+                            <ExternalLink size={12} /> Q-Net에서 "{evidenceCertName}" 시험 일정 보기
+                          </a>
+                          <a
+                            href="https://www.q-net.or.kr/crf021.do?id=crf02101&scheType=03"
+                            target="_blank" rel="noreferrer"
+                            className="exec-qnet-fallback-secondary"
+                          >
+                            연도별 전체 일정 보기 →
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="exec-list">
+                      {exec.schedule.map((s, i) => {
+                        const hasStructured = !!(s.written || s.practical);
+                        const wD = s.written?.d_day_exam;
+                        const pD = s.practical?.d_day_exam;
+                        let bestDday: number | null;
+                        if (hasStructured) {
+                          if (wD != null && wD >= 0 && pD != null && pD >= 0) bestDday = Math.min(wD, pD);
+                          else if (wD != null && wD >= 0) bestDday = wD;
+                          else if (pD != null && pD >= 0) bestDday = pD;
+                          else bestDday = wD ?? pD ?? null;
+                        } else {
+                          bestDday = s.d_day_exam;
+                        }
+                        return (
+                          <div key={i} className="exec-sched-row exec-sched-row-v2">
+                            <div className="exec-sched-header-row">
                               <span className="exec-sched-round">{s.impl_seq_name ?? '-'}</span>
-                              <span className="exec-sched-period">
-                                {s.registration_start ? `접수 ${s.registration_start}` : ''}
-                                {s.registration_end ? `~${s.registration_end}` : ''}
-                              </span>
-                              {s.exam_start && (
-                                <span className="exec-sched-exam">시험 {s.exam_start}{s.exam_end && s.exam_end !== s.exam_start ? `~${s.exam_end}` : ''}</span>
-                              )}
-                            </div>
-                            <div className="exec-sched-right">
-                              {s.d_day_registration !== null && s.d_day_registration <= 0 && (s.d_day_exam ?? 1) > 0 && (
-                                <span className="exec-sched-reg-open">접수 중</span>
-                              )}
-                              {s.d_day_exam !== null && (
-                                <span className={`exec-dday${s.d_day_exam <= 0 ? ' exec-dday-open' : s.d_day_exam <= 7 ? ' exec-dday-soon' : ''}`}>
-                                  {s.d_day_exam === 0 ? 'D-Day' : s.d_day_exam < 0 ? '마감' : `D-${s.d_day_exam}`}
+                              {bestDday !== null && (
+                                <span className={`exec-dday${bestDday <= 0 ? ' exec-dday-open' : bestDday <= 7 ? ' exec-dday-soon' : ''}`}>
+                                  {bestDday === 0 ? 'D-Day' : bestDday < 0 ? '마감' : `D-${bestDday}`}
                                 </span>
                               )}
                             </div>
+                            {hasStructured ? (
+                              <div className="exec-sched-split">
+                                {s.written && (s.written.exam_start || s.written.registration_start) && (
+                                  <div className="exec-sched-sub">
+                                    <span className="exec-sched-sub-label exec-sched-written">필기</span>
+                                    <div className="exec-sched-sub-dates">
+                                      {s.written.registration_start && (
+                                        <span className="exec-sched-date-line">
+                                          접수 {fmtDateRange(s.written.registration_start, s.written.registration_end)}
+                                          {s.written.d_day_registration != null && s.written.d_day_registration >= 0 && (
+                                            <span className="exec-sched-reg-open">접수 D-{s.written.d_day_registration}</span>
+                                          )}
+                                        </span>
+                                      )}
+                                      {s.written.exam_start && (
+                                        <span className="exec-sched-date-line">
+                                          시험 {fmtDateRange(s.written.exam_start, s.written.exam_end)}
+                                          {s.written.d_day_exam != null && s.written.d_day_exam < 0 && <span className="exec-sched-past">종료</span>}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                {s.practical && (s.practical.exam_start || s.practical.registration_start) && (
+                                  <div className="exec-sched-sub">
+                                    <span className="exec-sched-sub-label exec-sched-practical">실기</span>
+                                    <div className="exec-sched-sub-dates">
+                                      {s.practical.registration_start && (
+                                        <span className="exec-sched-date-line">
+                                          접수 {fmtDateRange(s.practical.registration_start, s.practical.registration_end)}
+                                          {s.practical.d_day_registration != null && s.practical.d_day_registration >= 0 && (
+                                            <span className="exec-sched-reg-open">접수 D-{s.practical.d_day_registration}</span>
+                                          )}
+                                        </span>
+                                      )}
+                                      {s.practical.exam_start && (
+                                        <span className="exec-sched-date-line">
+                                          시험 {fmtDateRange(s.practical.exam_start, s.practical.exam_end)}
+                                          {s.practical.d_day_exam != null && s.practical.d_day_exam < 0 && <span className="exec-sched-past">종료</span>}
+                                          {s.practical.d_day_exam != null && s.practical.d_day_exam >= 0 && s.practical.d_day_exam <= 7 && <span className="exec-sched-urgent">D-{s.practical.d_day_exam}</span>}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="exec-sched-left">
+                                {s.registration_start && (
+                                  <span className="exec-sched-period">접수 {fmtDateRange(s.registration_start, s.registration_end)}</span>
+                                )}
+                                {s.exam_start && (
+                                  <span className="exec-sched-exam">시험 {fmtDateRange(s.exam_start, s.exam_end)}</span>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })}
+                    </div>
+                  )
                 )}
-                {exec.fetched && evidenceCertName && (() => {
-                  const qnetUrl = `https://www.q-net.or.kr/crf005.do?id=crf00501&gSite=Q&jmNm=${encodeURIComponent(evidenceCertName)}`;
-                  return (
-                    <a href={qnetUrl} target="_blank" rel="noreferrer" className="exec-qnet-btn">
-                      <ExternalLink size={12} /> Q-Net 원서접수
-                    </a>
-                  );
-                })()}
+                {exec.fetched && evidenceCertName && exec.schedule.length > 0 && (
+                  <a
+                    href={`https://www.q-net.or.kr/crf005.do?id=crf00501&gSite=Q&jmNm=${encodeURIComponent(evidenceCertName)}`}
+                    target="_blank" rel="noreferrer"
+                    className="exec-qnet-btn"
+                  >
+                    <ExternalLink size={12} /> Q-Net 원서접수
+                  </a>
+                )}
               </div>
 
               {/* ── 채용공고 ── */}
@@ -1438,7 +1550,33 @@ const Recommendation: React.FC = () => {
                 <p className="exec-section-title">채용공고</p>
                 {!exec.loading && exec.fetched && (
                   exec.hiringItems.length === 0
-                    ? <p className="exec-empty">현재 관련 채용공고를 찾지 못했습니다.</p>
+                    ? (() => {
+                        const cn = allCerts.find(c => c.cert_id === exec.certId)?.cert_name ?? '';
+                        const worknetUrl = cn
+                          ? `https://www.work.go.kr/empInfo/empInfoSrch/list/dtlEmpSrchList.do?careerTo=&subEmail=&empTpGbCd=1&cloDateStdt=&srcKeyword=${encodeURIComponent(cn)}&cloDateEndt=&keywordOption=1&cloYn=N&regionCd=0&sortFieldInfo=DATE`
+                          : 'https://www.work.go.kr/empInfo/empInfoSrch/list/dtlEmpSrchList.do';
+                        return (
+                          <div className="exec-hiring-fallback">
+                            <p className="exec-hiring-fallback-msg">
+                              현재 채용공고 API를 조회할 수 없습니다.<br/>
+                              워크넷에서 직접 검색해보세요.
+                            </p>
+                            <a href={worknetUrl} target="_blank" rel="noreferrer" className="exec-hiring-fallback-btn">
+                              <ExternalLink size={12} />
+                              {cn ? `워크넷에서 '${cn}' 채용공고 검색` : '워크넷 채용공고 바로가기'}
+                            </a>
+                            {cn && (
+                              <a
+                                href={`https://www.saramin.co.kr/zf_user/search?searchword=${encodeURIComponent(cn)}&recruitPage=1&recruitSort=relation&recruitPageCount=20&search_done=y`}
+                                target="_blank" rel="noreferrer"
+                                className="exec-hiring-fallback-secondary"
+                              >
+                                사람인에서도 검색하기 →
+                              </a>
+                            )}
+                          </div>
+                        );
+                      })()
                     : <div className="exec-list">
                         {exec.hiringItems.map((j, i) => (
                           <a key={i} href={j.url || '#'} target="_blank" rel="noreferrer" className="exec-job-row">
@@ -2409,10 +2547,28 @@ const Recommendation: React.FC = () => {
         .exec-list{display:flex;flex-direction:column;gap:.375rem}
         /* 시험 일정 */
         .exec-sched-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;background:#fff;border:1px solid #e2e8f0;border-radius:6px;gap:.5rem}
+        .exec-sched-row-v2{flex-direction:column;align-items:stretch;gap:.4rem}
+        .exec-sched-header-row{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
         .exec-sched-right{display:flex;flex-direction:column;align-items:flex-end;gap:.25rem;flex-shrink:0}
-        .exec-sched-reg-open{font-size:.68rem;font-weight:700;padding:.15rem .45rem;border-radius:var(--radius-xs);background:#dcfce7;color:#15803d}
+        .exec-sched-reg-open{font-size:.66rem;font-weight:700;padding:.12rem .4rem;border-radius:var(--radius-xs);background:#dcfce7;color:#15803d;margin-left:.4rem}
+        .exec-sched-past{font-size:.66rem;font-weight:600;padding:.1rem .35rem;border-radius:var(--radius-xs);background:#f1f5f9;color:#94a3b8;margin-left:.3rem}
+        .exec-sched-urgent{font-size:.66rem;font-weight:700;padding:.12rem .4rem;border-radius:var(--radius-xs);background:#fee2e2;color:#dc2626;margin-left:.3rem}
         .exec-qnet-btn{display:inline-flex;align-items:center;gap:.35rem;font-size:.75rem;font-weight:600;color:var(--primary);text-decoration:none;padding:.3rem .6rem;border:1px solid var(--primary);border-radius:var(--radius-xs);width:fit-content;margin-top:.25rem;transition:background .15s}
         .exec-qnet-btn:hover{background:var(--primary-light)}
+        .exec-qnet-fallback{display:flex;flex-direction:column;gap:.375rem;margin-top:.375rem}
+        .exec-qnet-fallback-primary{display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;font-weight:700;color:#fff;background:var(--primary);text-decoration:none;padding:.45rem .75rem;border-radius:var(--radius-xs);width:fit-content;transition:background .15s}
+        .exec-qnet-fallback-primary:hover{background:#1d4ed8}
+        .exec-qnet-fallback-secondary{font-size:.78rem;color:var(--primary);text-decoration:none;font-weight:600;padding:.2rem 0;width:fit-content}
+        .exec-qnet-fallback-secondary:hover{text-decoration:underline}
+        .exec-sched-empty-wrap{display:flex;flex-direction:column;gap:.25rem}
+        /* 필기/실기 분리 */
+        .exec-sched-split{display:flex;flex-direction:column;gap:.375rem}
+        .exec-sched-sub{display:flex;flex-direction:column;gap:.2rem}
+        .exec-sched-sub-label{display:inline-flex;font-size:.65rem;font-weight:800;letter-spacing:.05em;padding:.1rem .4rem;border-radius:4px;width:fit-content;margin-bottom:.1rem}
+        .exec-sched-written{background:#dbeafe;color:#1e40af}
+        .exec-sched-practical{background:#dcfce7;color:#15803d}
+        .exec-sched-sub-dates{display:flex;flex-direction:column;gap:.15rem;padding-left:.25rem}
+        .exec-sched-date-line{font-size:.76rem;color:#475569;display:flex;align-items:center;flex-wrap:wrap;gap:.15rem}
         .exec-sched-left{display:flex;flex-direction:column;gap:.1rem}
         .exec-sched-round{font-size:.82rem;font-weight:700;color:#1e293b}
         .exec-sched-period{font-size:.72rem;color:#64748b}
@@ -2428,6 +2584,12 @@ const Recommendation: React.FC = () => {
         .exec-job-company{font-size:.72rem;color:#64748b}
         .exec-job-close{font-size:.7rem;color:#94a3b8;white-space:nowrap}
         .exec-job-icon{color:#94a3b8;flex-shrink:0}
+        .exec-hiring-fallback{display:flex;flex-direction:column;gap:.5rem;padding:.75rem;background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px}
+        .exec-hiring-fallback-msg{font-size:.78rem;color:#6b21a8;margin:0;line-height:1.5}
+        .exec-hiring-fallback-btn{display:inline-flex;align-items:center;gap:.35rem;padding:.45rem .875rem;background:#7c3aed;color:#fff;border-radius:6px;text-decoration:none;font-size:.8rem;font-weight:600;transition:background .15s;width:fit-content}
+        .exec-hiring-fallback-btn:hover{background:#6d28d9}
+        .exec-hiring-fallback-secondary{font-size:.75rem;color:#7c3aed;text-decoration:none;font-weight:500;align-self:flex-start}
+        .exec-hiring-fallback-secondary:hover{text-decoration:underline}
         /* 훈련과정 */
         .exec-train-row{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:#fff;border:1px solid #e2e8f0;border-radius:6px}
         .exec-train-main{display:flex;flex-direction:column;gap:.1rem;flex:1;min-width:0}

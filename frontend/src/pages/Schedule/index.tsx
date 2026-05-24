@@ -5,6 +5,15 @@ import { getCertCandidates } from '../../api/client';
 import type { CertCandidate } from '../../types/cert';
 
 // ── types ──────────────────────────────────────────────────────────────────
+interface ExamSubItem {
+  registration_start: string | null;
+  registration_end: string | null;
+  exam_start: string | null;
+  exam_end: string | null;
+  pass_announce_date: string | null;
+  d_day_exam: number | null;
+  d_day_registration: number | null;
+}
 interface ScheduleItem {
   impl_year: string | null;
   impl_seq: string | null;
@@ -16,6 +25,8 @@ interface ScheduleItem {
   pass_announce_date: string | null;
   d_day_exam: number | null;
   d_day_registration: number | null;
+  written?: ExamSubItem | null;
+  practical?: ExamSubItem | null;
 }
 
 interface CertSchedule {
@@ -106,74 +117,121 @@ function CertInfoRow({ data, candidate }: { data: CertSchedule; candidate?: Cert
 
 // ── Schedule timeline (일정이 있을 때) ────────────────────────────────────
 function ScheduleTimeline({ schedules }: { schedules: ScheduleItem[] }) {
-  const upcoming = schedules.filter(s => (s.d_day_exam ?? -1) >= 0);
-  const past     = schedules.filter(s => (s.d_day_exam ?? 0)  <  0);
+  const isUpcomingItem = (s: ScheduleItem): boolean => {
+    if (s.written?.d_day_exam != null && s.written.d_day_exam >= 0) return true;
+    if (s.practical?.d_day_exam != null && s.practical.d_day_exam >= 0) return true;
+    if (!s.written && !s.practical) return (s.d_day_exam ?? -1) >= 0;
+    return false;
+  };
+
+  const upcoming = schedules.filter(isUpcomingItem);
+  const past     = schedules.filter(s => !isUpcomingItem(s));
+
+  function SubExamDates({ data, label }: { data: ExamSubItem; label: string }) {
+    if (!data.exam_start && !data.registration_start) return null;
+    return (
+      <div className="sch-sub-exam">
+        <span className={`sch-sub-label ${label === '필기' ? 'sch-sub-written' : 'sch-sub-practical'}`}>{label}</span>
+        <div className="sch-timeline-dates">
+          {data.registration_start && (
+            <span className="sch-td-date">
+              <span className="sch-td-key">접수</span>
+              {fmtRange(data.registration_start, data.registration_end)}
+              {data.d_day_registration != null && data.d_day_registration >= 0 && (
+                <span className="sch-badge sch-badge-reg" style={{ marginLeft: '4px' }}>D-{data.d_day_registration}</span>
+              )}
+            </span>
+          )}
+          {data.exam_start && (
+            <span className="sch-td-date">
+              <span className="sch-td-key">시험</span>
+              {fmtRange(data.exam_start, data.exam_end)}
+              {data.d_day_exam != null && <DdayBadge dday={data.d_day_exam} />}
+            </span>
+          )}
+          {data.pass_announce_date && (
+            <span className="sch-td-date">
+              <span className="sch-td-key">발표</span>
+              {fmt(data.pass_announce_date)}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  function SchedItem({ s, isPast }: { s: ScheduleItem; isPast: boolean }) {
+    const hasStructured = !!(s.written || s.practical);
+    const wD = s.written?.d_day_exam;
+    const pD = s.practical?.d_day_exam;
+    let bestDday: number | null;
+    if (hasStructured) {
+      if (wD != null && wD >= 0 && pD != null && pD >= 0) bestDday = Math.min(wD, pD);
+      else if (wD != null && wD >= 0) bestDday = wD;
+      else if (pD != null && pD >= 0) bestDday = pD;
+      else bestDday = wD ?? pD ?? null;
+    } else {
+      bestDday = s.d_day_exam;
+    }
+
+    const regDday = s.written?.d_day_registration ?? s.practical?.d_day_registration ?? s.d_day_registration;
+
+    return (
+      <div className={`sch-timeline-item ${isPast ? 'sch-timeline-past' : 'sch-timeline-upcoming'}`}>
+        <div className={`sch-timeline-dot${isPast ? ' sch-dot-past' : ''}`} />
+        <div className="sch-timeline-body">
+          <div className="sch-timeline-header">
+            <span className="sch-timeline-seq">{s.impl_seq_name ?? `${s.impl_seq}회`}</span>
+            <DdayBadge dday={bestDday} />
+            {!isPast && regDday != null && regDday >= 0 && (
+              <span className="sch-badge sch-badge-reg">접수 D-{regDday}</span>
+            )}
+          </div>
+          {hasStructured ? (
+            <div className="sch-sub-exams">
+              {s.written && <SubExamDates data={s.written} label="필기" />}
+              {s.practical && <SubExamDates data={s.practical} label="실기" />}
+            </div>
+          ) : (
+            <div className="sch-timeline-dates">
+              {s.registration_start && (
+                <span className="sch-td-date">
+                  <span className="sch-td-key">접수</span>
+                  {fmtRange(s.registration_start, s.registration_end)}
+                </span>
+              )}
+              {s.exam_start && (
+                <span className="sch-td-date">
+                  <span className="sch-td-key">시험</span>
+                  {fmtRange(s.exam_start, s.exam_end)}
+                </span>
+              )}
+              {s.pass_announce_date && (
+                <span className="sch-td-date">
+                  <span className="sch-td-key">발표</span>
+                  {fmt(s.pass_announce_date)}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="sch-timeline">
       {upcoming.length > 0 && (
         <div className="sch-timeline-section">
           <p className="sch-timeline-label">예정된 시험</p>
-          {upcoming.map((s, i) => {
-            return (
-            <div key={i} className="sch-timeline-item sch-timeline-upcoming">
-              <div className="sch-timeline-dot" />
-              <div className="sch-timeline-body">
-                <div className="sch-timeline-header">
-                  <span className="sch-timeline-seq">{s.impl_seq_name ?? `${s.impl_seq}회`}</span>
-                  <DdayBadge dday={s.d_day_exam} />
-                  {s.d_day_registration !== null && s.d_day_registration !== undefined && s.d_day_registration >= 0 && (
-                    <span className="sch-badge sch-badge-reg">접수 D-{s.d_day_registration}</span>
-                  )}
-                </div>
-                <div className="sch-timeline-dates">
-                  {s.registration_start && (
-                    <span className="sch-td-date">
-                      <span className="sch-td-key">접수</span>
-                      {fmtRange(s.registration_start, s.registration_end)}
-                    </span>
-                  )}
-                  {s.exam_start && (
-                    <span className="sch-td-date">
-                      <span className="sch-td-key">시험</span>
-                      {fmtRange(s.exam_start, s.exam_end)}
-                    </span>
-                  )}
-                  {s.pass_announce_date && (
-                    <span className="sch-td-date">
-                      <span className="sch-td-key">발표</span>
-                      {fmt(s.pass_announce_date)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          );})}
+          {upcoming.map((s, i) => <SchedItem key={i} s={s} isPast={false} />)}
         </div>
       )}
       {past.length > 0 && (
         <details className="sch-past-details">
           <summary className="sch-past-summary">지난 일정 {past.length}건</summary>
           <div className="sch-timeline-section sch-past-section">
-            {past.map((s, i) => (
-              <div key={i} className="sch-timeline-item sch-timeline-past">
-                <div className="sch-timeline-dot sch-dot-past" />
-                <div className="sch-timeline-body">
-                  <div className="sch-timeline-header">
-                    <span className="sch-timeline-seq">{s.impl_seq_name ?? `${s.impl_seq}회`}</span>
-                    <DdayBadge dday={s.d_day_exam} />
-                  </div>
-                  <div className="sch-timeline-dates">
-                    {s.exam_start && (
-                      <span className="sch-td-date">
-                        <span className="sch-td-key">시험</span>
-                        {fmtRange(s.exam_start, s.exam_end)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+            {past.map((s, i) => <SchedItem key={i} s={s} isPast={true} />)}
           </div>
         </details>
       )}
@@ -693,6 +751,18 @@ const Schedule: React.FC = () => {
 
         .spin { animation:spin 1s linear infinite; }
         @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+
+        /* 필기/실기 분리 */
+        .sch-sub-exams { display:flex; flex-direction:column; gap:.5rem; margin-top:.25rem; }
+        .sch-sub-exam { display:flex; flex-direction:column; gap:.2rem; }
+        .sch-sub-label {
+          display:inline-flex; align-items:center;
+          font-size:.66rem; font-weight:800; letter-spacing:.05em;
+          padding:.1rem .45rem; border-radius:4px; width:fit-content;
+          margin-bottom:.15rem;
+        }
+        .sch-sub-written { background:#dbeafe; color:#1e40af; }
+        .sch-sub-practical { background:#dcfce7; color:#15803d; }
       `}</style>
     </div>
   );
