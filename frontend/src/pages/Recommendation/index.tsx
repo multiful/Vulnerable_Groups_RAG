@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect, useCallback, useDeferredValue, mem
 import { CertFlowDiagram } from '../../components/charts/CertFlowDiagram';
 import { getCertCandidates } from '../../api/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { loadPipeline } from '../../utils/pipelineState';
+import { loadPipeline, savePipeline } from '../../utils/pipelineState';
 import {
   Search, Map, FileText, ChevronDown, AlertCircle,
   Loader2, ArrowLeft, ArrowRight, X, BookOpen, ExternalLink,
@@ -274,7 +274,11 @@ interface ExecState {
   hiringTotal: number;
   hiringItems: Array<{ title: string; company: string; url: string; close_date: string }>;
   trainingTotal: number;
-  trainingItems: Array<{ course_name: string; institution_name: string; employment_rate: string }>;
+  trainingItems: Array<{
+    course_name: string; institution_name: string; employment_rate: string;
+    cost?: string; support_amount?: string; course_url?: string;
+    train_start?: string; train_end?: string;
+  }>;
   certId: string;
   fetched: boolean;
   activeTab: 'schedule' | 'hiring' | 'training' | 'certinfo';
@@ -577,6 +581,7 @@ const Recommendation: React.FC = () => {
     fetchSessionRates(certId);
     // certJobs / fallback training needs cert name — look up from candidates
     const certName_ = allCerts.find(c => c.cert_id === certId)?.cert_name ?? '';
+    if (certName_) savePipeline({ certId, certName: certName_ });
     if (certName_) {
       fetchCertJobs(certId, certName_);
       fetchJobLearner(certId, certName_);
@@ -1595,20 +1600,76 @@ const Recommendation: React.FC = () => {
               {/* ── 훈련과정 ── */}
               <div className="exec-section">
                 <p className="exec-section-title">훈련과정</p>
+                {/* 국민내일배움카드 안내 카드 */}
+                <div className="naeil-card">
+                  <div className="naeil-card-header">
+                    <span className="naeil-card-badge">💳 국민내일배움카드</span>
+                    <a
+                      href="https://www.work24.go.kr"
+                      target="_blank" rel="noreferrer"
+                      className="naeil-card-link"
+                    >신청하기 →</a>
+                  </div>
+                  <p className="naeil-card-desc">
+                    실업자·재직자·자영업자 모두 신청 가능. 훈련비의 <strong>45~85%</strong>를 지원받아 자격증 취득 과정을 수강할 수 있습니다.
+                  </p>
+                  <div className="naeil-card-chips">
+                    <span className="naeil-chip">HRD-Net 훈련과정 검색</span>
+                    <span className="naeil-chip">고용24 신청</span>
+                    <span className="naeil-chip">최대 500만원 지원</span>
+                  </div>
+                </div>
+                {/* 국민취업지원제도 안내 카드 — 2~5단계 표시 */}
+                {stageParam && stageParam !== '1' && (
+                  <div className="naeil-card naeil-card-green">
+                    <div className="naeil-card-header">
+                      <span className="naeil-card-badge naeil-card-badge-green">📋 국민취업지원제도</span>
+                      <a
+                        href="https://www.work24.go.kr/ua/z/z/1300/selectEmssRqutIntro.do"
+                        target="_blank" rel="noreferrer"
+                        className="naeil-card-link naeil-card-link-green"
+                      >신청하기 →</a>
+                    </div>
+                    <p className="naeil-card-desc naeil-card-desc-green">
+                      18~34세 청년 및 저소득층 대상. <strong>월 50만원 × 최대 6개월</strong> 구직촉진수당 + 취업지원 서비스를 함께 제공합니다.
+                    </p>
+                    <div className="naeil-card-chips">
+                      <span className="naeil-chip naeil-chip-green">구직촉진수당 지원</span>
+                      <span className="naeil-chip naeil-chip-green">고용24 신청</span>
+                      <span className="naeil-chip naeil-chip-green">취업지원 서비스 병행</span>
+                    </div>
+                  </div>
+                )}
                 {!exec.loading && exec.fetched && (
                   exec.trainingItems.length > 0
                     ? <div className="exec-list">
-                        {exec.trainingItems.map((t, i) => (
-                          <div key={i} className="exec-train-row">
+                        {exec.trainingItems.map((t, i) => {
+                          const costNum  = t.cost ? parseInt(t.cost.replace(/,/g, '')) : null;
+                          const suppNum  = t.support_amount ? parseInt(t.support_amount.replace(/,/g, '')) : null;
+                          const isFree   = costNum !== null && costNum === 0;
+                          const suppPct  = (costNum && suppNum && costNum > 0)
+                            ? Math.round((suppNum / costNum) * 100) : null;
+                          return (
+                          <div key={i} className="exec-train-row exec-train-row-rich">
                             <div className="exec-train-main">
-                              <span className="exec-train-name">{t.course_name}</span>
+                              {t.course_url
+                                ? <a href={t.course_url} target="_blank" rel="noreferrer" className="exec-train-name exec-train-name-link">{t.course_name}</a>
+                                : <span className="exec-train-name">{t.course_name}</span>
+                              }
                               <span className="exec-train-org">{t.institution_name}</span>
                             </div>
-                            {t.employment_rate && (
-                              <span className="exec-train-rate">취업률 {t.employment_rate}%</span>
-                            )}
+                            <div className="exec-train-badges">
+                              {isFree && <span className="exec-train-badge exec-train-badge-free">무료</span>}
+                              {!isFree && suppPct !== null && (
+                                <span className="exec-train-badge exec-train-badge-supp">지원 {suppPct}%</span>
+                              )}
+                              {t.employment_rate && (
+                                <span className="exec-train-badge exec-train-badge-rate">취업률 {t.employment_rate}%</span>
+                              )}
+                            </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     : <div>
                         <p className="exec-empty">Work24 훈련과정을 찾지 못했습니다.</p>
@@ -2590,12 +2651,35 @@ const Recommendation: React.FC = () => {
         .exec-hiring-fallback-btn:hover{background:#6d28d9}
         .exec-hiring-fallback-secondary{font-size:.75rem;color:#7c3aed;text-decoration:none;font-weight:500;align-self:flex-start}
         .exec-hiring-fallback-secondary:hover{text-decoration:underline}
+        /* 국민내일배움카드 안내 카드 */
+        .naeil-card{background:linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);border:1px solid rgba(59,130,246,.22);border-radius:8px;padding:.75rem 1rem;display:flex;flex-direction:column;gap:.45rem;margin-bottom:.5rem}
+        .naeil-card-header{display:flex;align-items:center;justify-content:space-between}
+        .naeil-card-badge{font-size:.73rem;font-weight:800;color:#1d4ed8;letter-spacing:.03em}
+        .naeil-card-link{font-size:.72rem;font-weight:700;color:#1d4ed8;text-decoration:none}
+        .naeil-card-link:hover{text-decoration:underline}
+        .naeil-card-desc{font-size:.77rem;color:#1e40af;margin:0;line-height:1.55}
+        .naeil-card-desc strong{font-weight:800}
+        .naeil-card-chips{display:flex;gap:.35rem;flex-wrap:wrap}
+        .naeil-chip{font-size:.65rem;font-weight:600;background:rgba(59,130,246,.12);color:#1d4ed8;padding:.1rem .45rem;border-radius:999px}
+        .naeil-card-green{background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border-color:rgba(22,163,74,.22)}
+        .naeil-card-badge-green{color:#15803d}
+        .naeil-card-link-green{color:#15803d}
+        .naeil-card-desc-green{color:#166534}
+        .naeil-chip-green{background:rgba(22,163,74,.12);color:#15803d}
         /* 훈련과정 */
         .exec-train-row{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:#fff;border:1px solid #e2e8f0;border-radius:6px}
+        .exec-train-row-rich{flex-wrap:wrap}
         .exec-train-main{display:flex;flex-direction:column;gap:.1rem;flex:1;min-width:0}
         .exec-train-name{font-size:.82rem;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .exec-train-name-link{color:#1d4ed8;text-decoration:none}
+        .exec-train-name-link:hover{text-decoration:underline}
         .exec-train-org{font-size:.72rem;color:#64748b}
         .exec-train-rate{font-size:.75rem;font-weight:700;color:#0369a1;white-space:nowrap;flex-shrink:0}
+        .exec-train-badges{display:flex;gap:.3rem;flex-wrap:wrap;flex-shrink:0;align-items:center}
+        .exec-train-badge{font-size:.67rem;font-weight:700;padding:.1rem .4rem;border-radius:4px;white-space:nowrap}
+        .exec-train-badge-free{background:#dcfce7;color:#15803d}
+        .exec-train-badge-supp{background:#dbeafe;color:#1d4ed8}
+        .exec-train-badge-rate{background:#f0f9ff;color:#0369a1}
 
         /* 자격정보 탭 */
         .certinfo-wrap{display:flex;flex-direction:column;gap:.75rem}

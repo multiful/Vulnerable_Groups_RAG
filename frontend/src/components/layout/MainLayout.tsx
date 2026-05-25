@@ -3,6 +3,7 @@ import React, { useRef, useEffect } from 'react';
 import { Outlet, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Home, Calendar, Compass, Briefcase } from 'lucide-react';
 import { loadPipeline } from '../../utils/pipelineState';
+import ChatWidget from '../ChatWidget';
 
 const SUPPORT_LINKS = [
   {
@@ -284,6 +285,11 @@ const MainLayout: React.FC = () => {
       </footer>
 
       {/* ── Chat widget ── */}
+      <ChatWidget context={{
+        stage_id: loadPipeline().stage ?? undefined,
+        domain_name: loadPipeline().domainName ?? undefined,
+        job_name: loadPipeline().jobName ?? undefined,
+      }} />
 
       <style>{`
         /* ── 청년지원제도 드롭다운 (헤더 내 탭) ── */

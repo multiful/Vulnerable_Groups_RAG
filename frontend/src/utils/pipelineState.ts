@@ -11,6 +11,8 @@ export interface PipelineState {
   job?: string;
   jobName?: string;
   major?: string;
+  certId?: string;
+  certName?: string;
 }
 
 /** 파이프라인 상태를 저장(기존 값과 병합). */
