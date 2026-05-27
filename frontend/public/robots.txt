@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://www.didim.life/sitemap.xml
+
+# 중복 URL 크롤링 방지
+Host: https://www.didim.life

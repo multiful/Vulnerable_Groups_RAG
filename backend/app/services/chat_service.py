@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 from backend.app.core.config import Settings
@@ -13,6 +14,10 @@ from backend.app.schemas.envelope import err_envelope, ok_envelope
 logger = logging.getLogger(__name__)
 
 _MAX_HISTORY = 10
+
+# 동일 cert + 질문 조합의 evidence 재조회 방지 (embedding 비용 절감)
+_EVIDENCE_TTL = 3600
+_evidence_cache: dict[str, tuple[float, list[str]]] = {}
 
 _STAGE_LABELS: dict[str, str] = {
     "1": "1단계 (취업 안정권)",
@@ -61,6 +66,11 @@ _BASE_SYSTEM_PROMPT = """당신은 DIDIM 서비스의 청년 진로 상담사입
 
 def _retrieve_evidence(cert_name: str, user_question: str, settings: Settings) -> list[str]:
     """cert_name 기반으로 관련 evidence snippet을 가져온다."""
+    _ev_key = f"{cert_name}|{user_question[:80]}"
+    _ev_entry = _evidence_cache.get(_ev_key)
+    if _ev_entry is not None and (time.monotonic() - _ev_entry[0]) < _EVIDENCE_TTL:
+        return _ev_entry[1]
+
     try:
         from backend.app.services.retrieval_service import search_evidence
 
@@ -69,6 +79,7 @@ def _retrieve_evidence(cert_name: str, user_question: str, settings: Settings) -
             settings,
         )
         if not result.get("success"):
+            _evidence_cache[_ev_key] = (time.monotonic(), [])
             return []
         rows = result.get("data", {}).get("evidence", [])
         snippets: list[str] = []
@@ -80,6 +91,7 @@ def _retrieve_evidence(cert_name: str, user_question: str, settings: Settings) -
                 seen.add(snippet)
                 label = f"[{sec}] " if sec else ""
                 snippets.append(f"{label}{snippet}")
+        _evidence_cache[_ev_key] = (time.monotonic(), snippets)
         return snippets
     except Exception as e:
         logger.debug("chat evidence retrieval failed: %s", e)

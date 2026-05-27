@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 from backend.app.core.config import Settings
@@ -202,7 +203,7 @@ def get_support_bundle(
     resource_types = _RESOURCE_TYPES[level]
     bundles: list[dict] = []
 
-    for rtype in resource_types:
+    def _run(rtype: str) -> dict:
         if rtype == "job_fair":
             items, error = _fetch_job_fair(settings, domain_name, region)
         elif rtype == "training":
@@ -213,8 +214,21 @@ def get_support_bundle(
             items, error = _fetch_process_eval(settings)
         else:
             items, error = [], None
+        return _build_bundle_entry(rtype, items, error)
 
-        bundles.append(_build_bundle_entry(rtype, items, error))
+    order = {rtype: i for i, rtype in enumerate(resource_types)}
+    with ThreadPoolExecutor(max_workers=len(resource_types)) as pool:
+        futures = {pool.submit(_run, rtype): rtype for rtype in resource_types}
+        results: dict[str, dict] = {}
+        for fut in as_completed(futures):
+            rtype = futures[fut]
+            try:
+                results[rtype] = fut.result()
+            except Exception as e:
+                logger.warning("support_bundle %s executor error: %s", rtype, e)
+                results[rtype] = _build_bundle_entry(rtype, [], str(e))
+
+    bundles = [results[rtype] for rtype in sorted(resource_types, key=lambda r: order[r])]
 
     return ok_envelope({
         "risk_stage_id":  risk_stage_id,

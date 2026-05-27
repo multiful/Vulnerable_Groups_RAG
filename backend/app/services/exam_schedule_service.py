@@ -1,13 +1,16 @@
 # File: exam_schedule_service.py
-# Last Updated: 2026-05-20
+# Last Updated: 2026-05-27
 # Content Hash: SHA256:TBD
 # Role: 한국산업인력공단 시험일정 API 조회
 #
 # API: 국가자격 시험일정 (apis.data.go.kr/B490007)
 #   GET https://apis.data.go.kr/B490007/qualExamSchd/getQualExamSchdList
 #   serviceKey: URL-encoded key (hrdkorea_api_key_in)
-#   필수 파라미터: implYy (연도), dataFormat=json
-#   jmCd 미제공 시 전체 일정 반환 → grade_name(기능사/기사/산업기사 등)으로 클라이언트 필터링
+#   jmCd 제공 시 해당 종목만 반환 (정확도 향상) — qualItlCd 종목코드 선조회로 jmCd 확보
+#
+# API: 자격종목 코드 (apis.data.go.kr/B490007/qualItlCd)
+#   GET https://apis.data.go.kr/B490007/qualItlCd/getQualItlCdList
+#   cert_name → jmCd 매핑 빌드에 사용 (24시간 캐시)
 #
 # 구 엔드포인트(openapi.q-net.or.kr)는 2025년 폐지, 신규 apis.data.go.kr로 이전됨
 from __future__ import annotations
@@ -31,10 +34,15 @@ logger = logging.getLogger(__name__)
 _PROJECT_ROOT = Path(__file__).parents[3]
 _CERT_MASTER_CSV = _PROJECT_ROOT / "data/processed/master/cert_master.csv"
 
-_EXAM_SCHD_BASE = "https://apis.data.go.kr/B490007/qualExamSchd/getQualExamSchdList"
+_EXAM_SCHD_BASE  = "https://apis.data.go.kr/B490007/qualExamSchd/getQualExamSchdList"
+_QUAL_ITL_CD_BASE = "https://apis.data.go.kr/B490007/qualItlCd/getQualItlCdList"
+_PASS_STAT_BASE  = "https://apis.data.go.kr/B490007/qualPassStat/getQualPassStatList"
+_HIRE_INFO_BASE  = "https://apis.data.go.kr/B490007/qualHireInfo/getQualHireInfoList"
 
-_TTL = 3600  # 시험 일정은 하루 단위 변경 — 1시간 캐시 (페이지네이션 비용 상각)
+_TTL     = 3600   # 시험일정·통계 캐시 (1시간)
+_ITL_TTL = 86400  # 자격종목 코드는 거의 불변 — 24시간 캐시
 _sched_cache: dict[str, tuple[float, Any]] = {}
+_itl_cd_cache: dict[str, tuple[float, Any]] = {}
 
 
 def _cache_get(key: str) -> Any | None:
@@ -46,6 +54,17 @@ def _cache_get(key: str) -> Any | None:
 
 def _cache_set(key: str, value: Any) -> None:
     _sched_cache[key] = (time.monotonic(), value)
+
+
+def _itl_cache_get(key: str) -> Any | None:
+    entry = _itl_cd_cache.get(key)
+    if entry and (time.monotonic() - entry[0]) < _ITL_TTL:
+        return entry[1]
+    return None
+
+
+def _itl_cache_set(key: str, value: Any) -> None:
+    _itl_cd_cache[key] = (time.monotonic(), value)
 
 
 def _build_qnet_url(base: str, api_key_in: str, extra: dict[str, str]) -> str:
@@ -193,18 +212,119 @@ def _dedup_by_seq(items: list[dict]) -> list[dict]:
     return list(seen.values())
 
 
-def _fetch_all_exam_schd(api_key: str, year: str, timeout: float) -> list[dict] | None:
-    """연도별 전체 시험일정을 페이지네이션으로 수집.
-    최대 50/page 제한 → totalCount 기준 자동 페이지 순회.
+def _fetch_all_qual_itl_cd(api_key: str, timeout: float) -> list[dict]:
+    """자격종목 코드 전체 목록 수집 (페이지네이션, 24시간 캐시).
+    jmCd → description(종목명) 매핑에 사용."""
+    cache_key = "__qual_itl_cd_all__"
+    cached = _itl_cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    collected: list[dict] = []
+    for page in range(1, 30):  # 안전 상한 (실제 약 500~600종목)
+        url = _build_qnet_url(_QUAL_ITL_CD_BASE, api_key, {
+            "dataFormat": "json",
+            "numOfRows":  "100",
+            "pageNo":     str(page),
+        })
+        try:
+            resp = httpx.get(url, timeout=timeout)
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception as e:
+            logger.warning("qual_itl_cd page=%s error: %s", page, e)
+            break
+
+        body = data.get("body", {})
+        if not isinstance(body, dict):
+            break
+        items = body.get("items") or []
+        if isinstance(items, dict):
+            items = items.get("item", [])
+        if isinstance(items, dict):
+            items = [items]
+        if not isinstance(items, list) or not items:
+            break
+        collected.extend(items)
+
+        total = int(body.get("totalCount") or 0)
+        if total > 0 and len(collected) >= total:
+            break
+        if len(items) < 100:
+            break
+
+    _itl_cache_set(cache_key, collected)
+    return collected
+
+
+def _build_jm_code_map(api_key: str, timeout: float) -> dict[str, str]:
+    """cert_name(종목명) → jmCd 매핑 dict 반환."""
+    cache_key = "__jm_code_map__"
+    cached = _itl_cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    items = _fetch_all_qual_itl_cd(api_key, timeout)
+    mapping: dict[str, str] = {}
+    for it in items:
+        name = (it.get("description") or it.get("jmNm") or "").strip()
+        code = (it.get("jmCd") or "").strip()
+        if name and code:
+            mapping[name] = code
+    _itl_cache_set(cache_key, mapping)
+    return mapping
+
+
+def get_cert_codes(settings: Settings, keyword: str | None = None) -> dict:
+    """
+    자격종목 코드 목록 조회 (apis.data.go.kr/B490007/qualItlCd).
+    keyword: 종목명 검색어 (부분 일치)
+    """
+    api_key = settings.hrdkorea_api_key_in
+    if not api_key and settings.hrdkorea_api_key_de:
+        api_key = urllib.parse.quote(settings.hrdkorea_api_key_de, safe='')
+    if not api_key:
+        return err_envelope("API_KEY_MISSING", "HRD Korea API 키가 설정되지 않았습니다.")
+
+    items = _fetch_all_qual_itl_cd(api_key, settings.hrdkorea_api_timeout)
+    normalized = [
+        {
+            "jm_cd":       (it.get("jmCd") or "").strip(),
+            "cert_name":   (it.get("description") or it.get("jmNm") or "").strip(),
+            "grade":       (it.get("grdNm") or "").strip(),
+            "series_code": (it.get("serisCd") or "").strip(),
+        }
+        for it in items
+        if it.get("jmCd")
+    ]
+
+    if keyword and keyword.strip():
+        kw = keyword.strip().lower()
+        normalized = [c for c in normalized if kw in c["cert_name"].lower()]
+
+    return ok_envelope({
+        "keyword": keyword,
+        "codes":   normalized,
+        "total":   len(normalized),
+        "note":    "HRD Korea 자격종목 코드 (apis.data.go.kr/B490007/qualItlCd)",
+    })
+
+
+def _fetch_all_exam_schd(api_key: str, year: str, timeout: float, jm_cd: str | None = None) -> list[dict] | None:
+    """연도별 시험일정 수집 (페이지네이션).
+    jm_cd 제공 시 해당 종목만 직접 조회 — 전체 페이지를 받지 않아 빠름.
     오류 시 None 반환 (호출자가 fallback 처리)."""
     collected: list[dict] = []
     for page in range(1, 20):  # 안전 상한 20 pages
-        url = _build_qnet_url(_EXAM_SCHD_BASE, api_key, {
+        extra: dict[str, str] = {
             "dataFormat": "json",
             "numOfRows":  "50",
             "pageNo":     str(page),
             "implYy":     year,
-        })
+        }
+        if jm_cd:
+            extra["jmCd"] = jm_cd
+        url = _build_qnet_url(_EXAM_SCHD_BASE, api_key, extra)
         try:
             resp = httpx.get(url, timeout=timeout)
             resp.raise_for_status()
@@ -275,19 +395,39 @@ def get_exam_schedule(cert_id: str, settings: Settings) -> dict:
     if cached is not None:
         return cached
 
-    # 전체 페이지 조회 (최대 50/page, totalCount 기준). 연도별 캐시 공유로 비용 상각.
-    year_cache_key = f"exam_schd_all|{current_year}"
-    all_items = _cache_get(year_cache_key)
-    if all_items is None:
-        all_items = _fetch_all_exam_schd(api_key, current_year, settings.hrdkorea_api_timeout)
+    # jmCd 조회 시도: 성공하면 종목 직접 조회(빠름), 실패해도 전체 조회로 fallback
+    jm_cd: str | None = None
+    try:
+        jm_map = _build_jm_code_map(api_key, settings.hrdkorea_api_timeout)
+        jm_cd = jm_map.get(cert_name)
+    except Exception as e:
+        logger.debug("jm_code_map build failed, falling back to full scan: %s", e)
+
+    if jm_cd:
+        # 종목 코드가 있으면 jmCd 파라미터로 직접 조회
+        jm_cache_key = f"exam_schd_jm|{jm_cd}|{current_year}"
+        all_items = _cache_get(jm_cache_key)
         if all_items is None:
-            return _fallback("unavailable")
-        _cache_set(year_cache_key, all_items)
+            all_items = _fetch_all_exam_schd(api_key, current_year, settings.hrdkorea_api_timeout, jm_cd=jm_cd)
+            if all_items:
+                _cache_set(jm_cache_key, all_items)
+    else:
+        # jmCd 없으면 연도 전체 캐시 공유 (기존 방식)
+        year_cache_key = f"exam_schd_all|{current_year}"
+        all_items = _cache_get(year_cache_key)
+        if all_items is None:
+            all_items = _fetch_all_exam_schd(api_key, current_year, settings.hrdkorea_api_timeout)
+            if all_items is None:
+                return _fallback("unavailable")
+            _cache_set(year_cache_key, all_items)
+
+    if not all_items:
+        return _fallback("unavailable")
 
     try:
         item_list = list(all_items)
-        # grade_name 기준 필터 — " 기사 " 공백 경계로 "산업기사"/"기술사" 오매칭 방지
-        if grade_name:
+        if not jm_cd and grade_name:
+            # jmCd 없을 때만 description 문자열 필터 적용
             padded = f" {grade_name} "
             item_list = [it for it in item_list if padded in it.get("description", "")]
         item_list = _dedup_by_seq(item_list)
@@ -395,8 +535,6 @@ def get_professional_exam_schedule(
 
 
 # ── HRD Korea 합격자 통계 ─────────────────────────────────────────────────────
-_PASS_STAT_BASE = "https://apis.data.go.kr/B490007/qualPassStat/getQualPassStatList"
-
 
 def get_pass_stats(cert_id: str, settings: Settings) -> dict:
     """
@@ -491,8 +629,6 @@ def get_pass_stats(cert_id: str, settings: Settings) -> dict:
 
 
 # ── HRD Korea 취업현황 ───────────────────────────────────────────────────────
-_HIRE_INFO_BASE = "https://apis.data.go.kr/B490007/qualHireInfo/getQualHireInfoList"
-
 
 def get_hire_stats(cert_id: str, settings: Settings) -> dict:
     """

@@ -1,7 +1,7 @@
 # File: training.py
-# Last Updated: 2026-05-14
+# Last Updated: 2026-05-27
 # Content Hash: SHA256:TBD
-# Role: GET /api/v1/training/courses, GET /api/v1/training/process-eval
+# Role: GET /api/v1/training/courses, /courses/detail, /institutions, /process-eval, /job-learner
 from __future__ import annotations
 
 from fastapi import APIRouter, Query
@@ -45,6 +45,40 @@ def get_training_by_cert(
     직접 문자열 매칭 없이 구조화 데이터만 사용.
     """
     return training_service.get_training_by_cert_id(cert_id, settings, region=region, page_size=page_size)
+
+
+@router.get("/courses/detail/{course_id}")
+def get_training_course_detail(
+    course_id: str,
+    settings: SettingsDep,
+    degree: str = Query(default="1", description="차수 (기본값 1)"),
+) -> dict:
+    """
+    훈련과정 상세 조회 (callOpenApiSvcInfo310L02).
+    과정 목록에서 받은 course_id(trprId)로 커리큘럼·강사·수강료 등 상세 정보를 조회합니다.
+    """
+    return training_service.get_training_course_detail(course_id, settings, degree=degree)
+
+
+@router.get("/institutions")
+def get_training_institutions(
+    settings: SettingsDep,
+    region: str | None = Query(default=None, description="지역명 (예: 서울)"),
+    ncs_category: str | None = Query(default=None, description="NCS 1차 분류명 (예: 정보통신)"),
+    institution_name: str | None = Query(default=None, description="기관명 검색어"),
+    page_size: int = Query(default=20, ge=1, le=100),
+) -> dict:
+    """
+    훈련기관 목록 조회 (callOpenApiSvcInfo320L01).
+    지역·NCS 분류로 국민내일배움카드 훈련을 제공하는 기관을 검색합니다.
+    """
+    return training_service.get_training_institutions(
+        settings,
+        region=region,
+        ncs_category=ncs_category,
+        institution_name=institution_name,
+        page_size=page_size,
+    )
 
 
 @router.get("/process-eval")

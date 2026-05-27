@@ -15,6 +15,7 @@ from __future__ import annotations
 import csv
 import json
 import re
+import time
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -54,6 +55,13 @@ _TIER_ORDER: dict[str, int] = {
     "1_기능사": 1, "2_산업기사": 2, "3_기사": 3,
     "4_기술사": 4, "5_기능장": 5,
 }
+
+# ── OpenAI 호출 결과 서버 캐시 ──
+# 동일 cert_id / (risk+domain) 조합은 1시간 내 재호출하지 않는다.
+_EXPLAIN_TTL  = 3600  # explain_cert 캐시 TTL (초)
+_ROADMAP_TTL  = 3600  # llm_recommendations 캐시 TTL (초)
+_explain_cache: dict[str, tuple[float, str | None]] = {}
+_roadmap_cache: dict[str, tuple[float, dict]]        = {}
 
 
 @lru_cache(maxsize=1)
@@ -372,6 +380,13 @@ def llm_recommendations(body: dict[str, Any], settings: Settings) -> dict:
         return err_envelope("MISSING_REQUIRED_FIELD", "domain_ids가 필요합니다.")
 
     domain_id = domain_ids[0]
+
+    # 캐시 히트 → OpenAI 호출 없이 반환
+    _roadmap_key = f"{risk_id}|{domain_id}"
+    _roadmap_entry = _roadmap_cache.get(_roadmap_key)
+    if _roadmap_entry and (time.monotonic() - _roadmap_entry[0]) < _ROADMAP_TTL:
+        return ok_envelope(_roadmap_entry[1])
+
     candidates = _load_candidates()
     if not candidates:
         return err_envelope(
@@ -415,6 +430,7 @@ def llm_recommendations(body: dict[str, Any], settings: Settings) -> dict:
             reasons = {}
 
     result = _build_roadmap_data(buckets, reasons, risk_id, starting_stage_id, llm_generated=llm_generated)
+    _roadmap_cache[_roadmap_key] = (time.monotonic(), result)
     return ok_envelope(result)
 
 
@@ -539,6 +555,12 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
     if not settings.openai_api_key:
         return err_envelope("NOT_CONFIGURED", "OpenAI API 키가 설정되지 않아 AI 설명을 생성할 수 없습니다.")
 
+    # 캐시 히트 → OpenAI 호출 없이 반환
+    _explain_key = f"{cert_id}|{domain_id}|{risk_stage_id}"
+    _explain_entry = _explain_cache.get(_explain_key)
+    if _explain_entry and (time.monotonic() - _explain_entry[0]) < _EXPLAIN_TTL:
+        return ok_envelope({"cert_id": cert_id, "explanation": _explain_entry[1]})
+
     candidates = _load_candidates()
     cert = next((c for c in candidates if c.get("cert_id") == cert_id), None)
     if not cert:
@@ -579,6 +601,7 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
             temperature=0.4,
         )
         explanation = (resp.choices[0].message.content or "").strip()
+        _explain_cache[_explain_key] = (time.monotonic(), explanation)
         return ok_envelope({"cert_id": cert_id, "explanation": explanation})
     except Exception as exc:
         return err_envelope("AI_ERROR", f"AI 설명 생성 실패: {str(exc)[:120]}")

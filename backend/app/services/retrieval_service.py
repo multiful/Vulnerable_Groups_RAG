@@ -12,6 +12,7 @@ from __future__ import annotations
 import csv
 import json
 import re
+import time
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -28,6 +29,11 @@ _NATIONAL_CATALOG_JSON = _PROJECT_ROOT / "data/index_ready/national_cert_catalog
 _GASANJEOM_INDEX_JSON = _PROJECT_ROOT / "data/index_ready/gasanjeom_index.json"
 
 _SUPABASE_MATCH_RPC = "match_certificates"
+
+# ── Supabase embedding + RPC 결과 캐시 ──
+# embedding 생성 비용이 가장 크므로 cert별로 1시간 캐싱한다.
+_SUPABASE_TTL = 3600
+_supabase_cache: dict[str, tuple[float, Any]] = {}
 
 
 @lru_cache(maxsize=1)
@@ -457,6 +463,13 @@ def _search_supabase(cert_name: str, query_text: str, settings: Settings) -> lis
     """Supabase match_certificates RPC 직접 호출. 실패 시 None 반환."""
     if not _supabase_configured(settings):
         return None
+
+    # 동일 cert_name + query 조합은 1시간 캐싱 → embedding + RPC 재호출 방지
+    _sb_key = f"{cert_name}|{query_text[:120]}"
+    _sb_entry = _supabase_cache.get(_sb_key)
+    if _sb_entry is not None and (time.monotonic() - _sb_entry[0]) < _SUPABASE_TTL:
+        return _sb_entry[1]  # None(결과없음) 또는 list 둘 다 캐싱됨
+
     try:
         from openai import OpenAI
         from supabase import create_client
@@ -491,7 +504,9 @@ def _search_supabase(cert_name: str, query_text: str, settings: Settings) -> lis
                 "cert_name": item.get("name", ""),
                 "similarity": item.get("similarity"),
             })
-        return rows if rows else None
+        result = rows if rows else None
+        _supabase_cache[_sb_key] = (time.monotonic(), result)
+        return result
     except Exception:
         return None
 

@@ -1,1 +1,6 @@
+# apex → www 정규화 (HTTP/HTTPS 모두)
+http://didim.life/*   https://www.didim.life/:splat  301!
+https://didim.life/*  https://www.didim.life/:splat  301!
+
+# API 프록시
 /api/*  https://vulnerable-groups-rag.onrender.com/api/:splat  200

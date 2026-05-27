@@ -25,7 +25,9 @@ from backend.app.schemas.envelope import err_envelope, ok_envelope
 
 logger = logging.getLogger(__name__)
 
-_TRAINING_BASE = "https://www.work24.go.kr/cm/openApi/call/hr/callOpenApiSvcInfo310L01.do"
+_TRAINING_BASE        = "https://www.work24.go.kr/cm/openApi/call/hr/callOpenApiSvcInfo310L01.do"
+_TRAINING_DETAIL_BASE = "https://www.work24.go.kr/cm/openApi/call/hr/callOpenApiSvcInfo310L02.do"
+_TRAINING_INST_BASE   = "https://www.work24.go.kr/cm/openApi/call/hr/callOpenApiSvcInfo320L01.do"
 # NOTE: openapi.q-net.or.kr/ProcessEvalService 폐지(2025). B490007 대체 없음.
 # process_eval / job_learner 함수는 graceful unavailable 응답으로 처리.
 _QNET_PROCESS_EVAL_URL = "https://www.q-net.or.kr/man004.do?id=man00401&gSite=Q"
@@ -269,6 +271,163 @@ def get_training_by_cert_id(
         )
         if result.get("success") and result.get("data"):
             result["data"]["fallback_note"] = "자격증명 검색 결과가 없어 NCS 분류로 조회했습니다."
+    return result
+
+
+def _normalize_training_institution(raw: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "institution_id":   raw.get("instId") or raw.get("inst_base_id"),
+        "institution_name": raw.get("instNm") or raw.get("traInstNm"),
+        "branch_name":      raw.get("instNm2") or "",
+        "address":          raw.get("address") or raw.get("traAddr") or "",
+        "tel":              raw.get("telNo") or "",
+        "homepage":         raw.get("hpAddr") or "",
+        "ncs_categories":   raw.get("ncs1NmList") or raw.get("ncsCdNm") or "",
+        "course_count":     raw.get("trprCnt") or "",
+        "region_code":      raw.get("traArea1") or "",
+    }
+
+
+def get_training_course_detail(
+    course_id: str,
+    settings: Settings,
+    degree: str = "1",
+) -> dict:
+    """
+    국민내일배움카드 훈련과정 상세 조회 (callOpenApiSvcInfo310L02).
+    course_id: 훈련과정 ID (목록 API의 trprId 또는 course_id 필드)
+    degree: 차수 (기본값 "1" — 동일 과정의 여러 기수)
+    """
+    api_key = settings.get_training_api_key
+    if not api_key:
+        return err_envelope("API_KEY_MISSING", "훈련과정 API 키가 설정되지 않았습니다.")
+    if not course_id:
+        return err_envelope("MISSING_REQUIRED_FIELD", "course_id가 필요합니다.")
+
+    cache_key = f"training_detail|{course_id}|{degree}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    params: dict[str, Any] = {
+        "authKey":    api_key,
+        "returnType": "XML",
+        "outType":    "1",
+        "trprId":     course_id,
+        "trprDegr":   degree,
+    }
+
+    try:
+        resp = httpx.get(_TRAINING_DETAIL_BASE, params=params, timeout=settings.training_api_timeout)
+        resp.raise_for_status()
+        root = ET.fromstring(resp.text)
+    except httpx.TimeoutException:
+        return err_envelope("EXTERNAL_API_TIMEOUT", "훈련과정 상세 API 응답 시간이 초과되었습니다.")
+    except httpx.HTTPStatusError as e:
+        return err_envelope("EXTERNAL_API_ERROR", f"훈련과정 상세 API 오류: HTTP {e.response.status_code}")
+    except ET.ParseError:
+        return err_envelope("EXTERNAL_API_ERROR", "훈련과정 상세 응답 파싱에 실패했습니다.")
+    except Exception as e:
+        logger.warning("training detail API error: %s", e)
+        return err_envelope("EXTERNAL_API_ERROR", "훈련과정 상세 조회 중 오류가 발생했습니다.")
+
+    raw: dict[str, Any] = {}
+    for item in root.iter("scn_list"):
+        for child in item:
+            raw[child.tag] = (child.text or "").strip()
+        break  # 단건 상세
+    if not raw:
+        return err_envelope("NOT_FOUND", f"course_id '{course_id}' 상세 정보를 찾을 수 없습니다.")
+
+    course = _normalize_training_course(raw)
+    # 상세 전용 추가 필드
+    course["contents"]      = raw.get("contents") or ""
+    course["curriculum"]    = raw.get("alaSerNum") or raw.get("curriculumNm") or ""
+    course["supervisor"]    = raw.get("supervisorNm") or ""
+    course["degree"]        = raw.get("trprDegr") or degree
+    course["course_status"] = raw.get("courseStatNm") or ""
+    course["ncs_code"]      = raw.get("ncsCd") or ""
+    course["ncs_name"]      = raw.get("ncsCdNm") or course.get("ncs_name") or ""
+
+    result = ok_envelope({"course": course})
+    _cache_set(cache_key, result)
+    return result
+
+
+def get_training_institutions(
+    settings: Settings,
+    region: str | None = None,
+    ncs_category: str | None = None,
+    institution_name: str | None = None,
+    page_size: int = 20,
+) -> dict:
+    """
+    훈련기관 정보 조회 (callOpenApiSvcInfo320L01).
+    region: 지역명 (예: "서울")
+    ncs_category: NCS 1차 분류명 (예: "정보통신")
+    institution_name: 기관명 검색어
+    """
+    api_key = settings.get_training_api_key
+    if not api_key:
+        return err_envelope("API_KEY_MISSING", "훈련과정 API 키가 설정되지 않았습니다.")
+
+    cache_key = f"training_inst|{region}|{ncs_category}|{institution_name}|{page_size}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    params: dict[str, Any] = {
+        "authKey":    api_key,
+        "returnType": "XML",
+        "outType":    "1",
+        "pageNum":    "1",
+        "pageSize":   str(min(page_size, 100)),
+    }
+    if region:
+        region_code = TRAINING_REGION_CODES.get(region)
+        if region_code:
+            params["srchTraArea1"] = region_code
+    if ncs_category:
+        ncs_code = NCS_LEVEL1_CODES.get(ncs_category)
+        if ncs_code:
+            params["srchNcs1"] = ncs_code
+    if institution_name:
+        params["srchInstNm"] = institution_name
+
+    try:
+        resp = httpx.get(_TRAINING_INST_BASE, params=params, timeout=settings.training_api_timeout)
+        resp.raise_for_status()
+        root = ET.fromstring(resp.text)
+    except httpx.TimeoutException:
+        return err_envelope("EXTERNAL_API_TIMEOUT", "훈련기관 API 응답 시간이 초과되었습니다.")
+    except httpx.HTTPStatusError as e:
+        return err_envelope("EXTERNAL_API_ERROR", f"훈련기관 API 오류: HTTP {e.response.status_code}")
+    except ET.ParseError:
+        return err_envelope("EXTERNAL_API_ERROR", "훈련기관 응답 파싱에 실패했습니다.")
+    except Exception as e:
+        logger.warning("training institution API error: %s", e)
+        return err_envelope("EXTERNAL_API_ERROR", "훈련기관 조회 중 오류가 발생했습니다.")
+
+    raw_insts: list[dict[str, Any]] = []
+    for item in root.iter("inst_base_list"):
+        row: dict[str, Any] = {}
+        for child in item:
+            row[child.tag] = (child.text or "").strip()
+        if row:
+            raw_insts.append(row)
+
+    institutions = [_normalize_training_institution(r) for r in raw_insts]
+
+    result = ok_envelope({
+        "query": {
+            "region":           region,
+            "ncs_category":     ncs_category,
+            "institution_name": institution_name,
+        },
+        "institutions": institutions,
+        "total":        len(institutions),
+    })
+    _cache_set(cache_key, result)
     return result
 
 

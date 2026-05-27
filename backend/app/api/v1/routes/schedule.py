@@ -1,10 +1,10 @@
 # File: schedule.py
-# Last Updated: 2026-05-14
+# Last Updated: 2026-05-27
 # Content Hash: SHA256:TBD
-# Role: 시험일정·접수일정 API — reserved 해제, 실제 HRD Korea API 호출
+# Role: 시험일정·접수일정·자격종목코드 API — HRD Korea apis.data.go.kr/B490007
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 from backend.app.api.deps import SettingsDep
 from backend.app.services import exam_schedule_service
@@ -17,6 +17,7 @@ def get_exam_schedule(cert_id: str, settings: SettingsDep) -> dict:
     """
     자격증 시험일정 조회.
     한국산업인력공단 Q-Net API를 통해 해당 연도 시험일정과 D-Day를 반환합니다.
+    jmCd(종목코드)를 선조회하여 정확도를 높이고, 없으면 description 필터로 fallback합니다.
     """
     return exam_schedule_service.get_exam_schedule(cert_id, settings)
 
@@ -40,6 +41,18 @@ def get_professional_exam_schedule(
     Q-Net ProfExamScheduleService — 의사·건축사 등 국가전문자격 일정.
     """
     return exam_schedule_service.get_professional_exam_schedule(cert_name, settings)
+
+
+@router.get("/cert-codes")
+def get_cert_codes(
+    settings: SettingsDep,
+    keyword: str | None = Query(default=None, description="종목명 검색어 (부분 일치)"),
+) -> dict:
+    """
+    자격종목 코드 목록 조회 (apis.data.go.kr/B490007/qualItlCd).
+    jmCd + 종목명 + 등급명을 반환합니다. keyword로 부분 검색 가능.
+    """
+    return exam_schedule_service.get_cert_codes(settings, keyword=keyword)
 
 
 @router.get("/links/support/{cert_id}")
