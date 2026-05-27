@@ -93,7 +93,10 @@ function CertInfoRow({ data, candidate }: { data: CertSchedule; candidate?: Cert
   const grade = data.cert_grade_tier || candidate?.cert_grade_tier || '';
   const passRate = data.avg_pass_rate_3yr ?? candidate?.avg_pass_rate_3yr;
   const domain = data.primary_domain || candidate?.primary_domain || '';
-  const freq = data.exam_frequency || candidate?.exam_sessions_per_year?.toString() || '';
+  // exam_frequency: 이미 "연 3회" 같이 완성된 문자열로 옴 (backend backfill_cert_master.py)
+  // exam_sessions_per_year: 숫자만 옴 → "연 N회"로 직접 포맷
+  const freqLabel: string = (data.exam_frequency && data.exam_frequency.trim())
+    || (candidate?.exam_sessions_per_year != null ? `연 ${candidate.exam_sessions_per_year}회` : '');
   const issuer = data.issuer || candidate?.issuer || '';
 
   return (
@@ -109,7 +112,7 @@ function CertInfoRow({ data, candidate }: { data: CertSchedule; candidate?: Cert
             <TrendingUp size={11} /> 평균 합격률 {passRate.toFixed(1)}%
           </span>
         )}
-        {freq && <span className="sch-freq-chip">연 {freq}회</span>}
+        {freqLabel && <span className="sch-freq-chip">{freqLabel}</span>}
       </div>
     </div>
   );

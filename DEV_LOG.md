@@ -1,7 +1,7 @@
 # DEV_LOG.md
 
 > **파일명**: DEV_LOG.md  
-> **최종 수정일**: 2026-05-15  
+> **최종 수정일**: 2026-05-27  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 날짜별 진행 로그, 변경 요약, 해결 이력  
 > **문서 우선순위**: 14  
@@ -13,6 +13,19 @@
 ## 1. 문서 목적
 
 구현과 문서 정렬 작업의 **타임라인**을 남겨, 이후 기여자가 맥락을 잃지 않게 한다.
+
+---
+
+## 2026-05-27 — Schedule 페이지 빈도 라벨 중복 렌더 버그 수정
+
+### 수행
+
+**버그 수정**
+
+- `frontend/src/pages/Schedule/index.tsx` — `CertInfoRow`에서 `exam_frequency` 칩이 `"연 연 3회회"`로 이중 렌더되던 문제 수정
+  - 원인: `data.exam_frequency`는 backend(`backfill_cert_master.py`)에서 이미 `"연 3회"` 형태 완성 문자열로 내려오는데, 프론트가 다시 `연 {freq}회`로 감쌌음
+  - 수정: `exam_frequency`(문자열)는 그대로 출력하고, `exam_sessions_per_year`(숫자) fallback일 때만 `연 N회`로 포맷하는 `freqLabel`로 분리
+  - 영향 범위: Schedule 페이지 카드의 보라색 빈도 chip만 변경. Recommendation/Roadmap은 이미 raw 출력 방식이라 무관
 
 ---
 
