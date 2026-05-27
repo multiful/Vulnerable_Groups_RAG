@@ -1,6 +1,6 @@
 // Content Hash: SHA256:TBD
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, Briefcase, BookOpen, Grid3X3, Loader2, AlertCircle, ChevronRight, ExternalLink, X } from 'lucide-react';
 
 type Tab = 'jobs' | 'majors' | 'ncs';
@@ -76,7 +76,7 @@ function ScoreMini({ label, score }: { label: string; score: number | null }) {
   );
 }
 
-function JobCard({ job }: { job: CareerJob }) {
+function JobCard({ job, onFindTraining, onFindJobs }: { job: CareerJob; onFindTraining?: (keyword: string) => void; onFindJobs?: (keyword: string) => void }) {
   const [open, setOpen] = useState(false);
   const [scores, setScores] = useState<JobScores | null>(null);
   const [scoresFetched, setScoresFetched] = useState(false);
@@ -200,6 +200,22 @@ function JobCard({ job }: { job: CareerJob }) {
               <span className="ex-detail-val">{job.related_majors}</span>
             </div>
           )}
+          {onFindTraining && job.name && (
+            <button
+              className="ex-training-link"
+              onClick={() => onFindTraining(job.name)}
+            >
+              <BookOpen size={12} /> 관련 훈련과정 찾기
+            </button>
+          )}
+          {onFindJobs && job.name && (
+            <button
+              className="ex-jobs-link"
+              onClick={() => onFindJobs(job.name)}
+            >
+              <Briefcase size={12} /> 채용행사 찾기
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -279,7 +295,7 @@ function MajorCard({ major }: { major: CareerMajor }) {
   );
 }
 
-function NcsCertCard({ cert }: { cert: NcsCert }) {
+function NcsCertCard({ cert, onFindTraining }: { cert: NcsCert; onFindTraining?: (keyword: string) => void }) {
   const passRate = cert.avg_pass_rate_3yr != null ? `${cert.avg_pass_rate_3yr.toFixed(1)}%` : '-';
   const tierColor = cert.cert_grade_tier === '기사' || cert.cert_grade_tier === '산업기사'
     ? 'var(--primary)' : cert.cert_grade_tier === '기능사' ? '#10b981' : '#f59e0b';
@@ -296,11 +312,17 @@ function NcsCertCard({ cert }: { cert: NcsCert }) {
         {cert.primary_domain && <span className="ex-ncs-meta-item">{cert.primary_domain}</span>}
         <span className="ex-ncs-meta-item">합격률 {passRate}</span>
       </div>
+      {onFindTraining && cert.cert_name && (
+        <button className="ex-cert-training-link" onClick={() => onFindTraining(cert.cert_name)}>
+          <BookOpen size={11} /> 훈련과정 찾기
+        </button>
+      )}
     </div>
   );
 }
 
 const Explore: React.FC = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialTab = (['jobs', 'majors', 'ncs'].includes(searchParams.get('tab') ?? ''))
     ? (searchParams.get('tab') as Tab)
@@ -478,6 +500,14 @@ const Explore: React.FC = () => {
     setSelectedNcs(item);
     fetchNcsCerts(item);
   }, [fetchNcsCerts]);
+
+  const handleFindTraining = useCallback((keyword: string) => {
+    navigate(`/training?keyword=${encodeURIComponent(keyword)}`);
+  }, [navigate]);
+
+  const handleFindJobs = useCallback((keyword: string) => {
+    navigate(`/jobs?keyword=${encodeURIComponent(keyword)}`);
+  }, [navigate]);
 
   const handleTabChange = useCallback((t: Tab) => {
     setTab(t);
@@ -724,7 +754,7 @@ const Explore: React.FC = () => {
               <p className="ex-result-count">총 {jobTotal.toLocaleString()}개 직업 · {jobResults.length}개 표시</p>
               <div className="ex-card-list">
                 {jobResults.map(job => (
-                  <JobCard key={job.seq} job={job} />
+                  <JobCard key={job.seq} job={job} onFindTraining={handleFindTraining} onFindJobs={handleFindJobs} />
                 ))}
               </div>
               {totalPages > 1 && (
@@ -912,7 +942,7 @@ const Explore: React.FC = () => {
                         <p className="ex-result-count">{ncsCerts.length}개 자격증</p>
                         <div className="ex-ncs-cert-list">
                           {ncsCerts.map(cert => (
-                            <NcsCertCard key={cert.cert_id} cert={cert} />
+                            <NcsCertCard key={cert.cert_id} cert={cert} onFindTraining={handleFindTraining} />
                           ))}
                         </div>
                       </>
@@ -1109,6 +1139,31 @@ const Explore: React.FC = () => {
         .ex-ncs-duty-major { color: #3730a3; font-weight: 600; }
         .ex-ncs-duty-minor { color: #6366f1; }
         .ex-ncs-duty-more { background: #f8fafc; border-color: #e2e8f0; color: #64748b; }
+        .ex-training-link {
+          display: inline-flex; align-items: center; gap: .3rem;
+          font-size: .72rem; color: #059669; font-weight: 600;
+          background: #ecfdf5; border: 1px solid #bbf7d0;
+          padding: .2rem .6rem; border-radius: 99px; cursor: pointer;
+          width: fit-content; transition: background .12s;
+        }
+        .ex-training-link:hover { background: #d1fae5; }
+        .ex-cert-training-link {
+          display: inline-flex; align-items: center; gap: .25rem;
+          font-size: .67rem; color: #059669; font-weight: 600;
+          background: #ecfdf5; border: 1px solid #bbf7d0;
+          padding: .15rem .5rem; border-radius: 99px; cursor: pointer;
+          width: fit-content; transition: background .12s; margin-top: .1rem;
+        }
+        .ex-cert-training-link:hover { background: #d1fae5; }
+        .ex-jobs-link {
+          display: inline-flex; align-items: center; gap: .3rem;
+          font-size: .72rem; color: #7c3aed; font-weight: 600;
+          background: #f5f3ff; border: 1px solid #ddd6fe;
+          padding: .2rem .6rem; border-radius: 99px; cursor: pointer;
+          width: fit-content; transition: background .12s;
+        }
+        .ex-jobs-link:hover { background: #ede9fe; }
+
         .ex-ncs-cert-list { display: flex; flex-direction: column; gap: .375rem; }
         .ex-ncs-cert-card {
           padding: .5rem .75rem; background: var(--surface);

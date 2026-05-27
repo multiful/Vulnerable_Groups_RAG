@@ -1,7 +1,7 @@
 # File: jobs.py
-# Last Updated: 2026-05-14
+# Last Updated: 2026-05-26
 # Content Hash: SHA256:TBD
-# Role: GET /api/v1/jobs/hiring, GET /api/v1/jobs/detail
+# Role: GET /api/v1/jobs/hiring, /jobs/fairs, /jobs/detail, /jobs/pass-stats, /jobs/hire-stats
 from __future__ import annotations
 
 from fastapi import APIRouter, Query
@@ -70,3 +70,54 @@ def get_job_detail(
 ) -> dict:
     """고용24 직업정보 상세 조회 (임금, 만족도, 전망, 근무내용 등)."""
     return jobs_service.get_job_detail(job_name=job_name, job_code=job_code)
+
+
+@router.get("/fairs")
+def get_job_fairs(
+    settings: SettingsDep,
+    region: str | None = Query(default=None, description="지역명 (예: 서울)"),
+    keyword: str | None = Query(default=None, description="행사명 검색어"),
+    days_ahead: int = Query(default=90, ge=7, le=365, description="조회 기간 (오늘로부터 N일)"),
+    page_size: int = Query(default=20, ge=1, le=100),
+) -> dict:
+    """
+    Work24 채용행사 목록 조회 (개인 계정 접근 가능).
+    고용센터·지자체 주최 공개 채용행사 — 기업 전용 채용공고와 다릅니다.
+    """
+    from backend.app.services import job_fair_service
+    return job_fair_service.get_job_fairs(
+        settings, region=region, keyword=keyword,
+        days_ahead=days_ahead, page_size=page_size,
+    )
+
+
+@router.get("/fairs/by-domain")
+def get_job_fairs_by_domain(
+    settings: SettingsDep,
+    domain_name: str = Query(description="도메인명 (예: IT/정보통신, 보건/의료)"),
+    region: str | None = Query(default=None),
+    page_size: int = Query(default=10, ge=1, le=50),
+) -> dict:
+    """도메인명으로 관련 채용행사 조회 — 추천 페이지 연결용."""
+    from backend.app.services import job_fair_service
+    return job_fair_service.get_job_fairs_by_domain(settings, domain_name, region=region, page_size=page_size)
+
+
+@router.get("/pass-stats/{cert_id}")
+def get_pass_stats(cert_id: str, settings: SettingsDep) -> dict:
+    """
+    HRD Korea 합격자 통계 조회 (개인 계정 접근 가능).
+    최근 3개 연도 필기·실기 응시/합격/합격률 반환.
+    """
+    from backend.app.services.exam_schedule_service import get_pass_stats
+    return get_pass_stats(cert_id, settings)
+
+
+@router.get("/hire-stats/{cert_id}")
+def get_hire_stats(cert_id: str, settings: SettingsDep) -> dict:
+    """
+    HRD Korea 자격취득자 취업현황 조회 (개인 계정 접근 가능).
+    취업률·고용보험 가입 현황 반환.
+    """
+    from backend.app.services.exam_schedule_service import get_hire_stats
+    return get_hire_stats(cert_id, settings)

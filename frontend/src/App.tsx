@@ -10,6 +10,7 @@ import Recommendation from './pages/Recommendation';
 import AllCerts from './pages/AllCerts';
 import Schedule from './pages/Schedule';
 import Explore from './pages/Explore';
+import Training from './pages/Training';
 import Jobs from './pages/Jobs';
 import Privacy from './pages/Privacy';
 import Contact from './pages/Contact';
@@ -29,6 +30,7 @@ const App: React.FC = () => {
             <Route path="certs" element={<AllCerts />} />
             <Route path="schedule" element={<Schedule />} />
             <Route path="explore" element={<Explore />} />
+            <Route path="training" element={<Training />} />
             <Route path="jobs" element={<Jobs />} />
             <Route path="privacy" element={<Privacy />} />
             <Route path="contact" element={<Contact />} />

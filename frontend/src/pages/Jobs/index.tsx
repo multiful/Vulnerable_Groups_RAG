@@ -1,93 +1,91 @@
 // Content Hash: SHA256:TBD
-import React, { useState, useCallback, useRef } from 'react';
-import { Search, Briefcase, MapPin, GraduationCap, ExternalLink, Loader2, AlertCircle } from 'lucide-react';
+// 채용행사 페이지 — Work24 공공 채용행사 (개인 계정 접근 가능)
+// 기업 전용 채용공고(Work24 채용목록)와 달리 고용센터·지자체 주최 행사
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Search, CalendarDays, MapPin, ExternalLink, Loader2, AlertCircle, Building2, Users } from 'lucide-react';
 
-interface HiringJob {
-  title?: string;
-  company?: string;
-  location?: string;
-  salary?: string;
-  education?: string;
-  deadline?: string;
-  url?: string;
-  job_type?: string;
-  experience?: string;
-  [key: string]: unknown;
-}
-
-interface HiringResponse {
-  jobs: HiringJob[];
-  total: number;
-  keyword?: string;
+interface JobFairEvent {
+  event_id?: string;
+  event_name?: string;
+  organizer?: string;
   region?: string;
+  venue?: string;
+  start_date?: string;
+  end_date?: string;
+  apply_method?: string;
+  url?: string;
+  description?: string;
+  participant_count?: string;
+  event_type?: string;
 }
 
 const REGIONS = ['전국', '서울', '경기', '인천', '부산', '대구', '광주', '대전', '울산', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'];
-const EDU_OPTIONS = [
-  { code: '', label: '학력 무관' },
-  { code: '02', label: '고졸' },
-  { code: '03', label: '대졸(2년)' },
-  { code: '05', label: '대졸(4년)' },
-  { code: '06', label: '석사' },
-  { code: '07', label: '박사' },
-];
-const CAREER_OPTIONS = [
-  { code: '', label: '경력 무관' },
-  { code: 'N', label: '신입' },
-  { code: 'E', label: '경력' },
-];
 
-function JobCard({ job }: { job: HiringJob }) {
-  const title = (job.title as string) || '(제목 없음)';
-  const company = (job.company as string) || '';
-  const companyType = (job.company_type as string) || '';
-  const region = (job.region as string) || '';
-  const salary = (job.salary as string) || '';
-  const salType = (job.sal_type as string) || '';
-  const education = (job.education as string) || '';
-  const career = (job.career as string) || '';
-  const employmentType = (job.employment_type as string) || '';
-  const closeDate = (job.close_date as string) || '';
-  const url = (job.url as string) || '';
+function formatDate(d: string) {
+  if (!d || d.length < 8) return d;
+  return `${d.slice(0, 4)}.${d.slice(4, 6)}.${d.slice(6, 8)}`;
+}
+
+function EventCard({ event }: { event: JobFairEvent }) {
+  const name = event.event_name || '(행사명 없음)';
+  const org = event.organizer || '';
+  const venue = event.venue || '';
+  const region = event.region || '';
+  const start = formatDate(event.start_date || '');
+  const end = formatDate(event.end_date || '');
+  const method = event.apply_method || '';
+  const count = event.participant_count || '';
+  const type = event.event_type || '';
+  const url = event.url || '';
+  const desc = event.description || '';
+
+  const dateStr = start && end ? `${start} ~ ${end}` : (start || end || '');
 
   return (
-    <div className="job-card">
-      <div className="job-card-top">
-        <span className="job-card-title">{title}</span>
-        <div className="job-card-company-row">
-          {company && <span className="job-card-company">{company}</span>}
-          {companyType && <span className="job-company-type-badge">{companyType}</span>}
+    <div className="jf-card">
+      <div className="jf-card-top">
+        <div className="jf-card-title-row">
+          <span className="jf-event-name">{name}</span>
+          {type && <span className="jf-type-badge">{type}</span>}
         </div>
-      </div>
-      <div className="job-card-meta">
-        {region && (
-          <span className="job-meta-item">
-            <MapPin size={11} /> {region}
-          </span>
-        )}
-        {salary && (
-          <span className="job-meta-item job-meta-salary">
-            {salType && <span className="job-sal-type">{salType}</span>} {salary}
-          </span>
-        )}
-        {education && (
-          <span className="job-meta-item">
-            <GraduationCap size={11} /> {education}
-          </span>
-        )}
-        {career && (
-          <span className="job-meta-item">{career}</span>
-        )}
-        {employmentType && (
-          <span className="job-meta-item job-emp-type">{employmentType}</span>
-        )}
-        {closeDate && (
-          <span className="job-meta-item job-meta-deadline">마감: {closeDate}</span>
+        {org && (
+          <div className="jf-org-row">
+            <Building2 size={11} className="jf-org-icon" />
+            <span className="jf-organizer">{org}</span>
+          </div>
         )}
       </div>
-      {url && (
-        <a className="job-card-link" href={url} target="_blank" rel="noopener noreferrer">
-          <ExternalLink size={11} /> 채용 상세 보기
+      <div className="jf-meta-row">
+        {(venue || region) && (
+          <span className="jf-meta-item">
+            <MapPin size={11} /> {venue || region}
+          </span>
+        )}
+        {dateStr && (
+          <span className="jf-meta-item jf-meta-date">
+            <CalendarDays size={11} /> {dateStr}
+          </span>
+        )}
+        {method && (
+          <span className="jf-meta-item">참가방법: {method}</span>
+        )}
+        {count && (
+          <span className="jf-meta-item">
+            <Users size={11} /> 참가 {count}명
+          </span>
+        )}
+      </div>
+      {desc && (
+        <p className="jf-desc">{desc.slice(0, 100)}{desc.length > 100 ? '…' : ''}</p>
+      )}
+      {url ? (
+        <a className="jf-card-link" href={url} target="_blank" rel="noopener noreferrer">
+          <ExternalLink size={11} /> 행사 상세 보기
+        </a>
+      ) : (
+        <a className="jf-card-link" href="https://www.work24.go.kr/cm/c/f/1300/retrivewantedList.do" target="_blank" rel="noopener noreferrer">
+          <ExternalLink size={11} /> Work24에서 확인
         </a>
       )}
     </div>
@@ -95,351 +93,302 @@ function JobCard({ job }: { job: HiringJob }) {
 }
 
 const Jobs: React.FC = () => {
-  const [keyword, setKeyword] = useState('');
+  const [searchParams] = useSearchParams();
+
+  const [keyword, setKeyword] = useState(searchParams.get('keyword') || '');
   const [region, setRegion] = useState('');
-  const [education, setEducation] = useState('');
-  const [career, setCareer] = useState('');
-  const [results, setResults] = useState<HiringJob[]>([]);
+  const [results, setResults] = useState<JobFairEvent[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
-  const cacheRef = useRef<Record<string, HiringResponse>>({});
+  const cacheRef = useRef<Record<string, { events: JobFairEvent[]; total: number }>>({});
+  const didAutoSearch = useRef(false);
 
-  const fetchJobs = useCallback(async () => {
-    const cacheKey = `${keyword}__${region}__${education}__${career}`;
+  const fetchFairs = useCallback(async (kw: string, reg: string) => {
+    const cacheKey = `${kw}__${reg}`;
     if (cacheRef.current[cacheKey]) {
-      const cached = cacheRef.current[cacheKey];
-      setResults(cached.jobs);
-      setTotal(cached.total);
+      const c = cacheRef.current[cacheKey];
+      setResults(c.events);
+      setTotal(c.total);
       setSearched(true);
       return;
     }
-
     setLoading(true);
     setError(null);
     setSearched(true);
     try {
-      const params = new URLSearchParams({ display: '30' });
-      if (keyword.trim()) params.set('keyword', keyword.trim());
-      if (region && region !== '전국') params.set('region', region);
-      if (education) params.set('education', education);
-      if (career) params.set('career', career);
+      const params = new URLSearchParams({ days_ahead: '120', page_size: '30' });
+      if (kw.trim()) params.set('keyword', kw.trim());
+      if (reg && reg !== '전국') params.set('region', reg);
 
-      const r = await fetch(`/api/v1/jobs/hiring?${params}`);
+      const r = await fetch(`/api/v1/jobs/fairs?${params}`);
       const json = await r.json();
-
       if (json.success && json.data) {
-        const jobs: HiringJob[] = json.data.jobs ?? [];
-        const t: number = json.data.total ?? jobs.length;
-        cacheRef.current[cacheKey] = { jobs, total: t };
-        setResults(jobs);
+        const events: JobFairEvent[] = json.data.events ?? [];
+        const t: number = json.data.total ?? events.length;
+        cacheRef.current[cacheKey] = { events, total: t };
+        setResults(events);
         setTotal(t);
       } else {
-        setError(json.error?.message ?? '채용 정보를 불러올 수 없습니다. WorkNet API 상태를 확인해주세요.');
+        setError(json.error?.message ?? '채용행사 정보를 불러올 수 없습니다.');
       }
     } catch {
-      setError('채용 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.');
+      setError('채용행사 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.');
     }
     setLoading(false);
-  }, [keyword, region, education, career]);
+  }, []);
+
+  // URL ?keyword= 파라미터로 자동 검색 (도메인 연결)
+  useEffect(() => {
+    const kw = searchParams.get('keyword');
+    if (kw && !didAutoSearch.current) {
+      didAutoSearch.current = true;
+      setKeyword(kw);
+      fetchFairs(kw, '');
+    }
+  }, [searchParams, fetchFairs]);
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    fetchJobs();
-  }, [fetchJobs]);
+    fetchFairs(keyword, region);
+  }, [keyword, region, fetchFairs]);
 
   return (
-    <div className="jobs-wrap">
-      <div className="jobs-header">
-        <h1 className="jobs-title">채용 정보</h1>
-        <p className="jobs-sub">
-          키워드, 지역, 학력 조건으로 원하는 공고를 찾아보세요.
+    <div className="jf-wrap">
+      <div className="jf-header">
+        <h1 className="jf-title">채용행사</h1>
+        <p className="jf-sub">
+          고용센터·지자체가 주최하는 공개 채용행사를 검색하세요.
+          <span className="jf-sub-note"> (개인 계정으로 조회 가능한 공공 채용행사입니다)</span>
         </p>
       </div>
 
       {/* 검색 폼 */}
-      <form className="jobs-search-form" onSubmit={handleSubmit}>
-        <div className="jobs-search-row">
-          <div className="jobs-search-input-wrap">
-            <Search size={15} className="jobs-search-icon" />
+      <form className="jf-search-form" onSubmit={handleSubmit}>
+        <div className="jf-search-row">
+          <div className="jf-search-input-wrap">
+            <Search size={15} className="jf-search-icon" />
             <input
-              className="jobs-search-input"
+              className="jf-search-input"
               type="text"
-              placeholder="직종 키워드 검색 (예: 소프트웨어, 간호사, 회계)"
+              placeholder="행사명 검색 (예: IT, 의료, 제조, 채용박람회)"
               value={keyword}
               onChange={e => setKeyword(e.target.value)}
             />
           </div>
         </div>
-        <div className="jobs-filter-row">
-          <select
-            className="jobs-filter-select"
-            value={region}
-            onChange={e => setRegion(e.target.value)}
-          >
+        <div className="jf-filter-row">
+          <select className="jf-filter-select" value={region} onChange={e => setRegion(e.target.value)}>
             {REGIONS.map(r => (
               <option key={r} value={r === '전국' ? '' : r}>{r}</option>
             ))}
           </select>
-          <select
-            className="jobs-filter-select"
-            value={education}
-            onChange={e => setEducation(e.target.value)}
-          >
-            {EDU_OPTIONS.map(e => (
-              <option key={e.code} value={e.code}>{e.label}</option>
-            ))}
-          </select>
-          <select
-            className="jobs-filter-select"
-            value={career}
-            onChange={e => setCareer(e.target.value)}
-          >
-            {CAREER_OPTIONS.map(c => (
-              <option key={c.code} value={c.code}>{c.label}</option>
-            ))}
-          </select>
-          <button type="submit" className="btn-primary jobs-search-btn" disabled={loading}>
-            {loading ? <Loader2 size={15} className="spin" /> : <><Search size={14} /> 채용 검색</>}
+          <button type="submit" className="btn-primary jf-search-btn" disabled={loading}>
+            {loading ? <Loader2 size={15} className="spin" /> : <><Search size={14} /> 검색</>}
           </button>
         </div>
       </form>
 
       {/* 에러 */}
       {error && (
-        <div className="jobs-error-wrap">
-          <div className="jobs-error-banner">
-            <AlertCircle size={15} className="jobs-error-icon" />
-            <div>
-              <p className="jobs-error-title">채용 정보 API 점검 중</p>
-              <p className="jobs-error-msg">{error}</p>
-            </div>
+        <div className="jf-error-wrap">
+          <AlertCircle size={15} className="jf-error-icon" />
+          <div>
+            <p className="jf-error-title">채용행사 조회 실패</p>
+            <p className="jf-error-msg">{error}</p>
           </div>
-          <div className="jobs-error-actions">
-            <a
-              href={keyword
-                ? `https://www.work.go.kr/empInfo/empInfoSrch/list/dtlEmpSrchList.do?searchKeyword=${encodeURIComponent(keyword)}`
-                : 'https://www.work.go.kr/empInfo/empInfoSrch/list/dtlEmpSrchList.do'}
-              target="_blank" rel="noopener noreferrer"
-              className="jobs-fallback-btn jobs-fallback-primary"
-            >
-              <ExternalLink size={14} /> WorkNet에서 직접 검색{keyword && ` "${keyword}"`}
-            </a>
-            <a href="https://www.work24.go.kr/wk/a/b/1200/retrivewantedList.do" target="_blank" rel="noopener noreferrer" className="jobs-fallback-btn jobs-fallback-secondary">
-              Work24 채용 공고 보기
-            </a>
-          </div>
-          <div className="jobs-fallback-quick">
-            <p className="jobs-fallback-quick-label">인기 직종 바로가기</p>
-            {['IT·인터넷', '의료·복지', '사무·관리', '교육·강사', '서비스'].map(cat => (
-              <a
-                key={cat}
-                href={`https://www.work.go.kr/empInfo/empInfoSrch/list/dtlEmpSrchList.do?searchKeyword=${encodeURIComponent(cat)}`}
-                target="_blank" rel="noopener noreferrer"
-                className="jobs-fallback-quick-btn"
-              >{cat}</a>
-            ))}
-          </div>
+          <a
+            href="https://www.work24.go.kr/cm/c/f/1300/retrivewantedList.do"
+            target="_blank" rel="noopener noreferrer"
+            className="jf-fallback-btn"
+          >
+            <ExternalLink size={13} /> Work24 채용행사 바로가기
+          </a>
         </div>
       )}
 
       {/* 로딩 */}
       {loading && (
-        <div className="jobs-loading">
+        <div className="jf-loading">
           <Loader2 size={20} className="spin" />
-          <span>WorkNet에서 채용 정보를 가져오는 중…</span>
+          <span>Work24에서 채용행사를 가져오는 중…</span>
         </div>
       )}
 
       {/* 결과 없음 */}
       {!loading && searched && results.length === 0 && !error && (
-        <div className="jobs-empty">
-          <Briefcase size={36} className="jobs-empty-icon" />
-          <h3>검색 결과가 없습니다</h3>
-          <p>다른 키워드나 조건으로 다시 검색해보세요.<br />조건을 더 넓게 설정하면 더 많은 결과가 나타납니다.</p>
+        <div className="jf-empty">
+          <CalendarDays size={36} className="jf-empty-icon" />
+          <h3>현재 예정된 채용행사가 없습니다</h3>
+          <p>다른 지역이나 키워드로 검색해보세요.<br />행사 일정이 없을 경우 Work24에서 직접 확인하실 수 있습니다.</p>
           <a
-            href="https://www.work.go.kr/empInfo/empInfoSrch/list/dtlEmpSrchList.do"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="jobs-worknet-direct"
+            href="https://www.work24.go.kr/cm/c/f/1300/retrivewantedList.do"
+            target="_blank" rel="noopener noreferrer"
+            className="jf-ext-link"
           >
-            WorkNet에서 직접 검색 →
+            Work24 채용행사 바로가기 →
           </a>
         </div>
       )}
 
-      {/* 안내 (첫 화면) */}
+      {/* 첫 화면 안내 */}
       {!searched && !loading && (
-        <div className="jobs-intro">
-          <div className="jobs-intro-card">
-            <Briefcase size={26} className="jobs-intro-icon" />
-            <h3>실시간 채용 정보</h3>
-            <p>WorkNet에서 실시간으로 제공하는 채용 공고를 검색합니다. 지역·학력 조건을 설정해 원하는 채용 정보를 찾아보세요.</p>
+        <div className="jf-intro">
+          <div className="jf-intro-card">
+            <CalendarDays size={26} className="jf-intro-icon" />
+            <h3>공공 채용행사</h3>
+            <p>고용센터·지자체가 주최하는 채용박람회, 취업설명회를 검색합니다. 개인 계정으로 조회 가능한 공공 데이터입니다.</p>
           </div>
-          <div className="jobs-intro-card">
-            <MapPin size={26} className="jobs-intro-icon" />
-            <h3>지역 필터</h3>
-            <p>서울, 경기, 부산 등 지역별로 필터링할 수 있습니다. 전국으로 설정하면 전체 채용 공고를 볼 수 있습니다.</p>
+          <div className="jf-intro-card">
+            <MapPin size={26} className="jf-intro-icon" />
+            <h3>지역별 필터</h3>
+            <p>서울, 경기, 부산 등 지역별 채용행사를 확인하세요. 가까운 지역 행사를 찾아 직접 방문할 수 있습니다.</p>
           </div>
-          <div className="jobs-intro-card">
-            <GraduationCap size={26} className="jobs-intro-icon" />
-            <h3>학력 조건</h3>
-            <p>학력 요건에 맞는 채용 공고만 필터링합니다. 위험군 단계와 상황에 맞는 현실적인 채용 정보를 찾아보세요.</p>
+          <div className="jf-intro-card">
+            <Building2 size={26} className="jf-intro-icon" />
+            <h3>추천 연계</h3>
+            <p>자격증 추천 결과에서 관련 채용행사를 바로 확인할 수 있습니다. 도메인별 행사를 키워드로 연결합니다.</p>
           </div>
         </div>
       )}
 
       {/* 결과 목록 */}
       {!loading && results.length > 0 && (
-        <div className="jobs-results">
-          <p className="jobs-result-count">
-            총 {total.toLocaleString()}개 채용 공고 · {results.length}개 표시
-          </p>
-          <div className="jobs-list">
-            {results.map((job, i) => (
-              <JobCard key={i} job={job} />
+        <div className="jf-results">
+          <p className="jf-result-count">총 {total.toLocaleString()}개 채용행사 · {results.length}개 표시</p>
+          <div className="jf-list">
+            {results.map((ev, i) => (
+              <EventCard key={ev.event_id || i} event={ev} />
             ))}
           </div>
-          <div className="jobs-worknet-link-row">
+          <div className="jf-ext-link-row">
             <a
-              href="https://www.work24.go.kr/wk/a/b/1200/retrivewantedList.do"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="jobs-ext-link"
+              href="https://www.work24.go.kr/cm/c/f/1300/retrivewantedList.do"
+              target="_blank" rel="noopener noreferrer"
+              className="jf-ext-link"
             >
-              <ExternalLink size={13} /> WorkNet에서 더 보기
+              <ExternalLink size={13} /> Work24에서 더 보기
             </a>
           </div>
         </div>
       )}
 
       <style>{`
-        .jobs-wrap { display: flex; flex-direction: column; gap: 1.75rem; max-width: 860px; margin: 0 auto; }
-        .jobs-header { display: flex; flex-direction: column; gap: .35rem; }
-        .jobs-title { font-size: 1.75rem; font-weight: 900; color: var(--text); margin: 0; }
-        .jobs-sub { font-size: .9rem; color: var(--text-muted); margin: 0; }
-        .jobs-datasrc { font-size: .72rem; color: var(--text-light); margin: 0; }
+        .jf-wrap { display: flex; flex-direction: column; gap: 1.75rem; max-width: 860px; margin: 0 auto; }
+        .jf-header { display: flex; flex-direction: column; gap: .35rem; }
+        .jf-title { font-size: 1.75rem; font-weight: 900; color: var(--text); margin: 0; }
+        .jf-sub { font-size: .9rem; color: var(--text-muted); margin: 0; }
+        .jf-sub-note { font-size: .75rem; color: var(--text-light); }
 
-        /* 검색 폼 */
-        .jobs-search-form { display: flex; flex-direction: column; gap: .625rem; }
-        .jobs-search-row {
+        .jf-search-form { display: flex; flex-direction: column; gap: .625rem; }
+        .jf-search-row {
           display: flex; align-items: center;
           background: var(--surface-2); border: 1px solid var(--border);
           border-radius: var(--radius-sm); padding: .5rem .75rem;
           transition: border-color .15s;
         }
-        .jobs-search-row:focus-within { border-color: var(--primary); }
-        .jobs-search-input-wrap { display: flex; align-items: center; gap: .5rem; width: 100%; }
-        .jobs-search-icon { color: var(--text-light); flex-shrink: 0; }
-        .jobs-search-input {
+        .jf-search-row:focus-within { border-color: var(--primary); }
+        .jf-search-input-wrap { display: flex; align-items: center; gap: .5rem; width: 100%; }
+        .jf-search-icon { color: var(--text-light); flex-shrink: 0; }
+        .jf-search-input {
           flex: 1; border: none; background: transparent;
           font-size: .9rem; color: var(--text); outline: none;
         }
-        .jobs-search-input::placeholder { color: var(--text-light); }
-        .jobs-filter-row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
-        .jobs-filter-select {
+        .jf-search-input::placeholder { color: var(--text-light); }
+        .jf-filter-row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+        .jf-filter-select {
           padding: .4rem .65rem; font-size: .82rem;
           border: 1px solid var(--border); border-radius: var(--radius-sm);
-          background: var(--surface-2); color: var(--text-muted); cursor: pointer;
-          outline: none;
+          background: var(--surface-2); color: var(--text-muted); cursor: pointer; outline: none;
         }
-        .jobs-filter-select:focus { border-color: var(--primary); }
-        .jobs-search-btn {
+        .jf-filter-select:focus { border-color: var(--primary); }
+        .jf-search-btn {
           display: flex; align-items: center; gap: .35rem;
-          padding: .45rem 1rem; font-size: .85rem;
-          margin-left: auto;
+          padding: .45rem 1rem; font-size: .85rem; margin-left: auto;
         }
 
-        /* 결과 */
-        .jobs-results { display: flex; flex-direction: column; gap: .625rem; }
-        .jobs-result-count { font-size: .75rem; color: var(--text-light); margin: 0; }
-        .jobs-list { display: flex; flex-direction: column; gap: .5rem; }
-        .job-card {
+        .jf-card {
           padding: .875rem 1rem; background: var(--surface-2);
           border: 1px solid var(--border); border-radius: var(--radius-sm);
           display: flex; flex-direction: column; gap: .375rem;
           transition: border-color .15s;
         }
-        .job-card:hover { border-color: var(--primary); }
-        .job-card-top { display: flex; flex-direction: column; gap: .15rem; }
-        .job-card-title { font-size: .9rem; font-weight: 700; color: var(--text); }
-        .job-card-company-row { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
-        .job-card-company { font-size: .8rem; color: var(--text-muted); }
-        .job-company-type-badge {
-          font-size: .68rem; background: var(--primary-light); color: var(--primary);
-          padding: .1rem .4rem; border-radius: 20px;
+        .jf-card:hover { border-color: var(--primary); }
+        .jf-card-top { display: flex; flex-direction: column; gap: .2rem; }
+        .jf-card-title-row { display: flex; align-items: flex-start; gap: .5rem; flex-wrap: wrap; }
+        .jf-event-name { font-size: .9rem; font-weight: 700; color: var(--text); flex: 1; }
+        .jf-type-badge {
+          font-size: .67rem; background: #f0f4ff; color: #4338ca;
+          padding: .1rem .4rem; border-radius: 20px; flex-shrink: 0; white-space: nowrap;
         }
-        .job-sal-type { font-size: .68rem; opacity: .8; }
-        .job-emp-type { color: #7c3aed; }
-        .job-card-meta { display: flex; gap: .625rem; flex-wrap: wrap; }
-        .job-meta-item {
+        .jf-org-row { display: flex; align-items: center; gap: .3rem; }
+        .jf-org-icon { color: var(--text-light); flex-shrink: 0; }
+        .jf-organizer { font-size: .8rem; color: var(--text-muted); }
+        .jf-meta-row { display: flex; gap: .625rem; flex-wrap: wrap; }
+        .jf-meta-item {
           display: inline-flex; align-items: center; gap: .2rem;
           font-size: .72rem; color: var(--text-light);
         }
-        .job-meta-salary { color: #059669; font-weight: 600; }
-        .job-meta-deadline { color: #d97706; }
-        .job-card-link {
+        .jf-meta-date { color: #2563eb; font-weight: 600; }
+        .jf-desc { font-size: .78rem; color: var(--text-muted); margin: 0; line-height: 1.55; }
+        .jf-card-link {
           display: inline-flex; align-items: center; gap: .3rem;
           font-size: .75rem; color: var(--primary); text-decoration: none;
           width: fit-content; transition: opacity .15s;
         }
-        .job-card-link:hover { opacity: .75; }
+        .jf-card-link:hover { opacity: .75; }
 
-        /* 상태 */
-        .jobs-loading { display: flex; align-items: center; gap: .625rem; padding: 2.5rem; justify-content: center; color: var(--text-muted); font-size: .9rem; }
-        .jobs-error-wrap { display:flex; flex-direction:column; gap:.75rem; padding:1rem; background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius-sm); }
-        .jobs-error-banner { display:flex; align-items:flex-start; gap:.625rem; }
-        .jobs-error-icon { color:#d97706; flex-shrink:0; margin-top:.1rem; }
-        .jobs-error-title { font-size:.85rem; font-weight:700; color:#92400e; margin:0 0 .2rem; }
-        .jobs-error-msg { font-size:.75rem; color:#b45309; margin:0; }
-        .jobs-error-actions { display:flex; gap:.5rem; flex-wrap:wrap; }
-        .jobs-fallback-btn {
-          display:inline-flex; align-items:center; gap:.4rem;
-          padding:.5rem .875rem; border-radius:var(--radius-sm);
-          font-size:.82rem; font-weight:600; text-decoration:none; transition:all .15s;
+        .jf-results { display: flex; flex-direction: column; gap: .625rem; }
+        .jf-result-count { font-size: .75rem; color: var(--text-light); margin: 0; }
+        .jf-list { display: flex; flex-direction: column; gap: .5rem; }
+
+        .jf-loading { display: flex; align-items: center; gap: .625rem; padding: 2.5rem; justify-content: center; color: var(--text-muted); font-size: .9rem; }
+
+        .jf-error-wrap {
+          display: flex; align-items: flex-start; gap: .625rem;
+          padding: 1rem; background: #fffbeb; border: 1px solid #fde68a;
+          border-radius: var(--radius-sm); flex-wrap: wrap;
         }
-        .jobs-fallback-primary { background:var(--primary); color:#fff; }
-        .jobs-fallback-primary:hover { background:#1d4ed8; }
-        .jobs-fallback-secondary { background:var(--surface); color:var(--text-muted); border:1px solid var(--border); }
-        .jobs-fallback-secondary:hover { border-color:var(--primary); color:var(--primary); }
-        .jobs-fallback-quick { display:flex; align-items:center; gap:.375rem; flex-wrap:wrap; padding-top:.25rem; border-top:1px solid #fde68a; }
-        .jobs-fallback-quick-label { font-size:.72rem; color:#92400e; font-weight:700; white-space:nowrap; }
-        .jobs-fallback-quick-btn {
-          font-size:.72rem; padding:.2rem .55rem; border-radius:20px;
-          background:#fef3c7; color:#92400e; border:1px solid #fde68a;
-          text-decoration:none; transition:all .15s;
+        .jf-error-icon { color: #d97706; flex-shrink: 0; margin-top: .1rem; }
+        .jf-error-title { font-size: .85rem; font-weight: 700; color: #92400e; margin: 0 0 .2rem; }
+        .jf-error-msg { font-size: .75rem; color: #b45309; margin: 0; }
+        .jf-fallback-btn {
+          display: inline-flex; align-items: center; gap: .35rem;
+          padding: .4rem .8rem; background: #f59e0b; color: #fff;
+          border-radius: var(--radius-sm); font-size: .8rem; font-weight: 600;
+          text-decoration: none; margin-left: auto; transition: background .15s;
         }
-        .jobs-fallback-quick-btn:hover { background:#fde68a; }
-        .jobs-empty {
+        .jf-fallback-btn:hover { background: #d97706; }
+
+        .jf-empty {
           display: flex; flex-direction: column; align-items: center; gap: .625rem;
           padding: 3rem 1.5rem; background: var(--surface-2);
           border: 1px dashed var(--border); border-radius: var(--radius-sm); text-align: center;
         }
-        .jobs-empty-icon { color: var(--border-strong); }
-        .jobs-empty h3 { font-size: .9rem; font-weight: 700; color: var(--text-muted); margin: 0; }
-        .jobs-empty p { font-size: .82rem; color: var(--text-light); margin: 0; line-height: 1.7; }
-        .jobs-worknet-direct { margin-top: .75rem; font-size: .8rem; color: var(--primary); text-decoration: underline; }
+        .jf-empty-icon { color: var(--border-strong); }
+        .jf-empty h3 { font-size: .9rem; font-weight: 700; color: var(--text-muted); margin: 0; }
+        .jf-empty p { font-size: .82rem; color: var(--text-light); margin: 0; line-height: 1.7; }
 
-        .jobs-intro { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        @media (max-width: 640px) { .jobs-intro { grid-template-columns: 1fr; } }
-        .jobs-intro-card {
+        .jf-intro { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        @media (max-width: 640px) { .jf-intro { grid-template-columns: 1fr; } }
+        .jf-intro-card {
           display: flex; flex-direction: column; gap: .5rem;
           padding: 1.25rem; background: var(--surface-2);
           border: 1px solid var(--border); border-radius: var(--radius-sm);
         }
-        .jobs-intro-icon { color: var(--primary); }
-        .jobs-intro-card h3 { font-size: .875rem; font-weight: 700; color: var(--text); margin: 0; }
-        .jobs-intro-card p { font-size: .78rem; color: var(--text-muted); margin: 0; line-height: 1.65; }
+        .jf-intro-icon { color: var(--primary); }
+        .jf-intro-card h3 { font-size: .875rem; font-weight: 700; color: var(--text); margin: 0; }
+        .jf-intro-card p { font-size: .78rem; color: var(--text-muted); margin: 0; line-height: 1.65; }
 
-        .jobs-worknet-link-row { display: flex; justify-content: center; padding-top: .5rem; }
-        .jobs-ext-link {
+        .jf-ext-link-row { display: flex; justify-content: center; padding-top: .5rem; }
+        .jf-ext-link {
           display: inline-flex; align-items: center; gap: .35rem;
           font-size: .8rem; color: var(--primary); text-decoration: none;
           padding: .375rem .875rem; border: 1px solid var(--primary);
           border-radius: var(--radius-sm); transition: background .15s;
         }
-        .jobs-ext-link:hover { background: var(--primary-light); }
+        .jf-ext-link:hover { background: var(--primary-light); }
 
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

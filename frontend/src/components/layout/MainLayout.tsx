@@ -1,7 +1,7 @@
 // Content Hash: SHA256:TBD
 import React, { useRef, useEffect } from 'react';
 import { Outlet, Link, useLocation, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, Home, Calendar, Compass, Briefcase } from 'lucide-react';
+import { CheckCircle2, Home, Calendar, CalendarDays, Compass, Briefcase } from 'lucide-react';
 import { loadPipeline } from '../../utils/pipelineState';
 import ChatWidget from '../ChatWidget';
 
@@ -55,7 +55,8 @@ const EXPLORE_LINKS = [
   { label: '직업 탐색', sub: '커리어넷 직업정보', path: '/explore' },
   { label: '학과 탐색', sub: '커리어넷 학과정보', path: '/explore?tab=majors' },
   { label: 'NCS 자격증', sub: '능력단위 기반 검색', path: '/explore?tab=ncs' },
-  { label: '채용 정보', sub: 'WorkNet 실시간 채용', path: '/jobs' },
+  { label: '채용행사', sub: 'Work24 공공 채용행사', path: '/jobs' },
+  { label: '훈련과정', sub: 'Work24 내일배움카드', path: '/training' },
 ];
 
 const FLOW_STEPS = [
@@ -148,7 +149,7 @@ const MainLayout: React.FC = () => {
             <div className="support-nav-wrap">
               <button
                 type="button"
-                className={['header-nav-link support-nav-btn', ['/explore', '/jobs'].some(p => location.pathname.startsWith(p)) ? 'active' : ''].filter(Boolean).join(' ')}
+                className={['header-nav-link support-nav-btn', ['/explore', '/training', '/jobs'].some(p => location.pathname.startsWith(p)) ? 'active' : ''].filter(Boolean).join(' ')}
                 aria-haspopup="true"
               >
                 탐색 <span className="support-nav-arrow">▾</span>
@@ -226,7 +227,8 @@ const MainLayout: React.FC = () => {
           { label: '홈',      path: '/',         Icon: Home },
           { label: '시험일정', path: '/schedule', Icon: Calendar },
           { label: '직업탐색', path: '/explore',  Icon: Compass },
-          { label: '채용',    path: '/jobs',      Icon: Briefcase },
+          { label: '채용행사', path: '/jobs',      Icon: CalendarDays },
+          { label: '훈련',    path: '/training',  Icon: Briefcase },
         ] as const).map(item => (
           <Link
             key={item.path}
@@ -258,7 +260,8 @@ const MainLayout: React.FC = () => {
                 <Link to="/certs" className="footer-link">전체 자격증</Link>
                 <Link to="/schedule" className="footer-link">시험 일정</Link>
                 <Link to="/explore" className="footer-link">직업 탐색</Link>
-                <Link to="/jobs" className="footer-link">채용 정보</Link>
+                <Link to="/jobs" className="footer-link">채용행사</Link>
+                <Link to="/training" className="footer-link">훈련과정</Link>
                 <a href="https://www.didim.life" target="_blank" rel="noopener noreferrer" className="footer-link">didim.life ↗</a>
               </div>
               <div className="footer-col">

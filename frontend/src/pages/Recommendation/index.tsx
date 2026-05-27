@@ -707,19 +707,33 @@ const Recommendation: React.FC = () => {
       certStatsData: null, certStatsLoading: false, certStatsFetched: false,
       sessionRatesData: null, sessionRatesLoading: false, sessionRatesFetched: false,
     }));
-    const [schedRes, jobsRes, trainRes] = await Promise.allSettled([
+    // 자격증 이름으로 채용행사 키워드 검색 (기업전용 채용공고 대신 공공 채용행사 사용)
+    const certName = allCerts.find(c => c.cert_id === certId)?.cert_name ?? '';
+    const certDomainName = (() => {
+      const c = allCerts.find(c => c.cert_id === certId);
+      return c ? (DOMAIN_NAMES[c.primary_domain] ?? '') : '';
+    })();
+    const fairKeyword = certDomainName.split('/')[0] || certName.slice(0, 4);
+
+    const [schedRes, fairsRes, trainRes] = await Promise.allSettled([
       fetch(`/api/v1/schedules/exams/${encodeURIComponent(certId)}`).then(r => r.json()),
-      fetch(`/api/v1/jobs/hiring/by-cert/${encodeURIComponent(certId)}?display=5`).then(r => r.json()),
+      fetch(`/api/v1/jobs/fairs?keyword=${encodeURIComponent(fairKeyword)}&days_ahead=120&page_size=5`).then(r => r.json()),
       fetch(`/api/v1/training/courses/by-cert/${encodeURIComponent(certId)}?page_size=5`).then(r => r.json()),
     ]);
     const schedData = schedRes.status === 'fulfilled' && schedRes.value.success ? schedRes.value.data : null;
-    const jobsData  = jobsRes.status === 'fulfilled'  && jobsRes.value.success  ? jobsRes.value.data  : null;
+    const fairsData = fairsRes.status === 'fulfilled' && fairsRes.value.success ? fairsRes.value.data : null;
     const trainData = trainRes.status === 'fulfilled' && trainRes.value.success ? trainRes.value.data : null;
     const execResult = {
       schedule:           (schedData?.schedules ?? []).slice(0, 4),
       scheduleApiStatus:  (schedData?.api_status ?? 'unavailable') as ExecState['scheduleApiStatus'],
-      hiringTotal:        jobsData?.total  ?? 0,
-      hiringItems:        (jobsData?.jobs ?? []).slice(0, 5),
+      hiringTotal:        fairsData?.total  ?? 0,
+      hiringItems:        (fairsData?.events ?? []).slice(0, 5).map((ev: { event_name?: string; organizer?: string; url?: string; start_date?: string; end_date?: string; venue?: string }) => ({
+        title:      ev.event_name ?? '',
+        company:    ev.organizer ?? '',
+        url:        ev.url ?? '',
+        close_date: ev.start_date ? `${(ev.start_date || '').slice(0,4)}.${(ev.start_date || '').slice(4,6)}.${(ev.start_date || '').slice(6,8)}` : '',
+        venue:      ev.venue ?? '',
+      })),
       trainingTotal:      trainData?.total ?? 0,
       trainingItems:      (trainData?.courses ?? []).slice(0, 5),
     };
@@ -1550,49 +1564,43 @@ const Recommendation: React.FC = () => {
                 )}
               </div>
 
-              {/* ── 채용공고 ── */}
+              {/* ── 채용행사 ── */}
               <div className="exec-section">
-                <p className="exec-section-title">채용공고</p>
+                <p className="exec-section-title">채용행사</p>
                 {!exec.loading && exec.fetched && (
                   exec.hiringItems.length === 0
-                    ? (() => {
-                        const cn = allCerts.find(c => c.cert_id === exec.certId)?.cert_name ?? '';
-                        const worknetUrl = cn
-                          ? `https://www.work.go.kr/empInfo/empInfoSrch/list/dtlEmpSrchList.do?careerTo=&subEmail=&empTpGbCd=1&cloDateStdt=&srcKeyword=${encodeURIComponent(cn)}&cloDateEndt=&keywordOption=1&cloYn=N&regionCd=0&sortFieldInfo=DATE`
-                          : 'https://www.work.go.kr/empInfo/empInfoSrch/list/dtlEmpSrchList.do';
-                        return (
-                          <div className="exec-hiring-fallback">
-                            <p className="exec-hiring-fallback-msg">
-                              현재 채용공고 API를 조회할 수 없습니다.<br/>
-                              워크넷에서 직접 검색해보세요.
-                            </p>
-                            <a href={worknetUrl} target="_blank" rel="noreferrer" className="exec-hiring-fallback-btn">
-                              <ExternalLink size={12} />
-                              {cn ? `워크넷에서 '${cn}' 채용공고 검색` : '워크넷 채용공고 바로가기'}
-                            </a>
-                            {cn && (
-                              <a
-                                href={`https://www.saramin.co.kr/zf_user/search?searchword=${encodeURIComponent(cn)}&recruitPage=1&recruitSort=relation&recruitPageCount=20&search_done=y`}
-                                target="_blank" rel="noreferrer"
-                                className="exec-hiring-fallback-secondary"
-                              >
-                                사람인에서도 검색하기 →
-                              </a>
-                            )}
-                          </div>
-                        );
-                      })()
+                    ? (
+                        <div className="exec-hiring-fallback">
+                          <p className="exec-hiring-fallback-msg">
+                            현재 관련 채용행사가 없습니다.<br/>
+                            Work24에서 전체 채용행사를 확인해보세요.
+                          </p>
+                          <a href="/jobs" className="exec-hiring-fallback-btn">
+                            채용행사 전체 보기
+                          </a>
+                          <a
+                            href="https://www.work24.go.kr/cm/c/f/1300/retrivewantedList.do"
+                            target="_blank" rel="noreferrer"
+                            className="exec-hiring-fallback-secondary"
+                          >
+                            Work24 채용행사 바로가기 →
+                          </a>
+                        </div>
+                      )
                     : <div className="exec-list">
                         {exec.hiringItems.map((j, i) => (
-                          <a key={i} href={j.url || '#'} target="_blank" rel="noreferrer" className="exec-job-row">
+                          <a key={i} href={j.url || '/jobs'} target={j.url ? '_blank' : '_self'} rel="noreferrer" className="exec-job-row">
                             <div className="exec-job-main">
                               <span className="exec-job-title">{j.title}</span>
                               <span className="exec-job-company">{j.company}</span>
                             </div>
-                            {j.close_date && <span className="exec-job-close">~{j.close_date}</span>}
+                            {j.close_date && <span className="exec-job-close">{j.close_date}</span>}
                             <ExternalLink size={11} className="exec-job-icon" />
                           </a>
                         ))}
+                        <a href="/jobs" className="exec-fair-more">
+                          채용행사 더 보기 →
+                        </a>
                       </div>
                 )}
               </div>
@@ -2651,6 +2659,8 @@ const Recommendation: React.FC = () => {
         .exec-hiring-fallback-btn:hover{background:#6d28d9}
         .exec-hiring-fallback-secondary{font-size:.75rem;color:#7c3aed;text-decoration:none;font-weight:500;align-self:flex-start}
         .exec-hiring-fallback-secondary:hover{text-decoration:underline}
+        .exec-fair-more{display:block;text-align:center;font-size:.76rem;font-weight:600;color:var(--primary);text-decoration:none;padding:.4rem;border-top:1px solid var(--border);margin-top:.125rem;transition:color .15s}
+        .exec-fair-more:hover{color:#4338ca;text-decoration:underline}
         /* 국민내일배움카드 안내 카드 */
         .naeil-card{background:linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);border:1px solid rgba(59,130,246,.22);border-radius:8px;padding:.75rem 1rem;display:flex;flex-direction:column;gap:.45rem;margin-bottom:.5rem}
         .naeil-card-header{display:flex;align-items:center;justify-content:space-between}

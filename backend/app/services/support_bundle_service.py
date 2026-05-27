@@ -1,11 +1,11 @@
 # File: support_bundle_service.py
-# Last Updated: 2026-05-25
+# Last Updated: 2026-05-26
 # Content Hash: SHA256:TBD
 # Role: 위험군 × 도메인/직무 기반 취업지원 자원 번들 조회 (F-17)
 # 위험군 단계별 게이팅:
-#   1단계 → hiring 만 (partial)
-#   2~3단계 → hiring + training (standard)
-#   4~5단계 → hiring + training + job_cafe + process_eval (full)
+#   1단계 → job_fair 만 (partial)  ← hiring(기업전용) 대신 job_fair(공공)
+#   2~3단계 → job_fair + training (standard)
+#   4~5단계 → job_fair + training + job_cafe + process_eval (full)
 from __future__ import annotations
 
 import logging
@@ -48,13 +48,13 @@ _SUPPORT_LEVEL: dict[int, str] = {
 }
 
 _RESOURCE_TYPES: dict[str, list[str]] = {
-    "partial":  ["hiring"],
-    "standard": ["hiring", "training"],
-    "full":     ["hiring", "training", "job_cafe", "process_eval"],
+    "partial":  ["job_fair"],
+    "standard": ["job_fair", "training"],
+    "full":     ["job_fair", "training", "job_cafe", "process_eval"],
 }
 
 _RESOURCE_LABELS: dict[str, str] = {
-    "hiring":       "채용정보",
+    "job_fair":     "채용행사",
     "training":     "훈련과정",
     "job_cafe":     "일자리카페",
     "process_eval": "과정평가형 자격",
@@ -82,31 +82,27 @@ def _build_bundle_entry(resource_type: str, items: list[dict], error: str | None
     return entry
 
 
-def _fetch_hiring(
+def _fetch_job_fair(
     settings: Settings,
     domain_name: str | None,
-    job_names: list[str],
     region: str | None,
 ) -> tuple[list[dict], str | None]:
-    from backend.app.services.jobs_service import get_hiring_jobs
+    from backend.app.services.job_fair_service import get_job_fairs_by_domain, get_job_fairs
 
-    keyword = job_names[0] if job_names else domain_name
     try:
-        resp = get_hiring_jobs(
-            settings,
-            keyword=keyword,
-            region=region,
-            display=5,
-        )
+        if domain_name:
+            resp = get_job_fairs_by_domain(settings, domain_name, region=region, page_size=5)
+        else:
+            resp = get_job_fairs(settings, region=region, page_size=5)
     except Exception as e:
-        logger.warning("support_bundle hiring error: %s", e)
-        return [], "채용정보 조회 중 오류가 발생했습니다."
+        logger.warning("support_bundle job_fair error: %s", e)
+        return [], "채용행사 조회 중 오류가 발생했습니다."
 
     if not resp.get("success"):
         err = resp.get("error", {})
         return [], err.get("message") if isinstance(err, dict) else str(err)
 
-    return resp.get("data", {}).get("jobs", []), None
+    return resp.get("data", {}).get("events", []), None
 
 
 def _fetch_training(
@@ -207,8 +203,8 @@ def get_support_bundle(
     bundles: list[dict] = []
 
     for rtype in resource_types:
-        if rtype == "hiring":
-            items, error = _fetch_hiring(settings, domain_name, job_names or [], region)
+        if rtype == "job_fair":
+            items, error = _fetch_job_fair(settings, domain_name, region)
         elif rtype == "training":
             items, error = _fetch_training(settings, domain_name, region)
         elif rtype == "job_cafe":

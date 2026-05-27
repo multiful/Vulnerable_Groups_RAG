@@ -392,3 +392,173 @@ def get_professional_exam_schedule(
     })
     _cache_set(prof_cache_key, result)
     return result
+
+
+# ── HRD Korea 합격자 통계 ─────────────────────────────────────────────────────
+_PASS_STAT_BASE = "https://apis.data.go.kr/B490007/qualPassStat/getQualPassStatList"
+
+
+def get_pass_stats(cert_id: str, settings: Settings) -> dict:
+    """
+    HRD Korea 합격자 통계 조회 (최근 3개 연도).
+    필기/실기 응시·합격·합격률을 반환한다.
+    """
+    api_key = settings.hrdkorea_api_key_in
+    if not api_key:
+        return err_envelope("API_KEY_MISSING", "HRD Korea API 키가 설정되지 않았습니다.")
+
+    cert_names = _load_cert_name_map()
+    cert_name = cert_names.get(cert_id)
+    if not cert_name:
+        return err_envelope("CERT_NOT_FOUND", f"cert_id '{cert_id}'를 찾을 수 없습니다.")
+
+    cache_key = f"pass_stat|{cert_id}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    current_year = str(date.today().year)
+    years = [str(int(current_year) - i) for i in range(3)]  # 최근 3년
+
+    all_stats: list[dict[str, Any]] = []
+    for year in years:
+        url = _build_qnet_url(_PASS_STAT_BASE, api_key, {
+            "dataFormat": "json",
+            "numOfRows":  "10",
+            "pageNo":     "1",
+            "implYy":     year,
+        })
+        try:
+            resp = httpx.get(url, timeout=settings.hrdkorea_api_timeout)
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception as e:
+            logger.warning("pass_stat year=%s cert=%s error: %s", year, cert_id, e)
+            continue
+
+        items = data.get("body", {}).get("items", {})
+        if isinstance(items, dict):
+            items = items.get("item", [])
+        if isinstance(items, dict):
+            items = [items]
+        if not isinstance(items, list):
+            continue
+
+        for it in items:
+            if cert_name in (it.get("description") or it.get("jmNm") or ""):
+                raw_written_app  = it.get("docAplcntNm") or it.get("docAplcnt") or "0"
+                raw_written_pass = it.get("docPassNm")   or it.get("docPass")   or "0"
+                raw_prac_app     = it.get("pracAplcntNm")or it.get("pracAplcnt")or "0"
+                raw_prac_pass    = it.get("pracPassNm")  or it.get("pracPass")  or "0"
+
+                def _num(v: str) -> int | None:
+                    try:
+                        return int(str(v).replace(",", ""))
+                    except (ValueError, AttributeError):
+                        return None
+
+                def _rate(p: int | None, a: int | None) -> float | None:
+                    if p is not None and a and a > 0:
+                        return round(p / a * 100, 1)
+                    return None
+
+                wa = _num(raw_written_app)
+                wp = _num(raw_written_pass)
+                pa = _num(raw_prac_app)
+                pp = _num(raw_prac_pass)
+
+                all_stats.append({
+                    "year":              year,
+                    "impl_seq":          it.get("implSeq") or it.get("implYy"),
+                    "written_applicants": wa,
+                    "written_pass":       wp,
+                    "written_pass_rate":  _rate(wp, wa),
+                    "practical_applicants": pa,
+                    "practical_pass":       pp,
+                    "practical_pass_rate":  _rate(pp, pa),
+                })
+                break  # 해당 연도 첫 번째 일치 항목
+
+    result = ok_envelope({
+        "cert_id":   cert_id,
+        "cert_name": cert_name,
+        "stats":     all_stats,
+        "total":     len(all_stats),
+        "note":      "HRD Korea 합격자 통계 (최근 3개 연도, apis.data.go.kr/B490007)",
+    })
+    _cache_set(cache_key, result)
+    return result
+
+
+# ── HRD Korea 취업현황 ───────────────────────────────────────────────────────
+_HIRE_INFO_BASE = "https://apis.data.go.kr/B490007/qualHireInfo/getQualHireInfoList"
+
+
+def get_hire_stats(cert_id: str, settings: Settings) -> dict:
+    """
+    HRD Korea 자격취득자 취업현황 조회.
+    자격증 취득 후 취업률·고용보험 가입 현황을 반환한다.
+    """
+    api_key = settings.hrdkorea_api_key_in
+    if not api_key:
+        return err_envelope("API_KEY_MISSING", "HRD Korea API 키가 설정되지 않았습니다.")
+
+    cert_names = _load_cert_name_map()
+    cert_name = cert_names.get(cert_id)
+    if not cert_name:
+        return err_envelope("CERT_NOT_FOUND", f"cert_id '{cert_id}'를 찾을 수 없습니다.")
+
+    cache_key = f"hire_stat|{cert_id}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    current_year = str(date.today().year - 1)  # 전년도 기준 (당해 데이터 미공개)
+    url = _build_qnet_url(_HIRE_INFO_BASE, api_key, {
+        "dataFormat": "json",
+        "numOfRows":  "50",
+        "pageNo":     "1",
+        "implYy":     current_year,
+    })
+    try:
+        resp = httpx.get(url, timeout=settings.hrdkorea_api_timeout)
+        resp.raise_for_status()
+        data = resp.json()
+    except httpx.TimeoutException:
+        return err_envelope("EXTERNAL_API_TIMEOUT", "취업현황 API 응답 시간이 초과되었습니다.")
+    except Exception as e:
+        logger.warning("hire_stat cert=%s error: %s", cert_id, e)
+        return err_envelope("EXTERNAL_API_ERROR", "취업현황 조회 중 오류가 발생했습니다.")
+
+    items = data.get("body", {}).get("items", {})
+    if isinstance(items, dict):
+        items = items.get("item", [])
+    if isinstance(items, dict):
+        items = [items]
+    if not isinstance(items, list):
+        items = []
+
+    matched: list[dict[str, Any]] = []
+    for it in items:
+        if cert_name in (it.get("description") or it.get("jmNm") or ""):
+            matched.append({
+                "year":             it.get("implYy") or current_year,
+                "cert_name":        it.get("description") or cert_name,
+                "grade_tier":       it.get("grdNm") or "",
+                "acquirer_count":   it.get("acqrCnt") or it.get("acqrNm") or "",
+                "employed_count":   it.get("emplCnt") or it.get("emplNm") or "",
+                "employment_rate":  it.get("emplRate") or "",
+                "insurance_enrolled": it.get("insrRgstCnt") or "",
+                "note":             it.get("rmk") or "",
+            })
+
+    result = ok_envelope({
+        "cert_id":   cert_id,
+        "cert_name": cert_name,
+        "year":      current_year,
+        "hire_stats": matched,
+        "total":     len(matched),
+        "note":      "HRD Korea 자격취득자 취업현황 (apis.data.go.kr/B490007)",
+    })
+    _cache_set(cache_key, result)
+    return result
