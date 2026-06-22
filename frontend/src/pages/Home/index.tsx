@@ -238,13 +238,14 @@ const Home: React.FC = () => {
       .hero-visual{display:flex;justify-content:center}
       .mascot-figure{display:flex;justify-content:center;align-items:center;width:100%;position:relative}
       .mascot-figure::before{content:'';position:absolute;width:290px;height:290px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.07) 0%,rgba(99,102,241,.03) 55%,transparent 75%);border:1px dashed rgba(99,102,241,.15);pointer-events:none}
-      .mascot-wrap{position:relative;width:260px;height:260px;flex-shrink:0;cursor:pointer}
-      .mascot-img{width:260px;height:260px;object-fit:contain;filter:drop-shadow(0 12px 32px rgba(99,102,241,.25));animation:mascot-float 3s ease-in-out infinite}
-      .mascot-img.mascot-happy{animation:mascot-bounce .4s ease forwards, mascot-float 3s ease-in-out 0.4s infinite}
-.mascot-heart{position:absolute;top:5px;left:50%;transform:translateX(-50%);font-size:1.6rem;animation:heart-pop .6s ease forwards;pointer-events:none}
-      @keyframes mascot-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-      @keyframes mascot-bounce{0%{transform:scale(1)}25%{transform:scale(1.13) translateY(-12px)}55%{transform:scale(.97) translateY(0)}75%{transform:scale(1.05) translateY(-5px)}100%{transform:scale(1) translateY(0)}}
-@keyframes heart-pop{0%{opacity:0;transform:scale(0) translateY(0)}40%{opacity:1;transform:scale(1.3) translateY(-8px)}70%{opacity:1;transform:scale(1) translateY(-14px)}100%{opacity:0;transform:scale(.8) translateY(-22px)}}
+      .mascot-wrap{position:relative;width:260px;height:260px;flex-shrink:0;cursor:pointer;animation:mascot-float 2.4s ease-in-out infinite}
+      .mascot-img{width:260px;height:260px;object-fit:contain;filter:drop-shadow(0 12px 32px rgba(99,102,241,.25));transition:filter .2s ease,transform .2s ease}
+      .mascot-wrap:hover .mascot-img:not(.mascot-happy){filter:drop-shadow(0 18px 42px rgba(99,102,241,.4));transform:scale(1.05)}
+      .mascot-img.mascot-happy{animation:mascot-bounce-scale .55s cubic-bezier(.34,1.56,.64,1) forwards;transform-origin:center bottom}
+      .mascot-heart{position:absolute;top:5px;left:50%;font-size:1.6rem;animation:heart-pop .5s ease forwards;pointer-events:none}
+      @keyframes mascot-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-13px)}}
+      @keyframes mascot-bounce-scale{0%{transform:scale(1)}35%{transform:scale(1.18)}60%{transform:scale(.93)}82%{transform:scale(1.07)}100%{transform:scale(1)}}
+      @keyframes heart-pop{0%{opacity:0;transform:translateX(-50%) scale(0) translateY(0)}35%{opacity:1;transform:translateX(-50%) scale(1.35) translateY(-8px)}65%{opacity:1;transform:translateX(-50%) scale(1) translateY(-16px)}100%{opacity:0;transform:translateX(-50%) scale(.8) translateY(-28px)}}
       .stage-card-title{font-size:.72rem;font-weight:700;letter-spacing:.07em;color:var(--text-light);text-transform:uppercase}
       .stage-list{display:flex;flex-direction:column;gap:.5rem}
       .stage-row{display:flex;align-items:center;gap:.625rem;padding:.35rem .5rem;border-radius:var(--radius-xs);text-decoration:none;transition:background .15s}

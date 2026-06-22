@@ -31,6 +31,7 @@ class PipelineOptions:
 
     pdf_dir: Path = Path("data/raw/pdf")
     html_dir: Path = Path("data/raw/html")
+    docx_dir: Path = Path("data/raw/docx")
     output_dir: Path = Path("data/index_ready")
     manifest_path: Optional[Path] = None
     cert_master_path: Path = Path("data/raw/csv/cert_master.csv")
@@ -139,6 +140,40 @@ def run_pipeline(options: PipelineOptions) -> list[DocProcessResult]:
             logger.error("Error processing HTML %s: %s", html_path.name, exc, exc_info=True)
             results.append(DocProcessResult(
                 doc_id=html_path.stem[:80],
+                status="error",
+                error=str(exc),
+            ))
+
+    # DOCX 파일 처리
+    docx_dir = options.docx_dir
+    docx_files = sorted(docx_dir.glob("*.docx")) if docx_dir.exists() else []
+
+    for docx_path in docx_files:
+        try:
+            from ..parse.parsers.docx_parser import slugify_docx
+            doc_id = slugify_docx(docx_path.name)
+
+            if options.doc_id_filter and doc_id != options.doc_id_filter:
+                continue
+
+            if options.dry_run:
+                print(f"\n{'='*60}")
+                print(f"[DRY-RUN DOCX] {doc_id}")
+                print(f"  parser: docx (python-docx)")
+                results.append(DocProcessResult(
+                    doc_id=doc_id,
+                    status="dry_run",
+                    parser_used="docx",
+                ))
+                continue
+
+            result = run_single_docx_doc(docx_path, options, manifest)
+            results.append(result)
+
+        except Exception as exc:
+            logger.error("Error processing DOCX %s: %s", docx_path.name, exc, exc_info=True)
+            results.append(DocProcessResult(
+                doc_id=docx_path.stem[:80],
                 status="error",
                 error=str(exc),
             ))
@@ -389,6 +424,106 @@ def run_single_html_doc(
         doc_id=doc_id,
         status="done",
         parser_used="html",
+        chunk_count=len(chunks),
+        quality_flags=quality_flags,
+    )
+
+
+def run_single_docx_doc(
+    docx_path: Path,
+    options: PipelineOptions,
+    manifest=None,
+) -> DocProcessResult:
+    """단일 DOCX 파일을 파싱 → 청킹 → JSONL 저장한다."""
+    from ..parse.parsers.docx_parser import (
+        compute_docx_file_hash,
+        parse_with_docx,
+        slugify_docx,
+    )
+    from ..chunk.builder import build_chunks, select_strategy
+    from ..chunk.cert_mapper import load_cert_lookup, map_cert_ids
+    from ..chunk.chunk_schema import ChunkConfig
+    from .manifest import PipelineManifest
+    from .serializer import append_chunks_jsonl, write_chunks_jsonl
+    from .quality_checker import check_chunk_quality
+
+    manifest_path = options.manifest_path or (
+        options.output_dir / "metadata" / "pipeline_manifest.json"
+    )
+    if manifest is None:
+        manifest = PipelineManifest.load(manifest_path)
+
+    doc_id = slugify_docx(docx_path.name)
+    file_hash = compute_docx_file_hash(docx_path)
+    quality_flags: list[str] = []
+
+    # --- Parse 증분 체크 ---
+    parse_ir_path = options.output_dir / "parse_ir" / f"{doc_id}.json"
+    parse_ir = None
+
+    if not options.force and not manifest.is_parse_stale(doc_id, file_hash):
+        parse_ir = _load_parse_ir(parse_ir_path)
+        if parse_ir:
+            logger.info("[%s] parse 스킵 (file_hash 동일)", doc_id)
+
+    if parse_ir is None:
+        logger.info("[%s] DOCX 파싱 시작", doc_id)
+        parse_ir = parse_with_docx(docx_path, doc_id=doc_id, file_hash=file_hash)
+        _save_parse_ir(parse_ir, parse_ir_path)
+        logger.info("[%s] DOCX 파싱 완료: %d 블록", doc_id, len(parse_ir.blocks))
+
+    # --- Chunk 증분 체크 ---
+    doc_type = _infer_doc_type(docx_path.name)
+    config = ChunkConfig(
+        max_tokens=512,
+        overlap_tokens=64,
+        min_tokens=20,
+        doc_type=doc_type,
+    )
+
+    chunks_jsonl_path = options.output_dir / "chunks" / "chunks.jsonl"
+
+    if not options.force and not manifest.is_chunk_stale(doc_id, parse_ir.parse_hash):
+        logger.info("[%s] chunk 스킵 (parse_hash 동일)", doc_id)
+        doc_entry = manifest.documents.get(doc_id, {})
+        return DocProcessResult(
+            doc_id=doc_id,
+            status="skipped",
+            parser_used="docx",
+            chunk_count=doc_entry.get("chunk_count", 0),
+            quality_flags=quality_flags,
+        )
+
+    cert_lookup = load_cert_lookup(options.cert_master_path)
+
+    logger.info("[%s] 청킹 시작 (strategy=%s, doc_type=%s)", doc_id, select_strategy(doc_type), doc_type)
+    chunks = build_chunks(parse_ir, config)
+    chunks = map_cert_ids(chunks, cert_lookup, doc_type, quality_flags=quality_flags)
+
+    report = check_chunk_quality(chunks, config)
+    logger.info("[%s] 품질 검사: %s", doc_id, report.summary())
+    quality_flags.extend(report.flags)
+
+    if not chunks_jsonl_path.exists():
+        written = write_chunks_jsonl(chunks, chunks_jsonl_path)
+    else:
+        written = append_chunks_jsonl(chunks, chunks_jsonl_path)
+    logger.info("[%s] JSONL 저장: %d 청크 → %s", doc_id, written, chunks_jsonl_path)
+
+    manifest.update_parse(
+        doc_id=doc_id,
+        file_hash=file_hash,
+        parse_hash=parse_ir.parse_hash,
+        parser_used="docx",
+        chunk_count=len(chunks),
+        quality_flags=quality_flags,
+        status="done",
+    )
+
+    return DocProcessResult(
+        doc_id=doc_id,
+        status="done",
+        parser_used="docx",
         chunk_count=len(chunks),
         quality_flags=quality_flags,
     )

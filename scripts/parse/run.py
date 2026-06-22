@@ -39,6 +39,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--pdf-dir", default="data/raw/pdf", help="PDF 파일 디렉토리")
     p.add_argument("--html-dir", default="data/raw/html", help="HTML 파일 디렉토리")
+    p.add_argument("--docx-dir", default="data/raw/docx", help="DOCX 파일 디렉토리")
     p.add_argument("--output-dir", default="data/index_ready", help="출력 디렉토리")
     p.add_argument("--manifest", default=None, help="manifest JSON 경로")
     p.add_argument(
@@ -85,6 +86,7 @@ def main() -> None:
     options = PipelineOptions(
         pdf_dir=Path(args.pdf_dir),
         html_dir=Path(args.html_dir),
+        docx_dir=Path(args.docx_dir),
         output_dir=Path(args.output_dir),
         manifest_path=Path(args.manifest) if args.manifest else None,
         cert_master_path=Path(args.cert_master),
