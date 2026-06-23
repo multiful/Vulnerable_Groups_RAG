@@ -27,6 +27,17 @@ _PRIVATE_CATALOG_JSON = _PROJECT_ROOT / "data/index_ready/private_cert_catalog.j
 
 _NATIONAL_CATALOG_JSON = _PROJECT_ROOT / "data/index_ready/national_cert_catalog.json"
 _GASANJEOM_INDEX_JSON = _PROJECT_ROOT / "data/index_ready/gasanjeom_index.json"
+_CHUNKS_JSONL = _PROJECT_ROOT / "data/index_ready/chunks/chunks.jsonl"
+
+# 위험군 척도 관련 doc_id 집합 (chunks.jsonl 필터용)
+# 정책_2022_35_고립은둔_청년_지원사업_모형_개발_연구: 보사연 기반 연구보고서, 4단계 분류 근거
+_STAGE_DOC_IDS: frozenset[str] = frozenset({
+    "은둔청소년_스크리닝_척도_개발",
+    "신뢰타당성분석",
+    "정책_2022_35_고립은둔_청년_지원사업_모형_개발_연구",
+})
+# NCS 직무-자격 매핑 doc_id 집합
+_NCS_DOC_IDS: frozenset[str] = frozenset({"NCS_능력단위별_자격종목_조회"})
 
 _SUPABASE_MATCH_RPC = "match_certificates"
 
@@ -34,6 +45,61 @@ _SUPABASE_MATCH_RPC = "match_certificates"
 # embedding 생성 비용이 가장 크므로 cert별로 1시간 캐싱한다.
 _SUPABASE_TTL = 3600
 _supabase_cache: dict[str, tuple[float, Any]] = {}
+
+
+@lru_cache(maxsize=1)
+def _load_chunks() -> list[dict]:
+    """chunks.jsonl 전체 로드 (1회 캐싱)."""
+    if not _CHUNKS_JSONL.exists():
+        return []
+    out: list[dict] = []
+    with _CHUNKS_JSONL.open(encoding="utf-8") as f:
+        for line in f:
+            if s := line.strip():
+                out.append(json.loads(s))
+    return out
+
+
+def _chunk_keyword_search(
+    query_text: str,
+    doc_ids: frozenset[str] | None = None,
+    top_k: int = 5,
+) -> list[dict]:
+    """chunks.jsonl에서 keyword overlap 기반으로 상위 청크를 반환한다."""
+    chunks = _load_chunks()
+    query_tokens = set(re.findall(r"[가-힣a-zA-Z0-9]+", query_text.lower()))
+    if not query_tokens:
+        return []
+    scored: list[tuple[float, dict]] = []
+    for chunk in chunks:
+        if doc_ids and chunk.get("doc_id", "") not in doc_ids:
+            continue
+        text = chunk.get("text", "")
+        if len(text) < 20:
+            continue
+        # 목차 페이지(점선 패턴) 노이즈 제거
+        dot_ratio = text.count("·") / max(len(text), 1)
+        if dot_ratio > 0.15:
+            continue
+        chunk_tokens = set(re.findall(r"[가-힣a-zA-Z0-9]+", text.lower()))
+        overlap = len(query_tokens & chunk_tokens) / len(query_tokens)
+        if overlap > 0:
+            scored.append((overlap, chunk))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    rows: list[dict] = []
+    for _, chunk in scored[:top_k]:
+        meta = chunk.get("metadata", {})
+        rows.append({
+            "doc_id": chunk.get("doc_id", ""),
+            "chunk_id": chunk.get("chunk_id", ""),
+            "source_type": meta.get("source_type", "pdf"),
+            "snippet": chunk.get("text", "")[:800],
+            "section_path": meta.get("section_path") or [],
+            "source_url": None,
+            "cert_name": None,
+            "similarity": None,
+        })
+    return rows
 
 
 @lru_cache(maxsize=1)
@@ -560,6 +626,9 @@ def search_evidence(body: dict[str, Any], settings: Settings) -> dict[str, Any]:
     rows = _bm25_chunk_fallback(cert_id, query_text)
     if not rows:
         rows = _candidate_fallback(cert_id)
+    # NCS 직무-자격 매핑 청크 추가 (공식 문서 근거 보강)
+    ncs_rows = _chunk_keyword_search(query_text, doc_ids=_NCS_DOC_IDS, top_k=2)
+    rows = rows + ncs_rows
     source_note = (
         "Supabase 미연결 — cert_candidates text_for_dense를 근거로 사용합니다."
         if not _supabase_configured(settings)
@@ -571,3 +640,10 @@ def search_evidence(body: dict[str, Any], settings: Settings) -> dict[str, Any]:
         "source": "local_candidates",
         "note": source_note,
     })
+
+
+def search_stage_evidence(stage_id: str, query_text: str, settings: Settings) -> dict[str, Any]:
+    """위험군 단계(stage_id) 기반 근거 검색 — 은둔청소년 척도·신뢰타당성 문서에서 추출."""
+    q = query_text.strip() or f"위험군 {stage_id}단계 청소년"
+    rows = _chunk_keyword_search(q, doc_ids=_STAGE_DOC_IDS, top_k=5)
+    return ok_envelope({"stage_id": stage_id, "evidence": rows, "source": "local_chunks"})

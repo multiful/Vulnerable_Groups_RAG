@@ -1,0 +1,1636 @@
+{
+  "doc_id": "신뢰타당성분석",
+  "source_path": "data/raw/pdf/신뢰타당성분석.pdf",
+  "file_hash": "sha256:8684b8ee413b3b11322c4c4b35a8e59e35dd8b4a7091fb8da7f772761df56d04",
+  "parse_hash": "sha256:a127967b4deb486f6d8062e555b58369ea23f4193e22e1b7c61e889eefb8a5f1",
+  "parser_used": "pymupdf",
+  "page_count": 10,
+  "blocks": [
+    {
+      "block_id": "b00000",
+      "block_type": "paragraph",
+      "text": "80 Copyright © 2022 Korean Neuropsychiatric Association\n서      론\n은둔형 외톨이 (hikikomori) 는 1970 년대 일본의 등교 거부\n학생들이 사회적 문제가 되면서 , 드러난 사회적 현상으로\n‘ 6 개월 이상 사회적으로 철수된 채 집에서 지내며 , 사회적\n철수와 관련된 심각한 수준의 기능저하를 보이는 자’를 이르\n는 말이다 . 국내에서도 공동체의 급속한 붕괴 , 경기의 장기\n적인 침체 , 지속되는 취업난 등의 지속되는 악화로 인하여\n2000 년대 초부터 비슷한 현상이 보고되어 왔다 . 그러나 현\n재 이들에 대한 명확한 역학연구는 아직 이루어지지 않았고\n은둔형 외톨이 , 은둔형 부적응 청소년 , 니트족 (not in educa-\ntion, employment or training) 등 다양한 용어를 혼용하여\n사용해 오고 있다 .\n2016 년에 일본 내각부에서 발간한 ‘청년 생활 조사 보고\n서’에 따르면 만 15-39 세의 청년 중 은둔형 외톨이는 541000\n명 (1.57%) 에 달하였다 . 해당 조사에 따르면 은둔형 외톨이\n의 발생시기는 24 세 이하가 77.5% 로 가장 많았으며 그 중\n20-24 세가 34.7%, 30-39 세는 14.3% 를 차지했다 . 뿐만 아니\n라 2019 년에 내각부에서는 40-65 세의 중장년층 내에서 은\n둔형 외톨이 추정 인구수가 610000 명 (1.45%) 일 것으로 발표\n하였다 . 은둔형 외톨이가 청년층에서 중장년 층까지 지속된",
+      "reading_order_index": 0,
+      "source_loc": "page:1",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00001",
+      "block_type": "heading",
+      "text": "ORIGINAL ARTICLE",
+      "reading_order_index": 1,
+      "source_loc": "page:1",
+      "heading_level": 3,
+      "section_path": []
+    },
+    {
+      "block_id": "b00002",
+      "block_type": "paragraph",
+      "text": "J Korean\nNeuropsychiatr Assoc\n2022;61(2):80-89\nPrint ISSN 1015-4817\nOnline ISSN 2289-0963\nwww.jknpa.or g",
+      "reading_order_index": 2,
+      "source_loc": "page:1",
+      "heading_level": null,
+      "section_path": [
+        "ORIGINAL ARTICLE"
+      ]
+    },
+    {
+      "block_id": "b00003",
+      "block_type": "heading",
+      "text": "은둔형 외톨이 자가보고 척도의 신뢰도 및 타당도 연구",
+      "reading_order_index": 3,
+      "source_loc": "page:1",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00004",
+      "block_type": "paragraph",
+      "text": "제세령 ·최태영 ·원근희 * ·봉수현\n대구가톨릭대학교 의과대학 정신건강의학교실, 서울대학교병원 정신건강의학과\nDeveloping Korean Version of the 25-item\nHikikomori Questionnaire\nSe Ryoung Je, MD , Tae Young Choi, MD, PhD ,\nGeun Hui Won, MD, PhD * , and Su Hyun Bong, MD\nDepartment of Psychiatry, Daegu Catholic University School of Medicine, Daegu, Korea\nDepartment of Psychiatry, Seoul National University Hospital, Seoul, Korea\nReceived January 26, 2022\nRevised\nMarch 6, 2022\nAccepted March 14, 2022\nAddress for correspondence\nTae Young Choi, MD, PhD\nDepartment of Psychiatry,\nDaegu Catholic University\nSchool of Medicine,\n33 Duryugonwon-ro 17-gil,\nNam-gu, Daegu 42472, Korea\nTel\n+82-53-650-4786\nFax +82-53-623-7507\nE-mail tyoungchoi@cu.ac.kr\n* Current affiliation: Department of\nPsychiatry, Daegu Catholic University\nSchool of Medicine, Daegu, Korea\nCurrent affiliation: Graduate School of\nMedical Science and Engineering,\nKAIST, Daejeon, Korea\nObjectives Hikikomori is a social condition characterized by social withdrawal. It is essential to\ndevelop an objective indicator to screen for this condition and provide early intervention. There-\nfore, this study verified the validity and reliability of a Korean version of the 25-item Hikikomori\nQuestionnaire (HQ-25).\nMethods Semi-structured interviews were conducted with participants at high risk of feeling\nloneliness and who were recruited through online and offline methods. Data based on clinical\nscales were collected, and after four weeks, a self-report questionnaire was administered to a\nfew participants to confirm the degree of agreement.\nResults One hundred forty-three people were enrolled, out of which 45 were identified as\nhikikomori. There was a significant difference in scores between the hikikomori group and the\nunaffected group (64.44 and 39.30, respectively; p<0.01). Convergent diversity and test-retest\nreliability were satisfactory. The area under the receiver operating characteristic curve was 0.817.\nBased on confirmatory factor analysis, the existing model was found suitable. In this study, sen-\nsitivity and specificity were 88.9% and 52.0% at 40.5 points, and 84.4% and 49.0% at 41.5\npoints, respectively.\nConclusion The Korean version of the HQ-25 has secure validity and reliability. This scale can\nbe beneficial in the screening and early intervention of hikikomori.\nJ Korean Neuropsychiatr Assoc 2022;61(2):80-89\nKeywords \u0007 Hikikomori; Cultural syndrome; Social isolation; Social withdrawal; Validity; Reliability.\nhttps://doi.org/10.4306/jknpa.2022.61.2.80\nThis is an Open Access article distributed under the terms of the Creative Commons\nAttribution Non-Commercial License (https://creativecommons.org/licenses/by-nc/4.0)\nwhich permits unrestricted non-commercial use, distribution, and reproduction in any\nmedium, provided the original work is properly cited.",
+      "reading_order_index": 4,
+      "source_loc": "page:1",
+      "heading_level": null,
+      "section_path": [
+        "은둔형 외톨이 자가보고 척도의 신뢰도 및 타당도 연구"
+      ]
+    },
+    {
+      "block_id": "b00005",
+      "block_type": "paragraph",
+      "text": "www.jknpa.org 81\n은둔형 외톨이 자가보고 척도 개발 SR Je, et al.\n다는 점은 이것이 전생애적인 삶의 질 저하를 유발하는 문제\n임을 시사한다 .\n국내에서 사회적 은둔에 대한 연구는 2001 년에 처음 시작\n되었는데 , 이 연구에서 밝혀진 바에 따르면 국내에서도 일본\n의 은둔형 외톨이와 유사한 사회적 은둔을 보이는 ‘은둔형 외\n톨이’가 존재하고 있으며 , 그 중 절반 이상이 사춘기가 시작\n되는 청소년 시기에 발생하는 특징을 가지고 있었다 . 2005\n년에 Hwang 등 은 사이버 공간을 통한 개입 , 집단 상담프\n로그램 , 가족자조모임 , 기숙형 치료시설 등의 은둔형 외톨이\n청소년에 대한 지원 방안이 제시하였다 . 이어서 2015 년 발표\n된 한 연구에 따르면 한국 청소년에서 사회적 위축 성향이 높\n을수록 우울 , 불안 증상 등의 부정적 정서에 더욱 많은 영향\n을 받는 것으로 나타났다 .\n한편 , 일본 , 한국뿐 아니라 영국 , 프랑스 , 포르투갈 등 세계\n각지에서 사회적 은둔 현상이 확인되고 , 점차 증가하고 있음\n이 확인되었다 . 이와 같이 사회적 은둔 현상이 동아시아\n문화권에 국한하여 나타나는 것이 아니라 전세계적인 현상\n이라는 최근의 증거에 대해 , 은둔형 외톨이를 문화관련 증후\n군 (culture bound syndrome) 이 아니라 현대사회 관련 증후\n군 (modern society bound syndrome) 으로 보아야 한다는 주\n장이 제기되고 있다 .\n은둔형 외톨이는 조현병 , 우울증 , 불안장애 , 인격 장애 , 외\n상후 스트레스 장애 등 여러가지 정신 질환이 동반될 수 있\n다 . 또한 은둔형 외톨이는 장기적으로 교육 문제 , 실업 문제\n와도 연관될 수 있으며 , 이로 인한 국가적 손실은 공중 보건\n학적인 관점에서도 시급한 문제이다 .\n이러한 은둔형 외톨이 현상으로의 진행을 방지하기 위해 ,\n청소년 단계의 부적응 문제에 대한 조기적인 개입이 필요하\n다는 것이 여러 연구에서 지적되고 있다 . 우리나라에서는\n2011 년에서는 은둔 청소년의 조기 발견을 위해 부모작성용\n은둔형 외톨이 선별 도구 (parental screening questionnaire\nfor hidden youth, 이하 HYQ) 가 개발된 바 있다 . HYQ 는\n신뢰도 및 타당도 측면에서 만족할 만한 결과를 보이며 이후\n현재까지 부모 대상으로의 설문 척도로 사용되었으나 , 부모\n의 참여를 거치지 않은 은둔형 외톨이에 대한 개입을 위해\n선 은둔형 외톨이 본인을 대상으로 하여 은둔 증상을 평가\n할 수 있는 자가 보고식 평가 척도의 필요성이 대두되었다 .\n또한 , 2018 년 일본에서는 Teo 등 에 의해 은둔형 외톨이\n를 국제적으로 비교할 수 있는 도구 개발의 필요성이 강조되\n었으며 , 이에 은둔형 외톨이 자가보고 척도 (25-item Hikiko-\nmori Questionnaire, 이하 HQ-25) 가 개발되었다 . 이 척도는\n0 점부터 4 점까지의 Likert 척도로 구성되어 있으며 , 검사 - 재\n검사 신뢰도가 0.92, 진단적 정확도가 0.86 으로 높은 신뢰도\n와 정확도를 보이고 다른 임상 척도와 공존 타당도 측면에서\n도 검증되었다 . HQ-25 는 개발 이후로 여러 연구에서 은둔형\n외톨이의 조기적인 판별을 위해 널리 사용되고 있다 . 본\n연구에서는 HQ-25 를 한글로 번안하여 신뢰도 및 타당도를\n검증하고 , 기존의 요인 구조를 안정성을 검증하는 작업을 시\n행하였다 .",
+      "reading_order_index": 5,
+      "source_loc": "page:2",
+      "heading_level": null,
+      "section_path": [
+        "은둔형 외톨이 자가보고 척도의 신뢰도 및 타당도 연구"
+      ]
+    },
+    {
+      "block_id": "b00006",
+      "block_type": "heading",
+      "text": "방      법",
+      "reading_order_index": 6,
+      "source_loc": "page:2",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00007",
+      "block_type": "paragraph",
+      "text": "연구 대상\n본 연구는 만 13 세 이상 ( 온라인 설문의 경우 만 19 세 이상 )\n의 자발적으로 연구에 참여하기를 원하는 자를 대상으로 진\n행되었으며 , 온라인 설문 및 오프라인 설문의 두 가지 경로\n로 대상자를 모집하였다 . 참여를 원하는 대상자에게 은둔형\n외톨이 진단을 위한 반구조화 면담이 제시되었으며 자가 보\n고식 설문 검사를 시행하였다 . 4 주 후 , 모든 연구 대상자 중\n무작위로 선정된 자들에게 재차 자가 보고식 설문 검사를 시\n행하였고 , 검사 결과를 대상자들에게 제공하였다 . 모집 과정\n에서 면담이나 자가보고 설문의 이해가 어렵거나 , 공동 생활\n시설 및 사회 복지시설에 거주 중이거나 , 내외과적 및 신경과\n적 질환으로 인해 생활에 어려움이 있을 경우는 제외하였다 .\n본 연구는 대구가톨릭대학교병원 임상연구윤리위원회 (In-\nstitutional Review Board, IRB) 의 승인을 받았고 ( 승인번호 :\nCR 20-169), 대상자와 보호자에게 연구의 목적과 방법에 대\n해 설명한 후 자발적인 서면 동의서를 작성하도록 하였다 .\n모집 경로\n본 연구는 온라인 설문과 오프라인 설문의 두 가지 경로로\n설문을 시행하였다 . 기존 연구에서 온라인 설문이나 오프라\n인 설문 등의 설문 방법의 차이가 결과에 유의미한 영향을\n주지 않는다는 것이 알려져 있고 , 온라인 설문은 민감한 질\n문에 대하여 더욱 솔직한 대답을 얻을 수 있어 , 내적 일관\n성에서는 오프라인 설문보다 우월한 결과를 보이기도 하였\n다 . 또한 표본의 대표성에 대해서는 표본의 선정에 따라 오\n프라인 설문과 차이가 있을 수 있으나 , 이는 오프라인 설문에\n서도 마찬가지로 고려하여야 할 문제이며 무작위 추출 등의\n방법으로 교정할 수 있는 것으로 알려져 있다 . 표본 확보 후\n온라인 설문 상의 척도 점수와 오프라인 설문상의 척도 점수\n간에 유의미한 차이가 있는지를 확인하였다 .\n오프라인 설문\n본 연구진은 대상자 모집을 위해 대구가톨릭 Wee 센터 및\n대구가톨릭대학교병원 정신건강의학과 외래 게시판에 포스",
+      "reading_order_index": 7,
+      "source_loc": "page:2",
+      "heading_level": null,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00008",
+      "block_type": "paragraph",
+      "text": "J Korean Neuropsychiatr Assoc 2022 ; 61(2):80-89",
+      "reading_order_index": 8,
+      "source_loc": "page:3",
+      "heading_level": null,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00009",
+      "block_type": "heading",
+      "text": "터를 게재하였으며 , 포스터 및 인터넷 광고 , 대구광역정신건",
+      "reading_order_index": 9,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00010",
+      "block_type": "heading",
+      "text": "강증진센터 , 정신건강의학과 외래 방문 환자 , Wee 센터 의뢰",
+      "reading_order_index": 10,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00011",
+      "block_type": "heading",
+      "text": "등의 경로를 통하여 연구 대상자를 모집하였다 . 선별 단계에",
+      "reading_order_index": 11,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00012",
+      "block_type": "heading",
+      "text": "서 대상자의 선정 기준 , 제외 기준 해당 여부를 판단하였고 ,",
+      "reading_order_index": 12,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00013",
+      "block_type": "heading",
+      "text": "모집된 대상자와 미성년자의 경우 대상자의 대리인에게 동",
+      "reading_order_index": 13,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00014",
+      "block_type": "heading",
+      "text": "의서를 취득하였다 . 대상자에게는 은둔형 외톨이 여부 판단",
+      "reading_order_index": 14,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00015",
+      "block_type": "heading",
+      "text": "을 위한 반구조화 면담을 시행하였다 .",
+      "reading_order_index": 15,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00016",
+      "block_type": "heading",
+      "text": "온라인 설문",
+      "reading_order_index": 16,
+      "source_loc": "page:3",
+      "heading_level": 3,
+      "section_path": [
+        "방      법",
+        "을 위한 반구조화 면담을 시행하였다 ."
+      ]
+    },
+    {
+      "block_id": "b00017",
+      "block_type": "heading",
+      "text": "카카오톡 오픈 채팅 , 인터넷 커뮤니티 등을 통하여 연구",
+      "reading_order_index": 17,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00018",
+      "block_type": "heading",
+      "text": "대상자를 모집하였고 , 모집된 대상자에게 구글 폼 설문지를",
+      "reading_order_index": 18,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00019",
+      "block_type": "heading",
+      "text": "이용하여 동의서를 취득하였다 . 은둔형 외톨이 여부 판단을",
+      "reading_order_index": 19,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00020",
+      "block_type": "heading",
+      "text": "위한 반구조화 면담과 동일한 질문을 구글 폼 설문지를 통해",
+      "reading_order_index": 20,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00021",
+      "block_type": "heading",
+      "text": "취득하였다 .",
+      "reading_order_index": 21,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00022",
+      "block_type": "heading",
+      "text": "측정도구",
+      "reading_order_index": 22,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00023",
+      "block_type": "heading",
+      "text": "은둔형 외톨이 여부 판단을 위한 반구조화 면담",
+      "reading_order_index": 23,
+      "source_loc": "page:3",
+      "heading_level": 3,
+      "section_path": [
+        "방      법",
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00024",
+      "block_type": "heading",
+      "text": "은둔형 외톨이 여부를 판단하기 위한 반구조화 면담은 이",
+      "reading_order_index": 24,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00025",
+      "block_type": "heading",
+      "text": "전 Teo 등 이 진행한 HQ-25 연구에서 사용된 도구를 기초",
+      "reading_order_index": 25,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00026",
+      "block_type": "heading",
+      "text": "로 하여 번역하였으며 , 저자들로부터 검수 과정을 거쳤다 . 질",
+      "reading_order_index": 26,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00027",
+      "block_type": "heading",
+      "text": "문은 상기 저자들의 기존 연구 및 이론적 모델을 기초로 만",
+      "reading_order_index": 27,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00028",
+      "block_type": "heading",
+      "text": "들어졌으며 , 아래의 자가보고 검사를 시행하기 전 시행",
+      "reading_order_index": 28,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00029",
+      "block_type": "heading",
+      "text": "되었다 .",
+      "reading_order_index": 29,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00030",
+      "block_type": "heading",
+      "text": "반구조화 면담에서는 대상자들이 은둔형 외톨이의 정의에",
+      "reading_order_index": 30,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00031",
+      "block_type": "heading",
+      "text": "해당되는지를 판단하기 위한 몇 가지 질문들이 제시되었다",
+      "reading_order_index": 31,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00032",
+      "block_type": "heading",
+      "text": "( ‘당신은 최근 하루 중 대부분 , 거의 매일 집에서 시간을 보내",
+      "reading_order_index": 32,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00033",
+      "block_type": "heading",
+      "text": "고 계신가요 ? ’ , ‘당신은 과거에 하루 중 대부분 , 거의 매일 집",
+      "reading_order_index": 33,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00034",
+      "block_type": "heading",
+      "text": "에서 시간을 보내신 적이 있으신가요 ? ’ ). 또한 은둔의 기간",
+      "reading_order_index": 34,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00035",
+      "block_type": "heading",
+      "text": "을 파악하여 , 6 개월 이상에 해당하는 지를 확인하였다 ( ‘언제",
+      "reading_order_index": 35,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00036",
+      "block_type": "heading",
+      "text": "부터 그렇게 하고 계신가요 ? ’ , ‘가장 길게 그렇게 했던 시기는",
+      "reading_order_index": 36,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00037",
+      "block_type": "heading",
+      "text": "언제부터 언제까지인가요 ? ’ ). 이러한 은둔으로 인한 고통이",
+      "reading_order_index": 37,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00038",
+      "block_type": "heading",
+      "text": "기능의 손상을 유발하는지를 판단하였으며 ( ‘당신의 정상적",
+      "reading_order_index": 38,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00039",
+      "block_type": "heading",
+      "text": "인 일상을 유의미하게 저해했습니까 ? ’ , ‘당신이 일을 하거나",
+      "reading_order_index": 39,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00040",
+      "block_type": "heading",
+      "text": "학교에 참석하는 것을 유의미하게 저해했습니까 ? ’ , ‘당신의",
+      "reading_order_index": 40,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00041",
+      "block_type": "heading",
+      "text": "사회적인 활동이나 관계를 유의미하게 저해했습니까 ? ’ , ‘당",
+      "reading_order_index": 41,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00042",
+      "block_type": "heading",
+      "text": "신을 괴롭게 만들었습니까 ? ’ ) 본 연구의 제외 기준에 해당하",
+      "reading_order_index": 42,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00043",
+      "block_type": "heading",
+      "text": "는지를 확인하여 최종적으로 참여 적합성을 판단하였다 .",
+      "reading_order_index": 43,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00044",
+      "block_type": "heading",
+      "text": "임상 척도",
+      "reading_order_index": 44,
+      "source_loc": "page:3",
+      "heading_level": 3,
+      "section_path": [
+        "방      법",
+        "는지를 확인하여 최종적으로 참여 적합성을 판단하였다 ."
+      ]
+    },
+    {
+      "block_id": "b00045",
+      "block_type": "heading",
+      "text": "은둔형 외톨이 자가보고 척도",
+      "reading_order_index": 45,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00046",
+      "block_type": "heading",
+      "text": "HQ-25 는 Teo 등 이 개발한 자가보고식 척도로 3 개의 하",
+      "reading_order_index": 46,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00047",
+      "block_type": "heading",
+      "text": "위척도 ( 사회화 , 고립 , 심리적 지지 ) 로 이루어진 25 개의 항목",
+      "reading_order_index": 47,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00048",
+      "block_type": "heading",
+      "text": "으로 구성되어 있다 . 해당 도구는 일본의 지역사회 및 임상환",
+      "reading_order_index": 48,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00049",
+      "block_type": "heading",
+      "text": "경에 있는 399 명의 성인을 대상으로 한 연구에서 Cronbach ’",
+      "reading_order_index": 49,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00050",
+      "block_type": "heading",
+      "text": "s alpha 0.96 으로 신뢰도와 타당도가 검증된 바 있다 . 해당연",
+      "reading_order_index": 50,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00051",
+      "block_type": "heading",
+      "text": "구의 저자들은 HQ-25 의 cut-off score 를 42 점으로 하였으며",
+      "reading_order_index": 51,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00052",
+      "block_type": "heading",
+      "text": "이 때의 민감도는 94%, 특이도는 61% 였다 . 본 연구를 위하여",
+      "reading_order_index": 52,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00053",
+      "block_type": "heading",
+      "text": "연구진은 상기 저자들로부터 번역에 대해 허락을 받았으며 ,",
+      "reading_order_index": 53,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00054",
+      "block_type": "heading",
+      "text": "한국의 정신건강의학과 의사가 번역 후 일본의 정신건강의",
+      "reading_order_index": 54,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00055",
+      "block_type": "heading",
+      "text": "학과 의사가 역번역하였다 ( 부록 ). 양 과정은 모두 한국어와",
+      "reading_order_index": 55,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00056",
+      "block_type": "heading",
+      "text": "일본어에 모두 능숙한 심리학자의 도움을 받아 진행되었다 .",
+      "reading_order_index": 56,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00057",
+      "block_type": "heading",
+      "text": "개정판 UCLA 외로움 사정 도구",
+      "reading_order_index": 57,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00058",
+      "block_type": "heading",
+      "text": "개정판 UCLA 외로움 사정 도구 (Revised UCLA Loneli-",
+      "reading_order_index": 58,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00059",
+      "block_type": "heading",
+      "text": "ness Scale, 이하 RULS) 는 Russell 등 이 개발하여 전세계적",
+      "reading_order_index": 59,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00060",
+      "block_type": "heading",
+      "text": "으로 널리 사용되는 외로움을 측정하기 위한 20 문항의 자가",
+      "reading_order_index": 60,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00061",
+      "block_type": "heading",
+      "text": "보고식 척도이다 . 해당 도구는 국내에서 Kim 에 의해 번역",
+      "reading_order_index": 61,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00062",
+      "block_type": "heading",
+      "text": "되어 널리 사용되고 있으며 , Kim 의 연구에 따르면 신뢰도 계",
+      "reading_order_index": 62,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00063",
+      "block_type": "heading",
+      "text": "수는 0.93 이었으며 , 외로움을 나타내는 10 개의 문장과 외로",
+      "reading_order_index": 63,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00064",
+      "block_type": "heading",
+      "text": "움을 나타내지 않는 10 개의 문장으로 구성되어 있다 . 해당 도",
+      "reading_order_index": 64,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00065",
+      "block_type": "heading",
+      "text": "구는 HQ-25 의 개발 및 일본에서의 타당화 연구에서 대조를",
+      "reading_order_index": 65,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00066",
+      "block_type": "heading",
+      "text": "위하여 사용된 바 있다 .",
+      "reading_order_index": 66,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00067",
+      "block_type": "heading",
+      "text": "고독선호도 척도",
+      "reading_order_index": 67,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00068",
+      "block_type": "heading",
+      "text": "Burger 가 개발한 고독선호도 척도 (Preference for Soli-",
+      "reading_order_index": 68,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00069",
+      "block_type": "heading",
+      "text": "tude Scale, 이하 PSS) 를 Lim 등 이 번역하고 연구에 사용",
+      "reading_order_index": 69,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00070",
+      "block_type": "heading",
+      "text": "하였다 . 각각 타인과 함께하는 상황 또는 고독에 해당하는",
+      "reading_order_index": 70,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00071",
+      "block_type": "heading",
+      "text": "2 가지 중 자신에게 적합한 것을 고르는 12 개의 질문으로 되",
+      "reading_order_index": 71,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00072",
+      "block_type": "heading",
+      "text": "어 있는 자가 보고식 척도로 Burger 의 연구에서는 Cron-",
+      "reading_order_index": 72,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00073",
+      "block_type": "heading",
+      "text": "bach ’ s alpha 는 0.70 이었으며 Lim 등의 연구에서는 0.79 로",
+      "reading_order_index": 73,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00074",
+      "block_type": "heading",
+      "text": "나타났다 . Burger 는 각 문항을 0 점 또는 1 점으로 하여 단일",
+      "reading_order_index": 74,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00075",
+      "block_type": "heading",
+      "text": "총점을 사용하기를 제안하였다 .",
+      "reading_order_index": 75,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00076",
+      "block_type": "heading",
+      "text": "다면 사회적 지지 인지 척도",
+      "reading_order_index": 76,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00077",
+      "block_type": "heading",
+      "text": "다면 사회적 지지 인지 척도 (Multidimensional Scale of",
+      "reading_order_index": 77,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00078",
+      "block_type": "heading",
+      "text": "Perceived Social Support, 이하 MSPSS) 는 사회적 지지의 정",
+      "reading_order_index": 78,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00079",
+      "block_type": "heading",
+      "text": "도를 알아보기 위하여 Zimet 등 이 개발한 12 문항의 1-6 점",
+      "reading_order_index": 79,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00080",
+      "block_type": "heading",
+      "text": "Likert 척도이다 . 3 가지 요인 ( 부모 , 친구 , 중요한 다른 누군",
+      "reading_order_index": 80,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00081",
+      "block_type": "heading",
+      "text": "가 ) 으로 구성되어 있으며 , 신뢰도 및 타당도 면에서 검증되",
+      "reading_order_index": 81,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00082",
+      "block_type": "heading",
+      "text": "어 사용되고 있다 . Teo 등 의 연구에서 HQ-25 는 MSPSS 와",
+      "reading_order_index": 82,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00083",
+      "block_type": "heading",
+      "text": "높은 연관성을 가지고 있는 것이 확인된 바 있다 .",
+      "reading_order_index": 83,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00084",
+      "block_type": "heading",
+      "text": "통계적 분석",
+      "reading_order_index": 84,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00085",
+      "block_type": "heading",
+      "text": "본 연구 자료의 신뢰도 , 타당도 , 진단적 정확성 확인을 위해",
+      "reading_order_index": 85,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "방      법"
+      ]
+    },
+    {
+      "block_id": "b00086",
+      "block_type": "paragraph",
+      "text": "www.jknpa.org 83\n은둔형 외톨이 자가보고 척도 개발 SR Je, et al.\nSPSS 25.0 (IBM Corp., Armonk, NY, USA) 을 이용하였으\n며 , 확인적 요인분석을 위해 Amos 18.0 (IBM Corp., Mead-\nville, PA, USA) 을 사용하였다 . 내적 일관성 신뢰도 검증 (in-\nternal consistency reliabilities) 은 Cronbach ’ s alpha 를 소척\n도별로 구분하여 구하였으며 , 진단적 정확성 확인을 위해 수\n용자 작업특성 곡선 (receiver-operating characteristic curve,\n이하 ROC curve) 을 분석하였다 . 또 검사 - 재검사 신뢰도 (test-\nretest reliabilities) 검증을 위하여 4 주 간격으로 검사 - 재검사\n를 시행하였다 . 공존 타당도 검증을 위해 은둔형 외톨이 설\n문과 은둔형 외톨이들의 특징을 나타내는 우울 , 불안 , 인터\n넷 중독 , 스마트폰 중독 척도와의 상관관계를 Pearson 상관\n분석을 통해 알아보았다 . 또한 , 은둔형 외톨이군과 대조군의\n전체 점수의 평균 및 표준편차를 알아보았고 Student t-test\n를 시행하여 변별타당도 (discriminant validity) 를 알아보았\n다 . 확인적 요인분석에서는 모형적합지수 (model fit index) 로\n카이제곱을 자유도로 나눈 값 (chi square per degree of free-\ndom, 이하 CMIN/DF), 근사평균제곱오차제곱근 (root mean\nsquare error of approximation, 이하 RMSEA), 표준적합지수\n(normal fit index, 이하 NFI), Tucker-Lewis 계수 (Tucker-\nKewis index, 이하 TLI), 비교적합지수 (comparative fit in-\ndex, 이하 CFI) 를 사용하였다 . CMIN/DF 는 3 이하일 경우 모\n형이 적합한 것으로 알려져 있다 . RMSEA 의 0.1 이상일 경우\n모형이 적절하지 않으며 , 0.08-0.10 의 범위일 경우 수용 가\n능한 모델 , 0.05-0.08 의 경우 적절한 모델 , 0.05 이하일 경우\n아주 적절한 모델이라고 알려져 있다 . 또한 NFI, CFI 와 TLI\n의 경우 0.9 이상일 경우 모델이 적절한 것으로 알려져 있다 .",
+      "reading_order_index": 86,
+      "source_loc": "page:4",
+      "heading_level": null,
+      "section_path": [
+        "방      법",
+        "본 연구 자료의 신뢰도 , 타당도 , 진단적 정확성 확인을 위해"
+      ]
+    },
+    {
+      "block_id": "b00087",
+      "block_type": "heading",
+      "text": "결      과",
+      "reading_order_index": 87,
+      "source_loc": "page:4",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00088",
+      "block_type": "paragraph",
+      "text": "총 144 명이 연구에 참여하였으며 , 오프라인 설문에는 43,\n온라인 설문에 101 명의 대상자가 참여하였다 . 오프라인 설문\n대상자 중 1 명이 제외 기준에 해당하여 , 설문 조사에 적합하\n지 않다고 판단되어 분석에서 제외하였다 .\n전체대상자 중 45 명이 은둔형 외톨이인 것으로 확인되었\n으며 , 오프라인 경로와 온라인 경로상에서 각각 13 명 , 32 명이\n은둔형 외톨이인 것으로 판단되었다 , 대상자들에게 시행된\n설문 검사의 결과가 제시되었다 ( 표 1). 온라인 설문과 오프라\n인 설문 간에 유의미한 차이를 확인하기 위해 t-test 를 시행\n하였으며 , 결과가 표에 제시되었다 ( 표 2).\n은둔형 외톨이군과 대조군에서의 척도별 점수의 평균 및\n표준편차가 표에 제시되었으며 , t-test 결과 상 상기 척도에\n서 점수의 유의미한 차이가 있었다 . HQ-25 전체 문항에 대\n한 Cronbach ’ s alpha 점수는 0.938 였다 . 또한 공존 타당도를\n평가하기 위한 HQ-25 를 포함한 타 척도들 간의 Pearson 상\n관계수가 제시되었다 ( 표 3). HQ-25 는 RULS 와 강한 양의 상\n관관계 (r=0.869, p ＜ 0.001), MSPSS 와 강한 음의 상관관계를\n보이며 (r=-0.713, p ＜ 0.001), PSS 와 중간정도의 상관관계를\n보이는 것으로 나타났다 . 4 주 이상의 간격을 두고 대상자들\n에게 HQ-25 재검사를 시행하였으며 , 11 명이 응답하였다 .\n11 명의 설문 결과를 통해 검사 - 재검사 신뢰도를 확인하였\n으며 , 상관계수 0.995 (p ＜ 0.01) 로 나타났다 . HQ-25 에 대한\nTable 1. Comparison of clinical scales between hikikomori group and normal group\nScale\nTotal\nOffline\nOnline\nHikikomori\n( n = 45 )\nNormal\n( n = 98 )\np\nHikikomori\n( n = 13 )\nNormal\n( n = 29 )\np\nHikikomori\n( n = 33 )\nNormal\n( n = 88 )\np\nHQ-25\n64.44 ± 20.09\n39.30 ± 18.15\n＜ 0.001**\n70.31 ± 16.66\n31.83 ± 20.72\n＜ 0.001**\n62.06 ± 21.10\n42.43 ± 16.10\n＜ 0.001**\nRULS\n55.64 ± 14.01\n41.85 ± 11.91\n＜ 0.001**\n57.38 ± 14.20\n39.38 ± 14.88\n0.001**\n54.94 ± 14.10\n42.88 ± 10.37\n＜ 0.001**\nPSS\n10.16 ± 3.24\n8.47 ± 3.58\n0.008**\n8.620 ± 3.71\n6.28 ± 3.91\n0.076\n10.78 ± 2.87\n9.39 ± 3.01\n0.031*\nMSPSS\n47.49 ± 18.93\n60.64 ± 15.72\n＜ 0.004**\n46.46 ± 18.03\n63.34 ± 19.32\n0.011*\n47.91 ± 19.54\n59.51 ± 13.94\n0.001**\nData are presented as mean ± standard deviation. *p ＜ 0.05; **p ＜ 0.01. HQ-25, 25-item Hikikomori Questionnaire; RULS, Revised\nUCLA Loneliness Scale;  PSS, Preference for Solitude Scale; MSPSS, Multidimensional Scale of Perceived Social Support\nTable 2. Comparison of offline and online score\nScale\nOffline\nOnline\np\nHQ-25\n43.74 ± 1.99\n48.65 ± 4.08\n0.283\nRULS\n44.95 ± 1.28\n46.70 ± 2.59\n0.547\nPSS\n7.00 ± 0.30\n9.830 ± 0.61\n＜ 0.001**\nMSPSS\n58.12 ± 1.67\n55.83 ± 3.13\n0.486\nData are presented as mean ± standard deviation. **p ＜ 0.01.\nHQ-25, 25-item Hikikomori Questionnaire; RULS, Revised UCLA\nLoneliness Scale; PSS, Preference for Solitude Scale; MSPSS,\nMultidimensional Scale of Perceived Social Support\nTable 3. Correlation between clinical scales\nHQ-25\nRULS\nPSS\nMSPSS\nHQ-25\n1\n0.869**\n0.539**\n-0.713**\nRULS\n0.869**\n1\n0.395**\n-0.819**\nPSS\n0.539**\n0.395**\n1\n-0.223**\nMSPSS\n-0.713**\n-0.819**\n-0.223**\n1\n**p ＜ 0.01. HQ-25, 25-item Hikikomori Questionnaire; RULS, Re-\nvised UCLA Loneliness Scale;  PSS, Preference for Solitude\nScale; MSPSS, Multidimensional Scale of Perceived Social Sup-\nport",
+      "reading_order_index": 88,
+      "source_loc": "page:4",
+      "heading_level": null,
+      "section_path": [
+        "결      과"
+      ]
+    },
+    {
+      "block_id": "b00089",
+      "block_type": "paragraph",
+      "text": "J Korean Neuropsychiatr Assoc 2022 ; 61(2):80-89\nROC curve 가 제시되었으며 , area under the ROC curve ( 이\n하 AUC) 값은 0.817 로 확인되었다 ( 그림 1).\n본 연구는 Teo 등 이 제시한 3 가지 요인 모델을 바탕으로\n확인적 요인분석을 시행하였으며 ( 그림 2, 표 4) 요인분석 진\n행 결과 CMIN/DF 2.175, RMSEA 0.092, NFI 0.762, TLI\n0.822, CFI 0.851 로 드러났다 . 본 연구 상에서 40.5 점에서 민\n감도와 특이도는 88.9%, 52.0% 이었으며 41.5 점에서 84.4%,\n49.0% 으로 확인되었다 ( 표 5).",
+      "reading_order_index": 89,
+      "source_loc": "page:5",
+      "heading_level": null,
+      "section_path": [
+        "결      과"
+      ]
+    },
+    {
+      "block_id": "b00090",
+      "block_type": "heading",
+      "text": "고      찰",
+      "reading_order_index": 90,
+      "source_loc": "page:5",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00091",
+      "block_type": "paragraph",
+      "text": "본 연구는 13 세 이상의 일반 인구를 대상으로 한국어판\nHQ-25 의 신뢰도와 타당도를 평가하였으며 다른 정신건강\n의학적 연관성을 평가하였다 . 본 연구에 참여한 은둔형 외톨\n이와 정상군에서 한국어판 HQ-25 의 점수간 유의미한 차이\n가 있었으며 , 한국어판 HQ-25 는 내적 일치도 , 공존 타당도 ,\n검사 - 재검사 신뢰도 측면에서 검증되었다 .\n온라인 대상자군과 오프라인 대상자군의 척도 상 PSS 를\n제외하고 유의미한 차이는 보이지 않았다 . 이는 추후 은둔형\n외톨이의 발견 빛 개입을 위한 설문을 시행할 때 온라인 매\n체를 통한 접근 방법을 이용하는 것이 오프라인 설문을 시행\n하기 힘든 은둔형 외톨이의 특성을 고려하였을 때 유용할 수\n있음을 시사한다 .\nHQ-25 개발 연구에서 HQ-25 는 RULS, PSS, MSPSS 와\n강한 상관관계를 보인다는 결과가 제시되었다 . 본 연구에\n서 한국어판 HQ-25 는 RULS, MSPSS 와는 강한 상관관계를\n보였으며 , PSS 와는 중간정도의 상관관계를 보였다 . 한국의\n은둔형 외톨이가 일본에 비해 고독에 대한 선호의 정도의 차\n이를 보이는 것은 한국과 일본의 문화적인 차이점과도 연관\n지어 생각할 수 있다 . 한국에서는 집단주의 , 대가족주의가 오\n랜 전통이었다 . 한국의 은둔형 외톨이는 일본과 달리 인터넷\n중독의 모습으로서 더 이슈가 되었다 . 한국의 인터넷 게임은\n가상 공간에서 여러 사람이 함께 플레이 하는 것으로 게임 플\n레이를 통한 자기 과시 , 협력을 통한 성취감 , 소속감을 제공\n한다 . 일본의 경우 혼자 플레이하는 콘솔 게임과는 이러한 면\n에서 차이가 있다 . 반면 , 일본은 한국보다 혼자 하는 문화에\n더욱 익숙하다 . 1 인 식당 , 1 인 주점 등 나홀로 문화가 익숙해\n져 있어 한국보다 혼자 지내는 것 자체에 대한 선호가 높다 .\n진단적 정확성 측면에서 , 한국어판 HQ-25 의 AUC 는 0.8-\nFig. 1. ROC of Korean version of 25-item Hikikomori Question-\nnaire showing accuracy of identifying individuals with hikikomori\n(n=143), AUC=0.817. ROC, receiver–operating characteristic;\nAUC, area under the ROC curve.\n0.0\n0.2\n0.4\n0.6\n0.8\n1.0\nFig. 2. Confirmatory factor analysis of 25-item Hikikomori Ques-\ntionnaire (n=143): 3 factor models. Chi-square fit statistics/degree\nof freedom, 2.175; root mean square error of approximation,\n0.092; normal fit index, 0.762; Tucker-Lewis index, 0.822; com-\nparative fit index, 0.851.",
+      "reading_order_index": 91,
+      "source_loc": "page:5",
+      "heading_level": null,
+      "section_path": [
+        "고      찰"
+      ]
+    },
+    {
+      "block_id": "b00092",
+      "block_type": "heading",
+      "text": "www.jknpa.org 85",
+      "reading_order_index": 92,
+      "source_loc": "page:6",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00093",
+      "block_type": "paragraph",
+      "text": "은둔형 외톨이 자가보고 척도 개발 SR Je, et al.",
+      "reading_order_index": 93,
+      "source_loc": "page:6",
+      "heading_level": null,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00094",
+      "block_type": "heading",
+      "text": "0.9 사이로 우수한 식별력을 가지고 있다 . 또한 민감도 , 특",
+      "reading_order_index": 94,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00095",
+      "block_type": "heading",
+      "text": "이도와 양성 예측도는 각각 36.5 점에서 91.1%, 40.8%, 11.8%,",
+      "reading_order_index": 95,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00096",
+      "block_type": "heading",
+      "text": "40.5 점에서 88.9%, 48.0%, 12.9% 였으며 41.5 점부터 민감도가",
+      "reading_order_index": 96,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00097",
+      "block_type": "heading",
+      "text": "84.4% 으로 급감하는 경향을 보였다 . Kondo 등 의 연구에",
+      "reading_order_index": 97,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00098",
+      "block_type": "heading",
+      "text": "따르면 , 일본의 은둔형 외톨이들이 은둔을 시작하고 나서부",
+      "reading_order_index": 98,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00099",
+      "block_type": "heading",
+      "text": "터 치료를 받기 까지는 평균 4.4 년이 걸렸다 . 본 도구의 목적",
+      "reading_order_index": 99,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00100",
+      "block_type": "heading",
+      "text": "이 선별 검사로서 은둔하여 개입을 받기 힘든 대상자로 하여",
+      "reading_order_index": 100,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00101",
+      "block_type": "heading",
+      "text": "금 가능한 빨리 진단적 평가를 받게 하기 위함을 고려하였을",
+      "reading_order_index": 101,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00102",
+      "block_type": "heading",
+      "text": "때 , 특이도가 낮더라도 민감도가 높은 선에서 절단점을 설정",
+      "reading_order_index": 102,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00103",
+      "block_type": "heading",
+      "text": "하는 것이 바람직할 것으로 생각된다 . 따라서 본 척도에서는",
+      "reading_order_index": 103,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00104",
+      "block_type": "heading",
+      "text": "절단점을 41 점으로 설정하고 선별된 대상자들에게는 은둔형",
+      "reading_order_index": 104,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00105",
+      "block_type": "heading",
+      "text": "외톨이에 대한 평가 및 개입이 이루어져야 할 것으로 생각",
+      "reading_order_index": 105,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00106",
+      "block_type": "heading",
+      "text": "된다 . 이는 HQ-25 개발 연구에서 민감도 , 특이도 , 양성 예측",
+      "reading_order_index": 106,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00107",
+      "block_type": "heading",
+      "text": "도 , 양성 우도비를 고려하여 절단점을 42 점으로 설정한 것과",
+      "reading_order_index": 107,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00108",
+      "block_type": "heading",
+      "text": "유사한 점수이다 .",
+      "reading_order_index": 108,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00109",
+      "block_type": "heading",
+      "text": "HQ-25 개발 연구에서는 탐색적 요인 분석을 통해 3 가지",
+      "reading_order_index": 109,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00110",
+      "block_type": "heading",
+      "text": "요인 모델 ( 고립 , 사회화 , 정서적 지지 ) 을 규명하였다 . 본 연",
+      "reading_order_index": 110,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00111",
+      "block_type": "heading",
+      "text": "구에서는 기존에 제시된 모델의 적합성을 평가하기 위해 확",
+      "reading_order_index": 111,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00112",
+      "block_type": "heading",
+      "text": "인적 요인 분석을 시행하였다 . CMIN/DF 는 2.175 로 기존 모",
+      "reading_order_index": 112,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00113",
+      "block_type": "heading",
+      "text": "형은 적합한 것으로 나타났으며 , RMSEA 는 0.092 로 , 경계 수",
+      "reading_order_index": 113,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00114",
+      "block_type": "heading",
+      "text": "준의 모델 적합성을 보였다고 할 수 있다 . 본 연구 상에서 TLI",
+      "reading_order_index": 114,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00115",
+      "block_type": "heading",
+      "text": "와 CFI 는 각각 0.822, 0.851 로 분석 결과 기존의 모델은 0.9 에",
+      "reading_order_index": 115,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00116",
+      "block_type": "heading",
+      "text": "다소 기준에 미치지 못하나 가까운 값으로 확인되었다 .",
+      "reading_order_index": 116,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00117",
+      "block_type": "heading",
+      "text": "본 연구의 의의로는 , 첫째로 한국어판으로 수정한 HQ-25",
+      "reading_order_index": 117,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00118",
+      "block_type": "heading",
+      "text": "가 타당하고 신뢰할 수 있는 척도라는 것을 확인한 것이다 .",
+      "reading_order_index": 118,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00119",
+      "block_type": "heading",
+      "text": "일본에서 최초로 발견되어 최근 세계에서 발견되고 있는 병",
+      "reading_order_index": 119,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00120",
+      "block_type": "heading",
+      "text": "적 은둔 현상에 대한 관심이 커지고 있는 지금 , 본 척도의 개",
+      "reading_order_index": 120,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00121",
+      "block_type": "heading",
+      "text": "발은 임상 환경에서 널리 적용될 수 있을 것으로 생각된다 .",
+      "reading_order_index": 121,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00122",
+      "block_type": "heading",
+      "text": "두번째로 , 기존에 개발된 척도에 대해 확인적 요인 분석을",
+      "reading_order_index": 122,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00123",
+      "block_type": "heading",
+      "text": "시행하였다는 점이다 . 확인적 요인 분석에서는 기존의 이론",
+      "reading_order_index": 123,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00124",
+      "block_type": "heading",
+      "text": "적 배경이나 연구를 바탕으로 제시된 모델을 더욱 엄격하게",
+      "reading_order_index": 124,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00125",
+      "block_type": "heading",
+      "text": "검증하게 된다 . 병적 은둔이 다양한 정신질환과 연관되어",
+      "reading_order_index": 125,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00126",
+      "block_type": "heading",
+      "text": "있고 , 이러한 질환에 공통적인 기전을 규명하는 것이 중요한",
+      "reading_order_index": 126,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00127",
+      "block_type": "heading",
+      "text": "상황에서 이러한 요인구조의 검정은 은둔의 병태생리를 이",
+      "reading_order_index": 127,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00128",
+      "block_type": "heading",
+      "text": "해하는데도 도움이 될 수 있다 .",
+      "reading_order_index": 128,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00129",
+      "block_type": "heading",
+      "text": "세번째로 , 본 연구는 청소년부터 중년까지의 다양한 연령",
+      "reading_order_index": 129,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00130",
+      "block_type": "heading",
+      "text": "대의 인구를 대표하고 있다 . 은둔형 외톨이에 대한 여러 연구",
+      "reading_order_index": 130,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00131",
+      "block_type": "heading",
+      "text": "가 시행되어 왔지만 상대적으로 소아 및 청소년 은둔에 대한",
+      "reading_order_index": 131,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 85"
+      ]
+    },
+    {
+      "block_id": "b00132",
+      "block_type": "paragraph",
+      "text": "Table 4. 25-item Hikikomori Questionnaire items grouped by 3 factors model\nFactor\nItem\nQuestion\nSocialization\n1\nI stay away from other people.\n4\nI love meeting new people.\n6\nPeople bother me.\n8\nI feel uncomfortable around other people.\n11\nI don’t like to be seen by others.\n15\nI enjoy being in social situations.\n18\nI avoid talking with other people.\n20\nI much prefer to be alone than with others.\n23\nI don’t enjoy social interactions.\n25\nI strongly prefer to be around other people.\nIsolation\n2\nI spend most of my time at home.\n5\nI shut myself in my room.\n9\nI spend most of my time alone.\n12\nI rarely meet people in-person.\n13\nIt is hard for me to join in on groups.\n16\nI do not live by society’s rules and values.\n19\nI have little contact with other people talking, writing, and so on.\n22\nI rarely spend time alone.\n24\nI spend very little time interacting with other people.\nEmotional support\n3\nThere really isn’t anyone with whom I can discuss matters of importance.\n7\nThere are people in my life who try to understand me.\n10\nI can share my personal thoughts with several people.\n14\nThere are few people I can discuss important issues with.\n17\nThere really isn’t anyone very significant in my life.\n21\nI have someone I can trust with my problems.",
+      "reading_order_index": 132,
+      "source_loc": "page:6",
+      "heading_level": null,
+      "section_path": [
+        "www.jknpa.org 85",
+        "가 시행되어 왔지만 상대적으로 소아 및 청소년 은둔에 대한"
+      ]
+    },
+    {
+      "block_id": "b00133",
+      "block_type": "paragraph",
+      "text": "J Korean Neuropsychiatr Assoc 2022 ; 61(2):80-89\n연구는 적은 편이다 . 이는 일반적으로 은둔형 외톨이는 은둔\n으로부터 발견까지의 시간이 오래 걸려 직장생활을 시작하\n게 되는 청년기에 문제가 드러나게 되는 경우가 많기 때문일\n것으로 생각된다 . 본 연구는 청소년 인구를 포함시킴으로써\n보다 다양한 연령대의 자료에 대한 근거를 확보하고 있다 .\n추후 연구에서도 이러한 청소년 은둔형 외톨이를 포함시키\n려는 노력이 은둔형 외톨이를 전생애적으로 이해하는데 도\n움이 될 것이다 .\n마지막으로 , 본 연구는 온라인 설문과 오프라인 설문을 동\n시에 진행하였다 . 기존 설문 연구들이 지역적인 표본을 확보\n하게 된다는 한계를 가지고 있는데 반해 , 본 연구는 상대적으\n로 공간적인 제약 없이 자료를 확보할 수 있었다 .\n이러한 강점에도 불구하고 , 본 연구의 결과는 몇 가지 제한\n점을 고려하여 받아들여져야 할 것이다 . 첫째로 , 여전히 본\n연구의 자료는 모든 인구를 대표하지 못한다 . 온라인으로 모\n집된 대상자들은 대부분 인터넷 커뮤니티 및 SNS 채팅방에\n서 모집되었으며 , 이러한 미디어를 이용하는 집단에 대한 고\n려가 필요하다 . 은둔형 외톨이는 인터넷 중독과 연관되어 있\n다는 것이 기존에 알려져 있다 . 현실에서 고립되었고 인터넷\n으로 사회적 관계를 형성하려고 하는 은둔형 외톨이들이 인\n터넷을 통한 설문에 적극적으로 참여했을 가능성이 있으며 ,\n이는 은둔형 외톨이 중에서도 사회적 관계를 추구하는 유형\n이 있고 그렇지 않은 유형이 있음을 고려하였을 때 연구 결\n과에 선택 바이어스로 작용했을 가능성이 있다 .\n또한 , MSPSS 는 현재 한국어판으로 타당화 된 척도가 존\n재하지 않아 , 결과를 해석할 때 이를 고려해야 한다 . 그러나\nMSPSS 를 자체 번역하여 사용한 논문은 있었으며 , 한국과\n일본의 문화적의 유사성을 고려할 때 , 본 연구의 결과도 유\n의미할 것으로 해석할 수 있을 것으로 생각된다 . 정서적 지\n지는 다양한 정서 및 행동 문제의 연관 요인이 되는 만큼 , 추\n후 MSPSS 에 대한 한국어판 타당화 작업이 진행되기를 기대\n한다 .\n은둔형 외톨이는 우울감 , 대인관계의 공포 , 퇴행적 행동으\n로 국내에서도 심각한 사회적인 문제로 부상하고 있는 만큼\n한국어판 HQ-25 의 개발은 의의가 있다 . 은둔형 외톨이의\n조기 진단 및 개입 , 다수 규모의 연구 표본 확보 , 치료에 따\n른 반응 확인 등 여러 방면에서 본 척도가 도움이 될 수 있기\n를 기대한다 .",
+      "reading_order_index": 133,
+      "source_loc": "page:7",
+      "heading_level": null,
+      "section_path": [
+        "www.jknpa.org 85",
+        "가 시행되어 왔지만 상대적으로 소아 및 청소년 은둔에 대한"
+      ]
+    },
+    {
+      "block_id": "b00134",
+      "block_type": "heading",
+      "text": "결      론",
+      "reading_order_index": 134,
+      "source_loc": "page:7",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00135",
+      "block_type": "paragraph",
+      "text": "한국어판 HQ-25 는 신뢰도 및 타당도 면에서 만족할 만한\n수준이었다 . 본 연구를 통해 , 이는 은둔형 외톨이의 평가를\n위한 기본적인 평가 도구로서 활용 가치가 있을 것으로 생각\n된다 . 은둔형 현대 사회의 중요한 과제가 되어가고 있는 시\n점에서 이 척도는 한국의 은둔형 외톨이에 대한 조기 개입을\n위해 중요한 도구로 사용될 수 있다 .\n중심 단어 : 은둔형 외톨이 ; 문화 증후군 ; 사회적 고립 ; 사회\n적 철수 ; 타당도 ; 신뢰도 .\nAcknowledgments\n본 연구는 지산 문화정신의학 연구기금 (Jisan Cultural Psychia-\ntry Research Fund) 을 지원받아 진행되었음 .\nSpecial thanks to Dr. Kato, Dr. Lee Chang ho and Lee Ji Eun for\nadvising for this study, translation and back-translation of HQ-25.\nConflicts of Interest\nThe authors have no financial conflicts of interest.\nAuthor Contributions\nConceptualization: Tae Young Choi. Formal analysis: Se Ryoung\nJe. Investigation: Su Hyun Bong. Methodology: Geun Hui Won.\nProject administration: Tae Young Choi. Supervision: Tae Young\nChoi. Writing—original draft: Se Ryoung Je. Writing—review &\nediting: Tae Young Choi.\nORCID iDs\nSe Ryoung Je\nhttps://orcid.org/0000-0001-8877-7241\nTae Young Choi\nhttps://orcid.org/0000-0003-2677-9297\nTable 5. Sensitivity and specificity of 25-item Hikikomori Ques-\ntionnaire score of total group\nScore\nSensitivity\n1-Specificity\nPPV\nLR +\n29.5\n0.956\n0.694\n0.107\n1.377\n30.5\n0.933\n0.684\n0.106\n1.365\n31.5\n0.933\n0.673\n0.108\n1.386\n32.5\n0.933\n0.643\n0.112\n1.452\n33.5\n0.933\n0.633\n0.114\n1.475\n34.5\n0.911\n0.612\n0.115\n1.488\n36.5\n0.911\n0.592\n0.118\n1.539\n37.5\n0.889\n0.571\n0.119\n1.556\n38.5\n0.889\n0.561\n0.121\n1.584\n39.5\n0.889\n0.531\n0.127\n1.675\n40.5\n0.889\n0.520\n0.129\n1.708\n41.5\n0.844\n0.490\n0.130\n1.724\n42.5\n0.844\n0.480\n0.133\n1.761\n43.5\n0.800\n0.459\n0.132\n1.742\n44.5\n0.778\n0.429\n0.136\n1.815\n45.5\n0.778\n0.408\n0.142\n1.906\n46.5\n0.778\n0.378\n0.152\n2.060\n47.5\n0.756\n0.357\n0.155\n2.116\n48.5\n0.733\n0.347\n0.155\n2.114\n49.5\n0.733\n0.316\n0.168\n2.318\n50.5\n0.733\n0.276\n0.188\n2.662\nPPV, positive predictive value; LR + , positive likelihood ratio",
+      "reading_order_index": 135,
+      "source_loc": "page:7",
+      "heading_level": null,
+      "section_path": [
+        "결      론"
+      ]
+    },
+    {
+      "block_id": "b00136",
+      "block_type": "heading",
+      "text": "www.jknpa.org 87",
+      "reading_order_index": 136,
+      "source_loc": "page:8",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00137",
+      "block_type": "paragraph",
+      "text": "은둔형 외톨이 자가보고 척도 개발 SR Je, et al.\nGeun Hui Won\nhttps://orcid.org/0000-0003-1220-6674\nSu Hyun Bong\nhttps://orcid.org/0000-0002-9492-9501",
+      "reading_order_index": 137,
+      "source_loc": "page:8",
+      "heading_level": null,
+      "section_path": [
+        "www.jknpa.org 87"
+      ]
+    },
+    {
+      "block_id": "b00138",
+      "block_type": "heading",
+      "text": "REFERENCES",
+      "reading_order_index": 138,
+      "source_loc": "page:8",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 87"
+      ]
+    },
+    {
+      "block_id": "b00139",
+      "block_type": "paragraph",
+      "text": "1) Kato TA, Kanba S, Teo AR. Hikikomori: multidimensional under-\nstanding, assessment, and future international perspectives. Psychia-\ntry Clin Neurosci 2019;73:427-440.\n2) Cabinet office. Investigation on life of youth [Internet]. Tokyo: Cabi-\nnet office [cited 2021 Nov 23]. Available from: https://www8.cao.\ngo.jp/youth/kenkyu/hikikomori/h27/pdf-index.html.\n3) Cabinet office. Investigation on living conditions [Internet]. Tokyo:\nCabinet office [cited 2021 Nov 23]. Available from: https://www8.\ncao.go.jp/youth/kenkyu/life/h30/pdf-index.html.\n4) Lee KM, Koo JG, Kim EJ, Lee SH. The psychosocial characteristics\nof oiettolie adolescents. Korean J Couns Psychother 2001;13:147-\n162.\n5) Hwang SG, Yeo IJ, Nam JR, Jang MK, MY, Kwon HS, et al. Measures\nto support socially maladjusted youth such as hikikomori [Internet].\nSeoul: National Youth Commission [cited 2021 Nov 23]. Available\nfrom: http://www.mohw.go.kr/react/jb/sjb030301vw.jsp?PAR_MENU_\nID=03&MENU_ID=032901&CONT_SEQ=335906&page=1.\n6) Lee YJ, Seo MJ, Choi TY. Psychopathological characteristics of so-\ncial withdrawal (hikikomori) in the Korean adolescent. J Korean\nNeuropsychiatr Assoc 2015;54:549-555.\n7) Gent E. The plight of Japan’s modern hermit [Internet]. London:\nBBC Future [cited 2021 Aug 18]. Available from: https://www.bbc.\ncom/future/article/20190129-the-plight-of-japans-modern-hermits.\n8) Gozlan PM. Des cas d’“hikikomori” en France [Internet]. Paris: Le\nMonde [cited 2021 Aug 18]. Available from: https://www.lemonde.\nfr/sciences/article/2012/06/07/des-cas-d-hikikomori-en-\nfrance_1714707_1650684.html.\n9) Macedo P, Pimenta V, Alves M, Uria AS, Salgado H. Hikikomori\ngoes global: a Portuguese case. Eur Psychiatry 2017;41(S1):S514.\n10) Wu AFW, Ooi J, Wong PWC, Catmur C, Lau JYF. Evidence of path-\nological social withdrawal in non-Asian countries: a global health\nproblem? Lancet Psychiatry 2019;6:195-196.\n11) Cerantola A. Why so many Japanese children refuse to go to school\n[Internet]. London: BBC World Service [cited 2021 Sep 28]. Avail-\nable from: https://www.bbc.com/news/world-asia-50693777.\n12) Park GW, Hong SJ. Recent changes in employment conditions and\nmeasures to resolve youth unemployment [Internet]. Seoul: The Bank\nof Korea Economic Research Institute [cited 2021 Sep 28]. Available\nfrom: https://www.bok.or.kr/portal/bbs/P0002454/view.do?nttId=148\n889&menuNo=200431&pageIndex=39.\n13) Baek HT, Kim BN, Shin MS, Ahn DH, Lee YS. Development of pa-\nrental screening questionnaire for hidden youth. J Korean Acad Child\nAdolesc Psychiatry 2011;22:262-270.\n14) Teo AR, Chen JI, Kubo H, Katsuki R, Sato-Kasai M, Shimokawa N,\net al. Development and validation of the 25-item hikikomori ques-\ntionnaire (HQ-25). Psychiatry Clin Neurosci 2018;72:780-788.\n15) Teo AR, Nelson S, Strange W, Kubo H, Katsuki R, Kurahara K, et al.\nSocial withdrawal in major depressive disorder: a case-control study\nof hikikomori in Japan. J Affect Disord 2020;274:1142-1146.\n16) Kato TA, Shinfuku N, Tateno M. Internet society, internet addiction,\nand pathological social withdrawal: the chicken and egg dilemma for\ninternet addiction and hikikomori. Curr Opin Psychiatry 2020;33:\n264-270.\n17) Kubo H, Aida N, Kato TA. Psychodynamic group psychotherapy for\nhikikomori: the case of a socially withdrawn male with schizoaffec-\ntive disorder. J Clin Psychol 2021;77:1851-1864.\n18) Tateno M, Teo AR, Ukai W, Kanazawa J, Katsuki R, Kubo H, et al.\nInternet addiction, smartphone addiction, and hikikomori trait in Jap-\nanese young adult: social isolation and social network. Front Psychi-\natry 2019;10:455.\n19) Oosterveld P, Wellems P. Two modalities, one anser?: combining in-\nternet and CATI survey effectively in market research [Internet].\nCannes: Technovate: CRM, internet research and new media [cited\n2020 Aug 23]. Available from: https://ana.esomar.org/documents/\ntwo-modalities-one-answer-.\n20) Youn ES, Kim YW. Methodology for internet survey: case study.\nSurvey Research 2002;3:25-51.\n21) Lee JY, Kim JG. Comparing data qualities of on-line panel and off-\nline interview surveys: reliability and validity. Korean Journal of\nMarketing 2006;21:209-231.\n22) Scherpenzeel AC. How representative are online panels? Problems\nof coverage and selection and possible solutions. In: Das M, Ester P,\nKaczmirek L, editors. Social and behavioral research and the inter-\nnet. Oxford: Routledge;2018. p.105-132.\n23) Teo AR, Fetters MD, Stufflebam K, Tateno M, Balhara Y, Choi TY,\net al. Identification of the hikikomori syndrome of social withdrawal:\npsychosocial features and treatment preferences in four countries. Int\nJ Soc Psychiatry 2015;61:64-72.\n24) Teo AR, Stufflebam K, Saha S, Fetters MD, Tateno M, Kanba S, et\nal. Psychopathology associated with social withdrawal: idiopathic\nand comorbid presentations. Psychiatry Res 2015;228:182-183.\n25) Russell D, Peplau LA, Cutrona CE. The revised UCLA loneliness\nscale: concurrent and discriminant validity evidence. J Pers Soc Psy-\nchol 1980;39:472-480.\n26) Kim OS. Korean version of the revised UCLA loneliness scale: reli-\nability and validity test. J Korean Acad Nurs 1997;27:871-879.\n27) Burger JM. Individual differences in preference for solitude. J Res\nPers 1995;29:85-108.\n28) Lim AY, Lee JD, Lee HJ. The relationships among self-determined\nsolitude, personality and psychological health. Kor J Clin Psychol\n2012;31:993-1021.\n29) Zimet GD, Dahlem NW, Zimet SG, Farley GK. The multidimen-\nsional scale of perceived social support. J Pers Assess 1988;52:30-\n41.\n30) Hosmer Jr DW, Lemeshow S, Sturdivant RX. Applied logistic re-\ngression. Hoboken: John Wiley & Sons;2013.\n31) Kondo N, Sakai M, Kuroda Y, Kiyota Y, Kitabata Y, Kurosawa M.\nGeneral condition of hikikomori (prolonged social withdrawal) in\nJapan: psychiatric diagnosis and outcome in mental health welfare\ncentres. Int J Soc Psychiatry 2013;59:79-86.\n32) Brown TA, Moore MT. Confirmatory factor analysis. In: Hoyle RH,\neditor. Handbook of structural equation modeling. New York: Guil-\nford Press;2012. p.361-379.",
+      "reading_order_index": 139,
+      "source_loc": "page:8",
+      "heading_level": null,
+      "section_path": [
+        "www.jknpa.org 87",
+        "REFERENCES"
+      ]
+    },
+    {
+      "block_id": "b00141",
+      "block_type": "heading",
+      "text": "▒ 부      록 ▒",
+      "reading_order_index": 141,
+      "source_loc": "page:9",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00142",
+      "block_type": "heading",
+      "text": "25-item Hikikomori Questionnaire (HQ-25) 한국어판",
+      "reading_order_index": 142,
+      "source_loc": "page:9",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00143",
+      "block_type": "paragraph",
+      "text": "※ 최근 6 개월 동안 아래의 문장들 중에 당신의 상태는 어느 정도에 해당됩니까 ?\n당신의 상태를 가장 잘 나타낸 번호를 하나 골라서 ○표를 하십시오 .\n증 상\n해당되지\n해당되지\n어느 쪽도\n해당된다\n해당된다\n1\n사람과 거리를 둔다 .\n0\n1\n2\n3\n4\n2\n하루 종일 거의 집에서 보낸다 .\n0\n1\n2\n3\n4\n3\n중요한 일에 대해 의논할 사람이 정말로 아무도 없다 .\n0\n1\n2\n3\n4\n4\n모르는 사람과 만나는 것을 아주 좋아한다 .\n0\n1\n2\n3\n4\n5\n나의 방에 틀어 박혀 있다 .\n0\n1\n2\n3\n4\n6\n사람이 귀찮다 .\n0\n1\n2\n3\n4\n7\n나의 생활에 있어서 나를 이해해 주려고 하는 사람들이 있다 .\n0\n1\n2\n3\n4\n8\n누군가와 함께 있는 것이 불편하게 느껴진다 .\n0\n1\n2\n3\n4\n9\n하루 종일 거의 혼자서 지낸다 .\n0\n1\n2\n3\n4\n10\n몇몇 사람들에게 개인적인 생각을 털어놓을 수 있다 .\n0\n1\n2\n3\n4\n11\n사람들에게 보여지는 것이 싫다 .\n0\n1\n2\n3\n4\n12\n사람과 직접 만나는 것이 거의 없다 .\n0\n1\n2\n3\n4\n13\n집단에 들어가는 것이 서투르다 .\n0\n1\n2\n3\n4\n14\n중요한 문제에 대해서 의논할 사람이 별로 없다 .\n0\n1\n2\n3\n4\n15\n사람과의 교류는 즐겁다 .\n0\n1\n2\n3\n4\n16\n사회의 규칙과 가치관에 맞춰서 살고 있지 않다 .\n0\n1\n2\n3\n4\n17\n자신의 인생에 있어서 소중한 사람이 정말로 아무도 없다 .\n0\n1\n2\n3\n4\n18\n사람과 이야기하는 것을 피한다 .\n0\n1\n2\n3\n4\n19\n누군가와 연락을 하는 일은 별로 없다 . ( 말하기 , 글쓰기 등 )\n0\n1\n2\n3\n4\n20\n누군가와 함께 있는 것 보다 혼자 있는 것이 훨씬 좋다 .\n0\n1\n2\n3\n4\n21\n자신이 안고 있는 문제에 대해서 안심하고 상담할 수 있는\n사람이 있다 .\n0\n1\n2\n3\n4\n22\n혼자서 시간을 보내는 것은 거의 없다 .\n0\n1\n2\n3\n4",
+      "reading_order_index": 143,
+      "source_loc": "page:9",
+      "heading_level": null,
+      "section_path": [
+        "25-item Hikikomori Questionnaire (HQ-25) 한국어판"
+      ]
+    },
+    {
+      "block_id": "b00144",
+      "block_type": "heading",
+      "text": "www.jknpa.org 89",
+      "reading_order_index": 144,
+      "source_loc": "page:10",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00145",
+      "block_type": "paragraph",
+      "text": "은둔형 외톨이 자가보고 척도 개발 SR Je, et al.\n23\n사람을 사귀는 것은 즐겁지 않다 .\n0\n1\n2\n3\n4\n24\n사람과 교류하는 것이 거의 없다 .\n0\n1\n2\n3\n4\n25\n혼자 있는 것 보다도 누군가와 함께 있는 편이 훨씬 좋다 .\n0\n1\n2\n3\n4\n26\n인생에 있어서 목적이 있다 .\n0\n1\n2\n3\n4\n27\n살아 있다는 것에 설렌다 .\n0\n1\n2\n3\n4\n28\n세상 일에 대해서 무관심하다 .\n0\n1\n2\n3\n4\n29\n나의 인생에는 의욕이 생기는 것이 많이 있다 .\n0\n1\n2\n3\n4",
+      "reading_order_index": 145,
+      "source_loc": "page:10",
+      "heading_level": null,
+      "section_path": [
+        "www.jknpa.org 89"
+      ]
+    },
+    {
+      "block_id": "b00146",
+      "block_type": "heading",
+      "text": "**26-29 까지의 문항은 HQ-25 의 개발에 참여한 Takahiro Kato 가 은둔형 외톨이의 네번째 요인으로서 추가한 ‘ motivation ’",
+      "reading_order_index": 146,
+      "source_loc": "page:10",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 89"
+      ]
+    },
+    {
+      "block_id": "b00147",
+      "block_type": "heading",
+      "text": "관련 항목으로 , 기존 척도 개발 연구에서는 25 번 항목까지 타당화되어 본 연구에서도 25 번 항목까지 타당화 분석을 진행하",
+      "reading_order_index": 147,
+      "source_loc": "page:10",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 89"
+      ]
+    },
+    {
+      "block_id": "b00148",
+      "block_type": "heading",
+      "text": "였다 . 다만 motivation 또한 환아의 은둔형 외톨이 성향을 평가하는데 고려할 만한 요소로 판단되는 바 , 26-29 까지의 항목",
+      "reading_order_index": 148,
+      "source_loc": "page:10",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 89"
+      ]
+    },
+    {
+      "block_id": "b00149",
+      "block_type": "heading",
+      "text": "점수를 참고할 수 있다 .",
+      "reading_order_index": 149,
+      "source_loc": "page:10",
+      "heading_level": 2,
+      "section_path": [
+        "www.jknpa.org 89"
+      ]
+    }
+  ],
+  "parse_quality_flags": [
+    "multi_column_detected"
+  ],
+  "parsed_at": "2026-06-22T13:29:42.732678+00:00"
+}

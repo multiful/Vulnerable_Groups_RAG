@@ -294,6 +294,47 @@
       "quality_flags": [
         "low_cert_resolution:0.00"
       ]
+    },
+    "은둔청소년_스크리닝_척도_개발": {
+      "file_hash": "sha256:437710ddc71748e4373b77c13f468487058230d52501a28d87b2c71068e43933",
+      "parse_hash": "sha256:27bf7f4835f81191ab169f7b254123300ca8e4ec255bdfe6c64a88fcc2c13fa8",
+      "parse_version": "v1",
+      "chunk_version": "v1",
+      "parser_used": "pymupdf",
+      "chunk_count": 18,
+      "status": "done",
+      "quality_flags": [
+        "multi_column_detected",
+        "unresolved_cert_id",
+        "low_cert_resolution:0.00"
+      ]
+    },
+    "신뢰타당성분석": {
+      "file_hash": "sha256:8684b8ee413b3b11322c4c4b35a8e59e35dd8b4a7091fb8da7f772761df56d04",
+      "parse_hash": "sha256:a127967b4deb486f6d8062e555b58369ea23f4193e22e1b7c61e889eefb8a5f1",
+      "parse_version": "v1",
+      "chunk_version": "v1",
+      "parser_used": "pymupdf",
+      "chunk_count": 38,
+      "status": "done",
+      "quality_flags": [
+        "multi_column_detected",
+        "unresolved_cert_id",
+        "low_cert_resolution:0.00"
+      ]
+    },
+    "NCS_능력단위별_자격종목_조회": {
+      "file_hash": "sha256:f581b716b3058be42b01de02e072800de808640016e4c339b77fcc11a1070163",
+      "parse_hash": "sha256:50488c028152431372dd413caacac5c5a53f131792d440236be5ccdecf14a5be",
+      "parse_version": "v1",
+      "chunk_version": "v1",
+      "parser_used": "docx",
+      "chunk_count": 14,
+      "status": "done",
+      "quality_flags": [
+        "unresolved_cert_id",
+        "low_cert_resolution:0.00"
+      ]
     }
   },
   "chunks": {

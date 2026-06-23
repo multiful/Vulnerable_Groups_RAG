@@ -274,11 +274,10 @@ function isMismatch(domainId: string | null, jobId: string | null): boolean {
 }
 
 const RISK_STAGE_LABELS: Record<string, string> = {
-  '1': '1단계 (취업 안정권)',
-  '2': '2단계 (준비 활성)',
-  '3': '3단계 (준비 정체)',
-  '4': '4단계 (고위험군)',
-  '5': '5단계 (최고위험군)',
+  '1': '1단계 (고립위험청년)',
+  '2': '2단계 (활동형 고립청년)',
+  '3': '3단계 (활동 제한형 고립청년)',
+  '4': '4단계 (은둔 청년)',
 };
 
 const InterestSelection: React.FC = () => {

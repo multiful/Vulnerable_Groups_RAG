@@ -1,0 +1,5079 @@
+{
+  "doc_id": "은둔청소년_스크리닝_척도_개발",
+  "source_path": "data/raw/pdf/은둔청소년_스크리닝_척도_개발.pdf",
+  "file_hash": "sha256:437710ddc71748e4373b77c13f468487058230d52501a28d87b2c71068e43933",
+  "parse_hash": "sha256:27bf7f4835f81191ab169f7b254123300ca8e4ec255bdfe6c64a88fcc2c13fa8",
+  "parser_used": "pymupdf",
+  "page_count": 20,
+  "blocks": [
+    {
+      "block_id": "b00000",
+      "block_type": "paragraph",
+      "text": "- 251 -\n청소년상담연구\nThe Korea Journal of Youth Counseling\n2024, Vol. 32, No. 2, 251-269",
+      "reading_order_index": 0,
+      "source_loc": "page:1",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00001",
+      "block_type": "heading",
+      "text": "은 둔청소년판별을위한스크리닝척도개발 *",
+      "reading_order_index": 1,
+      "source_loc": "page:1",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00002",
+      "block_type": "paragraph",
+      "text": "차주환\n이자영 †\n백정원\n편여울강\n어혜원\n한국청소년상담복지개발원\n한양사이버대학교\n한국청소년상담복지개발원\n본연구는청소년상담복지기관상담자가평정하는방식으로은둔청소년을효과적으로\n판별하는데필요한스크리닝척도를개발하는데목적이있다. 먼저, 기존에개발된척도\n와관련문헌을검토하여1차예비문항을구성하고, 학계전문가의자문및평정을통\n해최종예비문항을선정하였다. 이를은둔경험이있는청소년과일반청소년을대상으\n로설문조사한후, 수집된자료에대해탐색적요인분석과확인적요인분석을실시하여\n요인구조를검증하였다. 그결과3개의하위요인(사회단절및고립, 회피, 불규칙한\n생활방식)이도출되었으며, 최종적으로13개의문항이확정되었다. 척도의타당성을\n확인하기위해은둔경험집단과일반집단간의변별타당도를분석하였으며, 은둔형외톨이\n자가보고척도와우울척도와의상관분석을통해수렴타당도를확보하였다. Youden’s\nindex를활용하여고위험군을판별하기위한절단점을설정한결과, 사회단절및고립\n이11.5점, 회피가13.5점, 불규칙한생활방식은5.5점으로제시되었다. 본연구는3가지\n하위요인모두에서절단점이상인경우를은둔청소년(고위험)으로판별하였다. 마지막으로\n본연구는은둔청소년의개념과특성이불명확한상황에서청소년상담복지기관종사가\n가은둔청소년을판별할수있는스크리닝척도를개발하였다는점에서의의가있다.\n* 주요어: 은둔청소년, 조기개입, 발굴및지원\n* 본논문은2023년한국청소년상담복지개발원의‘은둔청소년발굴및지원방안’ 연구내용의일부를\n발췌 ･ 재구성한것임\n† 교신저자(Corresponding Author): 이자영, 한양사이버대학교상담심리학과교수,\n(04763) 서울시성동구왕십리로220 한양사이버대학교, Tel: 02-2290-0341, E-Mail: 1170003@hycu.ac.kr",
+      "reading_order_index": 2,
+      "source_loc": "page:1",
+      "heading_level": null,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00003",
+      "block_type": "paragraph",
+      "text": "차주환․이자영․백정원․편여울강․어혜원",
+      "reading_order_index": 3,
+      "source_loc": "page:2",
+      "heading_level": null,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00005",
+      "block_type": "heading",
+      "text": "은둔의사전적의미는‘세상을등지고숨는것’으로되어있으나, 현재은둔하는청소년에",
+      "reading_order_index": 4,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00006",
+      "block_type": "heading",
+      "text": "대한명확한개념은정립되지않고있다(김혜원외, 2022). 그러나선행연구를고찰해보면, 은",
+      "reading_order_index": 5,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00007",
+      "block_type": "heading",
+      "text": "둔청소년은은둔기간, 은둔상태, 사회적인접촉범위를기준으로개념화하는특징을보인다.",
+      "reading_order_index": 6,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00008",
+      "block_type": "heading",
+      "text": "여인중(2005)은‘친구없이(혹은하나) 3개월이상집밖출입을하지않고, 사회적참여를하",
+      "reading_order_index": 7,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00009",
+      "block_type": "heading",
+      "text": "지않는사람’으로정의했다. 윤철경과서보람(2020)은6개월을기준으로‘다양한요인으로취",
+      "reading_order_index": 8,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00010",
+      "block_type": "heading",
+      "text": "학, 취업등의사회적참여를회피하고6개월이상타인과의교류를단절한사람’, ‘6개월이",
+      "reading_order_index": 9,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00011",
+      "block_type": "heading",
+      "text": "상집에서나가지않고가족이외에는(심지어가족과도) 친밀한관계를맺지못하는사람’으",
+      "reading_order_index": 10,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00012",
+      "block_type": "heading",
+      "text": "로정의했다. 김기헌, 이윤주, 유설희, 배진우(2017)는‘최소한의사회적접촉없이3개월이상",
+      "reading_order_index": 11,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00013",
+      "block_type": "heading",
+      "text": "집안에머물러있고, 진학이나취업등의사회참여활동을할수없거나하지않고있으며,",
+      "reading_order_index": 12,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00014",
+      "block_type": "heading",
+      "text": "친구가하나밖에없거나혹은한명도없고, 자신의 운 둔상태에대한불안 감 이나 초 조 감 을",
+      "reading_order_index": 13,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00015",
+      "block_type": "heading",
+      "text": "느끼 는청소년’으로정의하였다.",
+      "reading_order_index": 14,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00016",
+      "block_type": "heading",
+      "text": "김혜원등(2022)은기존의선행연구를종 합 하여일정기간(3개월혹은6개월이상) 동안, 대",
+      "reading_order_index": 15,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00017",
+      "block_type": "heading",
+      "text": "부분자신의방이나집안에 만 머 무르 며, 간 헐 적이고일시적인외출은하 더라 도가족외대인",
+      "reading_order_index": 16,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00018",
+      "block_type": "heading",
+      "text": "관계를하지않으며, 지적 장애 나정신 질환 으로인해은둔하는경우는 포함 하지않는다고정",
+      "reading_order_index": 17,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00019",
+      "block_type": "heading",
+      "text": "의하였다. 그 런 데 W ong 등(2015)에 따르 면6개월이상, 6개월미 만 은둔한경우를비교했을",
+      "reading_order_index": 18,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00020",
+      "block_type": "heading",
+      "text": "때 그 들 의 삶 에미 치 는부정적영 향 에서는 큰 차이가없는것으로나타 났 다. 이러한연구결",
+      "reading_order_index": 19,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00021",
+      "block_type": "heading",
+      "text": "과를 바탕 으로본연구에서는은둔청소년의정의를내 릴때 , 이 들 의발굴및예방적개입을",
+      "reading_order_index": 20,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00022",
+      "block_type": "heading",
+      "text": "위해‘지적 장애 나정신 질환 으로인해은둔하는경우는제외하고은둔기간이최소3개월이상",
+      "reading_order_index": 21,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00023",
+      "block_type": "heading",
+      "text": "이며, 대부분자신의방이나집안에 만 머 무르 고, 학업이나취업활동을하지않고가족이외",
+      "reading_order_index": 22,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00024",
+      "block_type": "heading",
+      "text": "의사회적접촉이거의없는9세에서24세연 령 의청소년’으로정의하였다.",
+      "reading_order_index": 23,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00025",
+      "block_type": "heading",
+      "text": "그 런 데은둔청소년에대한사회적관심이나타 난 2005년이후20여년가 까운 시간이지 난",
+      "reading_order_index": 24,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00026",
+      "block_type": "heading",
+      "text": "현재, 국내에이 들 의현황을 살펴볼만 한 공 식적인통계는부재하다. 다 만O EC D 기준우리",
+      "reading_order_index": 25,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00027",
+      "block_type": "heading",
+      "text": "나 라 의15 ~ 29세청소년의 니트 비중(1 8 .9 % )이다 른 국가의평 균 (13.9 % )보다 높 은것으로나",
+      "reading_order_index": 26,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00028",
+      "block_type": "heading",
+      "text": "타 났 으며(김기헌외, 201 8 ), 15-29세의사회적고립청년비 율 은2.7 % 로 약 29 만 명을 추 정하고",
+      "reading_order_index": 27,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00029",
+      "block_type": "heading",
+      "text": "있다(김기헌외, 2020). 또 한1 8~ 24세의은둔청소년발생 률 은1.97 % (윤철경외, 2022)로보고",
+      "reading_order_index": 28,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00030",
+      "block_type": "heading",
+      "text": "하였다. 이러한결과를종 합 하여청소년기본 법 에적용되는 만 9세에서24세의청소년을 추 정",
+      "reading_order_index": 29,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00031",
+      "block_type": "heading",
+      "text": "하면, 2021년기준전 체8 3 8만 3000여명(여성가족부, 2022) 중은둔청소년은단 순 대입하면",
+      "reading_order_index": 30,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00032",
+      "block_type": "heading",
+      "text": "10 만 여명정도로예 측 할수있다.",
+      "reading_order_index": 31,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00033",
+      "block_type": "heading",
+      "text": "많 은선행연구에서는은둔의시 작 시기를청소년기로보고하고있다(김신 아 , 2019 ; 김효 순 ,",
+      "reading_order_index": 32,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00034",
+      "block_type": "heading",
+      "text": "김서연, 박 희서, 2016 ; 양미진외, 2007 ; 오 상 빈 , 2020 ; 이지 민 , 김영 근 , 2021). 일본내 각 부에서",
+      "reading_order_index": 33,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00035",
+      "block_type": "heading",
+      "text": "발간한‘청년생활조사보고서’에서도은둔의발생시기는24세이하가77.5 % 로가 장많았 고",
+      "reading_order_index": 34,
+      "source_loc": "page:2",
+      "heading_level": 3,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00038",
+      "block_type": "heading",
+      "text": "(복지타임 즈 , 2020), 은둔유경험자중에서 약 40 % 가청소년기에은둔생활을시 작 한것으로",
+      "reading_order_index": 35,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00039",
+      "block_type": "heading",
+      "text": "나타 났 다( 광 주 광역 시, 2020, 재인용). 청소년기는 아 동기에서성인기사이의과도기로서이전",
+      "reading_order_index": 36,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00040",
+      "block_type": "heading",
+      "text": "보다 급격 한인지 · 정서 · 행동발 달 이일어나며, 사회구성원으로성 장 하기위한준비과정이필",
+      "reading_order_index": 37,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00041",
+      "block_type": "heading",
+      "text": "요하다( 장휘숙 , 2004). 그러나은둔청소년은일정기간(3 ~ 6개월이상) 자신 만 의한정된 공 간에",
+      "reading_order_index": 38,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00042",
+      "block_type": "heading",
+      "text": "서외부와단절된상태로활동하며식사나수면 패턴 의불규칙 함 , 인 터넷 이나스마 트폰몰 입,",
+      "reading_order_index": 39,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00043",
+      "block_type": "heading",
+      "text": "개인의외모및위생을 돌 보지않는등의특징을가진다(김혜원, 2020). 특 히 우울, 불안, 회",
+      "reading_order_index": 40,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00044",
+      "block_type": "heading",
+      "text": "피, 자 살충 동, 낮 은자존 감 등의정서상태와자신을이상하 게볼 것이 라 는피해의식, 자신의",
+      "reading_order_index": 41,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00045",
+      "block_type": "heading",
+      "text": "상황 · 고통을 아무 도이해하지못할것이 라 는외로 움 , 스스로에대한 열 등 감 과 좌 절 감 , 무망감",
+      "reading_order_index": 42,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00046",
+      "block_type": "heading",
+      "text": "등의 빠져 있다(김혜원외, 2022). 이러한은둔청소년의특성은사회적관계형성을어 렵게",
+      "reading_order_index": 43,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00047",
+      "block_type": "heading",
+      "text": "하여사회기 술 의발 달 을저해하고, 집안에 칩 거하는방식으로스 트레 스를피하고안정 감 을",
+      "reading_order_index": 44,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00048",
+      "block_type": "heading",
+      "text": "얻게 되는데(고스 게 유 코 , 2012), 이로인해문제해결방 법 을 터득 하지못한 채 성 장 할가 능",
+      "reading_order_index": 45,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00049",
+      "block_type": "heading",
+      "text": "성이 높아 진다. 따라 서청소년기의은둔과고립경험은개인의 건강 한발 달 을저해할수있을",
+      "reading_order_index": 46,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00050",
+      "block_type": "heading",
+      "text": "뿐만아니라 , 사회전 체 의 건강 성과행복에심 각 한영 향 을주 게 되기 때 문에청소년시기의",
+      "reading_order_index": 47,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00051",
+      "block_type": "heading",
+      "text": "조기발굴은 매 우필요하다.",
+      "reading_order_index": 48,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00052",
+      "block_type": "heading",
+      "text": "한 편 , 은둔하는청소년은사회적관계를회피하는특성을보여실제상담 센터 에자발적으",
+      "reading_order_index": 49,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00053",
+      "block_type": "heading",
+      "text": "로방문해심리적어 려움 을 호 소하거나상담을진행하는경우는 드 물다. 간혹보 호 자의요청",
+      "reading_order_index": 50,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00054",
+      "block_type": "heading",
+      "text": "으로상담자가청소년가정에방문하여개입을진행하는경우도있지 만 , 이 때 은둔하는청소",
+      "reading_order_index": 51,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00055",
+      "block_type": "heading",
+      "text": "년은자기보고식심리검사를거부할가 능 성이 높아 상담자가은둔수준을 파악 하고선별하는",
+      "reading_order_index": 52,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00056",
+      "block_type": "heading",
+      "text": "데에는어 려움 이있다. 이러한점에서상담자가은둔하는청소년과면담과정에서나타 난 특",
+      "reading_order_index": 53,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00057",
+      "block_type": "heading",
+      "text": "성을문항에 체 크하는방식으로은둔을판별할수있는척도는 매 우필요하다. 그러나우리",
+      "reading_order_index": 54,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00058",
+      "block_type": "heading",
+      "text": "나 라 청소년상담자가은둔청소년을판별하기위해사용가 능 한스크리닝척도는부재한실정",
+      "reading_order_index": 55,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00059",
+      "block_type": "heading",
+      "text": "이다. 이에본연구에서는청소년상담복지기관상담자가평정하는방식의은둔청소년스크리",
+      "reading_order_index": 56,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00060",
+      "block_type": "heading",
+      "text": "닝척도를개발하고자한다.",
+      "reading_order_index": 57,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00061",
+      "block_type": "heading",
+      "text": "현재국내에서활용되고있는은둔청소년선별척도는부모 또 는청소년당사자가보고하는",
+      "reading_order_index": 58,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00062",
+      "block_type": "heading",
+      "text": "방식의척도 뿐 이다. 구 체 적으로 살펴 보면, 개정판 아 동용사회불안척도와 아 동용우울척도의",
+      "reading_order_index": 59,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00063",
+      "block_type": "heading",
+      "text": "공 존타당도를통해개발한부모 작 성자 녀 은둔평가척도( 백 형태, 김 봉 년, 신 민섭 , 안동현, 이",
+      "reading_order_index": 60,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00064",
+      "block_type": "heading",
+      "text": "영식, 2011), 은둔형외톨이자가보고척도(25-ite m H ikiko m ori Q uestionnaire, 이하 HQ -25 ;",
+      "reading_order_index": 61,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00065",
+      "block_type": "heading",
+      "text": "제세 령 , 최태영, 원 근 희, 봉 수현, 2022), 은둔형부적 응 청소년 체 크리스 트 (양미진외, 2007)가",
+      "reading_order_index": 62,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00066",
+      "block_type": "heading",
+      "text": "있다. 먼저부모 작 성용은둔형외톨이선별도구는전문가5명이문헌검토를통해예비문",
+      "reading_order_index": 63,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00067",
+      "block_type": "heading",
+      "text": "항을 만든 후은둔형외톨이로 추 정되는부모 즉 정신분 열 증등의정신 병 적 장애또 는중등도",
+      "reading_order_index": 64,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00068",
+      "block_type": "heading",
+      "text": "이상의정신지 체 가 아니 면서3개월이상사회적접촉이나활동을하지않는청소년( 8 -25세)",
+      "reading_order_index": 65,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00069",
+      "block_type": "heading",
+      "text": "의부모42명과일반인239명을대상으로설문조사하고이를요인분석하여개발하였다.",
+      "reading_order_index": 66,
+      "source_loc": "page:3",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00070",
+      "block_type": "paragraph",
+      "text": "그\n결과\n이\n척도는\n4개\n요인\n즉\n회피(a v oidance)요인,\n단절( w ithdra w al)요인,\n고립",
+      "reading_order_index": 67,
+      "source_loc": "page:3",
+      "heading_level": null,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *",
+        "의부모42명과일반인239명을대상으로설문조사하고이를요인분석하여개발하였다."
+      ]
+    },
+    {
+      "block_id": "b00073",
+      "block_type": "heading",
+      "text": "(isolation)요인, 무 관심(indifference)요인으로구성되었으며, 4개요인34문항이 추 출되었다.",
+      "reading_order_index": 68,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00074",
+      "block_type": "heading",
+      "text": "그러나이척도는부모용으로 만들 어 졌 기 때 문에접 근 성이 높 은부모를통해발굴할수있다",
+      "reading_order_index": 69,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00075",
+      "block_type": "heading",
+      "text": "는 장 점은있으나부모의주관적 편향 이개입 될 여지가있어상담자가은둔청소년의특성을",
+      "reading_order_index": 70,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00076",
+      "block_type": "heading",
+      "text": "정확하 게파악 하지못하는한계가있다.",
+      "reading_order_index": 71,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00077",
+      "block_type": "heading",
+      "text": "다 음 으로Teo 등(201 8 )이개발한은둔형외톨이자기보고식척도( HQ -25)가있다. 이척도",
+      "reading_order_index": 72,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00078",
+      "block_type": "heading",
+      "text": "는사회화, 고립그리고심리적지지 라 고하는3개의하위요인으로구성되어있다. 문항은",
+      "reading_order_index": 73,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00079",
+      "block_type": "heading",
+      "text": "총 25개문항으로사회화(sociali z ation)는10문항, 고립(isolation)은9문항그리고정서적지지",
+      "reading_order_index": 74,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00080",
+      "block_type": "heading",
+      "text": "(e m otional support)는6문항으로구성되어있다. 이척도의절단점(cut-off)은42점인것으로",
+      "reading_order_index": 75,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00081",
+      "block_type": "heading",
+      "text": "나타 났 다. 제세 령 등(2022)은이척도를우리나 라 에그대로사용해도되는지검증하기위해",
+      "reading_order_index": 76,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00082",
+      "block_type": "heading",
+      "text": "만 13세이상의청소년및성인143명(은둔형외톨이45명, 대조군9 8 명)을대상으로타당화",
+      "reading_order_index": 77,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00083",
+      "block_type": "heading",
+      "text": "하였다. 그결과타당한척도로증명되었으며, 이를한국어판은둔형외톨이자기보고척도로",
+      "reading_order_index": 78,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00084",
+      "block_type": "heading",
+      "text": "명명하였다. 그러나이척도는청소년 뿐만아니라 성인 까 지사용가 능 하여청소년의특수한",
+      "reading_order_index": 79,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00085",
+      "block_type": "heading",
+      "text": "상황과고유한특성이문항에반영되지못했다는한계가있다.",
+      "reading_order_index": 80,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00086",
+      "block_type": "heading",
+      "text": "또 한, 양미진등(2007)이개발한은둔형부적 응 청소년사회성척도가있다. 이척도는문",
+      "reading_order_index": 81,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00087",
+      "block_type": "heading",
+      "text": "헌조사, 면접조사등을통해예비문항을개발하고, 재학생과은둔형부적 응 청소년1,072명",
+      "reading_order_index": 82,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00088",
+      "block_type": "heading",
+      "text": "을대상으로문항개발및타당도검증을하였다. 그결과은둔형부적 응 청소년사회성척",
+      "reading_order_index": 83,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00089",
+      "block_type": "heading",
+      "text": "도는5요인(불안, 사회적기 술 , 사회적철회, 대인예 민 성, 공격 성) 33문항으로구성된것으로",
+      "reading_order_index": 84,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00090",
+      "block_type": "heading",
+      "text": "나타 났 다. 그외에이시형등(2000)이개발한은둔형외톨이경 향 척도는소외와외로 움 , 사",
+      "reading_order_index": 85,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00091",
+      "block_type": "heading",
+      "text": "회적유 능감 , 친구 들 과의상 호 교류세요인으로구성되었으며, 총 문항수는16문항이었다.",
+      "reading_order_index": 86,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00092",
+      "block_type": "heading",
+      "text": "S akai 등(2004)이개발한 HB C L 척도도있다. 이척도는이윤지등(2015)에의해 번역 되었으",
+      "reading_order_index": 87,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00093",
+      "block_type": "heading",
+      "text": "며, 공격 적행동, 대인불안, 강박 행동, 가족회피행동, 우울, 일상생활활동의결여, 이해할",
+      "reading_order_index": 88,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00094",
+      "block_type": "heading",
+      "text": "수없는부적절한행동, 사회불참가, 활동성의저하, 불규칙적인생활 패턴 으로구성되었다.",
+      "reading_order_index": 89,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00095",
+      "block_type": "heading",
+      "text": "그러나이척도는청소년의자기보고식척도로청소년상담자가은둔청소년을판별할수있는",
+      "reading_order_index": 90,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00096",
+      "block_type": "heading",
+      "text": "척도는 아니 었다.",
+      "reading_order_index": 91,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00097",
+      "block_type": "heading",
+      "text": "앞 서설명한기존의척도의한계를 극 복하기위해본연구에서는은둔청소년의조기발굴",
+      "reading_order_index": 92,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00098",
+      "block_type": "heading",
+      "text": "에 초 점을두고판별결과에 따라 차별적인지원이가 능 하도 록 청소년상담복지현 장 에서사",
+      "reading_order_index": 93,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00099",
+      "block_type": "heading",
+      "text": "용가 능 한스크리닝척도를개발하고자한다. 구 체 적으로은둔청소년관련선행연구를통해",
+      "reading_order_index": 94,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00100",
+      "block_type": "heading",
+      "text": "예비문항을 추 출하고, 예비조사와본조사로나 누 어척도개발을진행하였다.",
+      "reading_order_index": 95,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00101",
+      "block_type": "heading",
+      "text": "본연구의연구문제는다 음 과 같 다.",
+      "reading_order_index": 96,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00102",
+      "block_type": "heading",
+      "text": "첫째 , 상담자용은둔청소년스크리닝척도의구성요인은어 떠 한가 ? 둘째 , 상담자용은둔",
+      "reading_order_index": 97,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00103",
+      "block_type": "heading",
+      "text": "청소년스크리닝척도의신 뢰 도는어 떠 한가 ? 셋째 . 상담자용은둔청소년스크리닝척도의타",
+      "reading_order_index": 98,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00104",
+      "block_type": "heading",
+      "text": "당도(수렴타당도와변별타당도)는어 떠 한가 ? 이다. 이를통해청소년상담자가은둔청소년의",
+      "reading_order_index": 99,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00105",
+      "block_type": "heading",
+      "text": "조기발굴과 빠른 개입의가 능 성을 높 일수있을것이다.",
+      "reading_order_index": 100,
+      "source_loc": "page:4",
+      "heading_level": 2,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *"
+      ]
+    },
+    {
+      "block_id": "b00106",
+      "block_type": "paragraph",
+      "text": "은둔청소년판별을위한스크리닝척도개발",
+      "reading_order_index": 101,
+      "source_loc": "page:5",
+      "heading_level": null,
+      "section_path": [
+        "은 둔청소년판별을위한스크리닝척도개발 *",
+        "조기발굴과 빠른 개입의가 능 성을 높 일수있을것이다."
+      ]
+    },
+    {
+      "block_id": "b00108",
+      "block_type": "heading",
+      "text": "척도개발",
+      "reading_order_index": 102,
+      "source_loc": "page:5",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00109",
+      "block_type": "heading",
+      "text": "청소년상담자평정은둔청소년스크리닝척도의문항을개발하기위해선행연구를 바탕 으",
+      "reading_order_index": 103,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00110",
+      "block_type": "heading",
+      "text": "로예비문항을구성한후탐색적요인분석을실시하였다.",
+      "reading_order_index": 104,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00111",
+      "block_type": "heading",
+      "text": "예비문항구성",
+      "reading_order_index": 105,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00112",
+      "block_type": "heading",
+      "text": "청소년상담자평정은둔청소년스크리닝척도의문항을개발하기위해기존에개발된은",
+      "reading_order_index": 106,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00113",
+      "block_type": "heading",
+      "text": "둔청소년을선별및평가하는척도를분석하였다. 즉 부모 작 성용은둔형외톨이선별도구",
+      "reading_order_index": 107,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00114",
+      "block_type": "heading",
+      "text": "( 백 형태외, 2011), 은둔형외톨이자기보고식척도( HQ -25)(Teo et al., 201 8 ), 은둔형부적 응 청",
+      "reading_order_index": 108,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00115",
+      "block_type": "heading",
+      "text": "소년사회성척도(양미진외, 2017), 은둔형외톨이경 향 척도(이시형외, 2000), 은둔형외톨이",
+      "reading_order_index": 109,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00116",
+      "block_type": "heading",
+      "text": "간단 체 크리스 트 (김혜원외, 2002) 그리고 HB C L 척도( S akai et al., 2004)의구성요인을분석",
+      "reading_order_index": 110,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00117",
+      "block_type": "heading",
+      "text": "하였다. 그결과대부분의척도에서은둔청소년의일반적인특성인고립 / 단절, 회피 / 사회화,",
+      "reading_order_index": 111,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00118",
+      "block_type": "heading",
+      "text": "불규칙한생활 / 일상적인활동의결여등이 공 통요인으로나타 났 으며, 정신 건강 과관련요인으",
+      "reading_order_index": 112,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00119",
+      "block_type": "heading",
+      "text": "로불안, 우울, 공격 성등이있었다. 또 한은둔청소년의보 호 요인으로 볼 수있는정서적지지",
+      "reading_order_index": 113,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00120",
+      "block_type": "heading",
+      "text": "도 포함 되었다. 이에 근 거하여은둔청소년의 공 통특성영 역 에서사회단절 / 고립( 8 문항), 회피(6",
+      "reading_order_index": 114,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00121",
+      "block_type": "heading",
+      "text": "문항), 불규칙한생활방식(6문항)을요인으로 추 출하였고, 정신 건강 영 역 에서우울 / 불안(9문",
+      "reading_order_index": 115,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00122",
+      "block_type": "heading",
+      "text": "항), 공격 행동(6문항), 강박 및중 독 행동(3문항)을요인으로 추 출하였다. 마지막으로사회 · 정서",
+      "reading_order_index": 116,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00123",
+      "block_type": "heading",
+      "text": "적지지영 역 에서부모지지(4문항)를요인으로 추 출하였다. 이와 같 이7개의요인과42개의예",
+      "reading_order_index": 117,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00124",
+      "block_type": "heading",
+      "text": "비문항을 추 출하였다.",
+      "reading_order_index": 118,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00125",
+      "block_type": "heading",
+      "text": "이후42개의예비문항에대해은둔청소년연구경험이있는학계전문가2인의자문과평정",
+      "reading_order_index": 119,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00126",
+      "block_type": "heading",
+      "text": "을실시하였다. 전문가자문을통해5개요인중정신 건강 요인과사회 ･ 정서적지지요인은은",
+      "reading_order_index": 120,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00127",
+      "block_type": "heading",
+      "text": "둔상태자 체 를 측 정한다고보기는어 렵 기 때 문에 삭 제하였으며, 전문가평정에서5점 만 점",
+      "reading_order_index": 121,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00128",
+      "block_type": "heading",
+      "text": "중4.5이하로점수를 받 은3문항과의미가중 첩 되는2문항을제외하였다. 그결과 남 은문항",
+      "reading_order_index": 122,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00129",
+      "block_type": "heading",
+      "text": "은 총 15문항이었다. 구 체 적으로 살펴 보면, ‘사회적으로철수하여 혼 자고립되어있는상태’를",
+      "reading_order_index": 123,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00130",
+      "block_type": "heading",
+      "text": "묻 는5문항(예, 학교나 직장 ( 알바 )에가지않는다. 자기방에서나 오 지않는다, 친구 들 과어울",
+      "reading_order_index": 124,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00131",
+      "block_type": "heading",
+      "text": "리기보다는 혼 자서인 터넷 (유 튜브 )이나 게 임에 몰 두한다등), ‘사람 들 과의관계를회피하는경",
+      "reading_order_index": 125,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00132",
+      "block_type": "heading",
+      "text": "향 ’을 묻 는5문항(예, 남들 이자신을나 쁘게 평가할 까봐걱 정한다, 누 군가와연 락 (통화, 문자",
+      "reading_order_index": 126,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00133",
+      "block_type": "heading",
+      "text": "등)을하는일이별로없다, 가 능 한사람 들 과 멀 리 떨 어 져 있고 싶 어한다등), ‘일상생활에서",
+      "reading_order_index": 127,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00134",
+      "block_type": "heading",
+      "text": "불규칙하 게 생활하는것과관련된내용’의5문항(예, 방을정리하지않 아 지저분하다, 일상생",
+      "reading_order_index": 128,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00135",
+      "block_type": "heading",
+      "text": "활이불규칙하다, 밤 과 낮 이 바뀐 생활을한다)으로구성되어있다.",
+      "reading_order_index": 129,
+      "source_loc": "page:5",
+      "heading_level": 2,
+      "section_path": [
+        "척도개발"
+      ]
+    },
+    {
+      "block_id": "b00138",
+      "block_type": "heading",
+      "text": "연구대상",
+      "reading_order_index": 130,
+      "source_loc": "page:6",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00139",
+      "block_type": "heading",
+      "text": "예비문항개발을위한조사는2023년7월에이 루 어 졌 으며전국13세이상24세이하의청",
+      "reading_order_index": 131,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구대상"
+      ]
+    },
+    {
+      "block_id": "b00140",
+      "block_type": "heading",
+      "text": "소년을대상으로 온라 인설문조사를실시하였다. 누락 이나 오 기입등불성실한 응답 을제외한",
+      "reading_order_index": 132,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구대상"
+      ]
+    },
+    {
+      "block_id": "b00141",
+      "block_type": "heading",
+      "text": "최종참가자는165명이었다. 참가자의성별은 남 성이7 8 명(47.3 % ), 여성이 8 7명(52.7 % )이었으",
+      "reading_order_index": 133,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구대상"
+      ]
+    },
+    {
+      "block_id": "b00142",
+      "block_type": "heading",
+      "text": "며, 학교에재학중인119명(72.1 % ), 비재학중인청소년이46명(27.9 % )이었다. 17세19명",
+      "reading_order_index": 134,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구대상"
+      ]
+    },
+    {
+      "block_id": "b00143",
+      "block_type": "heading",
+      "text": "(11.5 % ), 1 8 세2 8 명(17.0 % ), 19세34명(20.6 % ), 20세32명(19.4 % ), 21세21명(12.7 % )이주를이",
+      "reading_order_index": 135,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구대상"
+      ]
+    },
+    {
+      "block_id": "b00144",
+      "block_type": "heading",
+      "text": "루 었으며, 이 들 의평 균 나이는19.11세였다. 현재은둔상태인청소년이16명(9.7 % ), 현재은둔",
+      "reading_order_index": 136,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구대상"
+      ]
+    },
+    {
+      "block_id": "b00145",
+      "block_type": "heading",
+      "text": "이 아닌 청소년이149명(90.3 % )으로나타 났 다.",
+      "reading_order_index": 137,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구대상"
+      ]
+    },
+    {
+      "block_id": "b00146",
+      "block_type": "heading",
+      "text": "연구절차",
+      "reading_order_index": 138,
+      "source_loc": "page:6",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00147",
+      "block_type": "heading",
+      "text": "현 장 전문가가은둔청소년을관찰해서은둔청소년인지를판별하기위한현 장 전문가용은",
+      "reading_order_index": 139,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구절차"
+      ]
+    },
+    {
+      "block_id": "b00148",
+      "block_type": "heading",
+      "text": "둔청소년스크리닝척도를개발하기위해우선선행연구및문헌검토와기존에개발된척도",
+      "reading_order_index": 140,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구절차"
+      ]
+    },
+    {
+      "block_id": "b00149",
+      "block_type": "heading",
+      "text": "를분석하여은둔청소년스크리닝척도의요인을 추 출하고, 1차예비문항을구성하였다. 그리",
+      "reading_order_index": 141,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구절차"
+      ]
+    },
+    {
+      "block_id": "b00150",
+      "block_type": "heading",
+      "text": "고최종예비문항은학계전문가의자문및평정을통해 추 출되었다. 마지막으로은둔(유경험)",
+      "reading_order_index": 142,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구절차"
+      ]
+    },
+    {
+      "block_id": "b00151",
+      "block_type": "heading",
+      "text": "청소년및일반청소년을대상으로설문조사를실시하였다. 설문지는청소년 들 이자주방문하",
+      "reading_order_index": 143,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구절차"
+      ]
+    },
+    {
+      "block_id": "b00152",
+      "block_type": "heading",
+      "text": "는 웹 사이 트게 시판에설문 링 크를 게 시하여시행되었다. 앞 서연구의목적과방 법 , 익 명성보",
+      "reading_order_index": 144,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구절차"
+      ]
+    },
+    {
+      "block_id": "b00153",
+      "block_type": "heading",
+      "text": "장 에대해상세 히 안내하였고, 수집된자료는연구목적외에는사용하지않으며, 보관기간인",
+      "reading_order_index": 145,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구절차"
+      ]
+    },
+    {
+      "block_id": "b00154",
+      "block_type": "heading",
+      "text": "5년이지나면 폐 기 될 것임을안내하였다. 이를확인한후자발적으로설문에참가하도 록 하였",
+      "reading_order_index": 146,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구절차"
+      ]
+    },
+    {
+      "block_id": "b00155",
+      "block_type": "heading",
+      "text": "으며, 중간에설문을그 만 하고 싶 을경우에는불이 익 없 음 을명시하였다. 설문에소요된시간",
+      "reading_order_index": 147,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구절차"
+      ]
+    },
+    {
+      "block_id": "b00156",
+      "block_type": "heading",
+      "text": "은 약 5분이였으며, 참여자 들 에 게 는5 천 원상당의기 프티콘 이제 공 되었다. 또 한, 더많 은은둔",
+      "reading_order_index": 148,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구절차"
+      ]
+    },
+    {
+      "block_id": "b00157",
+      "block_type": "heading",
+      "text": "청소년이설문에참여할수있도 록 청소년상담복지 센터 에 홍 보를요청하였으며, 설문절차는",
+      "reading_order_index": 149,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구절차"
+      ]
+    },
+    {
+      "block_id": "b00158",
+      "block_type": "heading",
+      "text": "일반청소년과동일하 게 진행되었다.",
+      "reading_order_index": 150,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "연구절차"
+      ]
+    },
+    {
+      "block_id": "b00159",
+      "block_type": "heading",
+      "text": "자료분석",
+      "reading_order_index": 151,
+      "source_loc": "page:6",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00160",
+      "block_type": "heading",
+      "text": "본연구에서는은둔청소년스크리닝예비척도의15문항에대한요인구조를확인하기위해",
+      "reading_order_index": 152,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "자료분석"
+      ]
+    },
+    {
+      "block_id": "b00161",
+      "block_type": "heading",
+      "text": "탐색적요인분석시행전 왜 도와 첨 도를분석하여다변 량 정규성검증을실시하였다. 또 한",
+      "reading_order_index": 153,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "자료분석"
+      ]
+    },
+    {
+      "block_id": "b00162",
+      "block_type": "heading",
+      "text": "KM O (Kaiser-Meyer- O lkin)와 B arlett 구형성지 표 ( B arlett’s Test of S phericity) 검증을통해",
+      "reading_order_index": 154,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "자료분석"
+      ]
+    },
+    {
+      "block_id": "b00163",
+      "block_type": "heading",
+      "text": "자료가요인분석을하기에적 합 한지를확인하였으며, 그결과으며, 마지막으로주 축 요인분석",
+      "reading_order_index": 155,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "자료분석"
+      ]
+    },
+    {
+      "block_id": "b00164",
+      "block_type": "heading",
+      "text": "과 프 로 맥 스( P ro m ax R otation) 회전방 법 을통해탐색적요인분석을실시하였으며, 분석에는",
+      "reading_order_index": 156,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "자료분석"
+      ]
+    },
+    {
+      "block_id": "b00165",
+      "block_type": "heading",
+      "text": "SPSS 22.0을사용하였다.",
+      "reading_order_index": 157,
+      "source_loc": "page:6",
+      "heading_level": 2,
+      "section_path": [
+        "자료분석"
+      ]
+    },
+    {
+      "block_id": "b00168",
+      "block_type": "heading",
+      "text": "탐색적요인분석",
+      "reading_order_index": 158,
+      "source_loc": "page:7",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00169",
+      "block_type": "heading",
+      "text": "은둔청소년스크리닝척도의문항개발을위해은둔경험이있는청소년및일반청소년",
+      "reading_order_index": 159,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00170",
+      "block_type": "heading",
+      "text": "대상의설문조사를실시한후탐색적요인분석을실시하였다. 이를위해15개의예비문항의",
+      "reading_order_index": 160,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00171",
+      "block_type": "heading",
+      "text": "정규성을검증하기위해 왜 도와 첨 도를분석한결과, 왜 도의절대 값 은.156과1.117 사이에",
+      "reading_order_index": 161,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00172",
+      "block_type": "heading",
+      "text": "분 포 하였으며, 첨 도의절대 값 은.193과1.092 사이에분 포 하였다. 따라 서 왜 도의절대 값 은",
+      "reading_order_index": 162,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00173",
+      "block_type": "heading",
+      "text": "3 이하, 첨 도의절대 값 은 8 이하 라 는정규성가정에 충 족되는것으로나타 났 다(Kline, 2011).",
+      "reading_order_index": 163,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00174",
+      "block_type": "heading",
+      "text": "다 음 으로본자료가요인분석을하기에적 합 한자료인지를확인하기위해KM O ( Kaiser-Meyer- O lkin )",
+      "reading_order_index": 164,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00175",
+      "block_type": "heading",
+      "text": "와 B arlett 구형성지 표 ( B arlett’s Test of S phericity)를검증한결과, KM O 는.907, B arlett",
+      "reading_order_index": 165,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00176",
+      "block_type": "heading",
+      "text": "구형성지 표 는 χ ² (7 8 ) = 1459.739 (p < .001)로요인분석을하기에적 합 한자료인것으로확인",
+      "reading_order_index": 166,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00177",
+      "block_type": "heading",
+      "text": "되었다. 그러나다변 량 정규성검증결과, 다변 량 정규성가정을 충 족하지못한것으로나",
+      "reading_order_index": 167,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00178",
+      "block_type": "heading",
+      "text": "타 났 다. 이에 따라 , 편향 된결과를 초래 할수있는최대우도 법 의사용을지양하고, D e",
+      "reading_order_index": 168,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00179",
+      "block_type": "heading",
+      "text": "W inter와 D odou(2012)가제안한방 법 을참고하여주 축 요인분석( P rincipal Axis F actoring,",
+      "reading_order_index": 169,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00180",
+      "block_type": "heading",
+      "text": "P A F )과 프 로 맥 스( P ro m ax) 회전을활용하여탐색적요인분석을수행하였다. 그후탐색적",
+      "reading_order_index": 170,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00181",
+      "block_type": "heading",
+      "text": "요인분석을실시하여고유 값 (eigen v alue)과스크리도 표 를 살펴 본결과, 고유 값 이1.0 이상",
+      "reading_order_index": 171,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00182",
+      "block_type": "heading",
+      "text": "인요인은 총 3개인것으로나타 났 다. 또 한, 요인부하 량 이.40보다 낮 거나다 른 요인과.20",
+      "reading_order_index": 172,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00183",
+      "block_type": "heading",
+      "text": "이상중복되는2개의문항 즉 ‘ 옷 을 갈아 입지않는다’ 문항과‘개인위생(두발및 손 발 톱 정",
+      "reading_order_index": 173,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00184",
+      "block_type": "heading",
+      "text": "리, 양 치 등)을신경 쓰 지않는다’는문항은변별 력 과타당성이저하시 키 기 때 문에 삭 제하였",
+      "reading_order_index": 174,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00185",
+      "block_type": "heading",
+      "text": "다( B lack, B a b in, & Anderson, 2010). 그결과최종적으로13개의문항이 남았 으며, 그결과",
+      "reading_order_index": 175,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00186",
+      "block_type": "heading",
+      "text": "는 표 1에제시하였다.",
+      "reading_order_index": 176,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00187",
+      "block_type": "heading",
+      "text": "각 요인을 살펴 보면, 요인1은5문항으로사회적으로철수하여 혼 자고립된상태와관련된",
+      "reading_order_index": 177,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00188",
+      "block_type": "heading",
+      "text": "내용이주를이 루 고있어‘사회단절및고립’으로명명하였으며, 설명변 량 은전 체 의54.499 %",
+      "reading_order_index": 178,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00189",
+      "block_type": "heading",
+      "text": "였다. 요인2는5문항으로사람 들 과의관계를회피하는내용이주를이 루 고있어‘회피’ 라 고",
+      "reading_order_index": 179,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00190",
+      "block_type": "heading",
+      "text": "명명하였다. 설명변 량 은전 체 의 8 .125 % 였다. 요인3은3문항으로정리를안하고불규칙하 게",
+      "reading_order_index": 180,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00191",
+      "block_type": "heading",
+      "text": "생활하는것과관련된내용이주를이 루 고있어‘불규칙한생활방식’으로명명하였다. 설명변",
+      "reading_order_index": 181,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00192",
+      "block_type": "heading",
+      "text": "량 은전 체 의7.74 % 다. 탐색적요인분석에이어신 뢰 도를분석한결과, 전 체 문항의내적 합",
+      "reading_order_index": 182,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00193",
+      "block_type": "heading",
+      "text": "치 도는.92 8 이었으며, 요인1은 88 2, 요인2는. 8 67, 요인3은. 8 09로모두 높 은신 뢰 도를나타",
+      "reading_order_index": 183,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00194",
+      "block_type": "heading",
+      "text": "냈 다.",
+      "reading_order_index": 184,
+      "source_loc": "page:7",
+      "heading_level": 2,
+      "section_path": [
+        "탐색적요인분석"
+      ]
+    },
+    {
+      "block_id": "b00197",
+      "block_type": "paragraph",
+      "text": "<표1> 은둔청소년스크리닝척도문항의탐색적요인분석결과\n요인적재 값\n해당요인\n번호\n문항\n요인1\n요인2\n요인3\n사회단절 /\n1\n학교나 직장 ( 알바 )에가지않는다\n.970\n-.15 8\n-.193\n2\n사람 들 과거의교류하지않는다\n. 8 07\n.196\n-.064\n3\n친구 들 과어울리기보다는\n혼 자서인 터넷 (유 튜브 )이나 게 임에 몰 두한다\n.797\n.219\n-.069\n4\n자기방에서나 오 지않는다\n.7 8 5\n-.1 8 5\n.177\n5\n가족이없을 때 (혹은 잘때 ) 만움직 인다\n.691\n-.026\n.244\n6\n남들 이자신을나 쁘게 평가할 까봐걱 정한다\n-.299\n1.059\n-.124\n7\n하 루 종일거의집에서보 낸 다\n.176\n.690\n.024\n8\n누 군가와연 락 (통화, 문자등)을하는일이별로없다\n.244\n.623\n.004\n9\n친구가거의없다\n.156\n.5 8 2\n.132\n10\n가 능 한사람 들 과 멀 리 떨 어 져 있고 싶 어한다\n.093\n.574\n.273\n불규칙한\n생활방식\n11\n방을정리하지않 아 지저분하다\n-.243\n.092\n.923\n12\n일상생활이불규칙하다\n.076\n-.0 8 1\n. 8 63\n13\n밤 과 낮 이 바뀐 생활을한다\n.077\n-.076\n. 8 33\n설명변 량 ( % )\n54.499\n8 .125\n7.774\n고유 치\n7.0 8 5\n1.06 8\n1.011\n신 뢰 도\n. 8 92\n. 8 67\n. 8 09",
+      "reading_order_index": 186,
+      "source_loc": "page:8",
+      "heading_level": null,
+      "section_path": [
+        "탐색적요인분석",
+        "냈 다."
+      ]
+    },
+    {
+      "block_id": "b00198",
+      "block_type": "heading",
+      "text": "척도타당화",
+      "reading_order_index": 187,
+      "source_loc": "page:8",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00199",
+      "block_type": "heading",
+      "text": "탐색적요인분석을통해선정된문항을대상으로확인적요인분석(C F A)을실시하였고,",
+      "reading_order_index": 188,
+      "source_loc": "page:8",
+      "heading_level": 2,
+      "section_path": [
+        "척도타당화"
+      ]
+    },
+    {
+      "block_id": "b00200",
+      "block_type": "heading",
+      "text": "이어서변별타당도와수렴타당도를검증하였다. 또 한, 은둔청소년판별을위한절단점(cut-off",
+      "reading_order_index": 189,
+      "source_loc": "page:8",
+      "heading_level": 2,
+      "section_path": [
+        "척도타당화"
+      ]
+    },
+    {
+      "block_id": "b00201",
+      "block_type": "heading",
+      "text": "score)을설정하여, 척도의실 질 적인활용가 능 성을평가하였다.",
+      "reading_order_index": 190,
+      "source_loc": "page:8",
+      "heading_level": 2,
+      "section_path": [
+        "척도타당화"
+      ]
+    },
+    {
+      "block_id": "b00202",
+      "block_type": "heading",
+      "text": "연구대상",
+      "reading_order_index": 191,
+      "source_loc": "page:8",
+      "heading_level": 2,
+      "section_path": [
+        "척도타당화"
+      ]
+    },
+    {
+      "block_id": "b00203",
+      "block_type": "heading",
+      "text": "설문조사는2023년 8 월에이 루 어 졌 으며1차조사에서와마 찬 가지로전국의13세이상24세",
+      "reading_order_index": 192,
+      "source_loc": "page:8",
+      "heading_level": 2,
+      "section_path": [
+        "척도타당화"
+      ]
+    },
+    {
+      "block_id": "b00204",
+      "block_type": "heading",
+      "text": "이하청소년을대상으로 온라 인을통해실시하였다. 참여자의성별은여자청소년이99명",
+      "reading_order_index": 193,
+      "source_loc": "page:8",
+      "heading_level": 2,
+      "section_path": [
+        "척도타당화"
+      ]
+    },
+    {
+      "block_id": "b00205",
+      "block_type": "heading",
+      "text": "(44.5 % ), 남 자청소년123명(55.4 % )이었다. 연구참여자의평 균 나이는19.02세였으며, 17세19명",
+      "reading_order_index": 194,
+      "source_loc": "page:8",
+      "heading_level": 2,
+      "section_path": [
+        "척도타당화"
+      ]
+    },
+    {
+      "block_id": "b00206",
+      "block_type": "heading",
+      "text": "(12.7 % ), 1 8 세23명(15.3 % ), 19세1 8 명(1 8 .0 % ), 20세30명(20.0 % ), 21세20명(13.3 % )이주를",
+      "reading_order_index": 195,
+      "source_loc": "page:8",
+      "heading_level": 2,
+      "section_path": [
+        "척도타당화"
+      ]
+    },
+    {
+      "block_id": "b00207",
+      "block_type": "heading",
+      "text": "이 루 었다. 이 들 중145명의청소년이학교에재학중이였고, 77명(34.7 % )이학교를다 니 지않는",
+      "reading_order_index": 196,
+      "source_loc": "page:8",
+      "heading_level": 2,
+      "section_path": [
+        "척도타당화"
+      ]
+    },
+    {
+      "block_id": "b00208",
+      "block_type": "heading",
+      "text": "것으로나타 났 다. 또 한47명(21.2 % )가현재은둔상태인것으로나타 났 으며, 175명(7 8 . 8% )이",
+      "reading_order_index": 197,
+      "source_loc": "page:8",
+      "heading_level": 2,
+      "section_path": [
+        "척도타당화"
+      ]
+    },
+    {
+      "block_id": "b00209",
+      "block_type": "heading",
+      "text": "은둔하지않은상태로나타 났 다.",
+      "reading_order_index": 198,
+      "source_loc": "page:8",
+      "heading_level": 2,
+      "section_path": [
+        "척도타당화"
+      ]
+    },
+    {
+      "block_id": "b00212",
+      "block_type": "heading",
+      "text": "연구절차",
+      "reading_order_index": 199,
+      "source_loc": "page:9",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00213",
+      "block_type": "heading",
+      "text": "척도개발을위해실시한설문조사와동일한방식으로진행되었다. 연구대상 만 다 르게 진",
+      "reading_order_index": 200,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "연구절차"
+      ]
+    },
+    {
+      "block_id": "b00214",
+      "block_type": "heading",
+      "text": "행되었을 뿐같 은사이 트 에연구윤리사항을동일하 게공 지한후동일한방식으로 공 지하였다.",
+      "reading_order_index": 201,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "연구절차"
+      ]
+    },
+    {
+      "block_id": "b00215",
+      "block_type": "heading",
+      "text": "설문에소요된시간은 약 10분이였으며, 참여자 들 에 게 5 천 원상당의기 프티콘 을제 공 하였다.",
+      "reading_order_index": 202,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "연구절차"
+      ]
+    },
+    {
+      "block_id": "b00216",
+      "block_type": "heading",
+      "text": "측정도구",
+      "reading_order_index": 203,
+      "source_loc": "page:9",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00217",
+      "block_type": "heading",
+      "text": "은둔청소년스크리닝예비척도",
+      "reading_order_index": 204,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00218",
+      "block_type": "heading",
+      "text": "본연구에서는은둔청소년스크리닝척도를개발하기위해최종13문항으로구성된예비척",
+      "reading_order_index": 205,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00219",
+      "block_type": "heading",
+      "text": "도를사용하였다. 이척도는‘사회적으로철수하여 혼 자고립되어있는상태’를 묻 는5문항, ‘사람",
+      "reading_order_index": 206,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00220",
+      "block_type": "heading",
+      "text": "들 과의관계를회피하는경 향 ’을 묻 는5문항, ‘일상생활에서불규칙하 게 생활하는것과관련된",
+      "reading_order_index": 207,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00221",
+      "block_type": "heading",
+      "text": "내용’의3문항으로구성되어있다. 각 문항은5점척도(0 = 해당되지않는다, 1 = 별로해당되지",
+      "reading_order_index": 208,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00222",
+      "block_type": "heading",
+      "text": "않는다, 2 = 어 느쪽 도 아니 다, 3 = 조 금 해당된다, 4 = 해당된다)로 응답 하 게 되어있으며점수",
+      "reading_order_index": 209,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00223",
+      "block_type": "heading",
+      "text": "가 높 을수 록 은둔의정도가심 각 하다는것을의미한다. 본연구에서나타 난 신 뢰 도계수",
+      "reading_order_index": 210,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00224",
+      "block_type": "heading",
+      "text": "(Cron b ach ' s Alpha)는.946이였다.",
+      "reading_order_index": 211,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00225",
+      "block_type": "heading",
+      "text": "은둔형외톨이자가보고척도",
+      "reading_order_index": 212,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00226",
+      "block_type": "heading",
+      "text": "본연구에서는Teo 등(201 8 )이개발하고제세 령 등(2022)이타당화한은둔형외톨이자가보",
+      "reading_order_index": 213,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00227",
+      "block_type": "heading",
+      "text": "고척도를사용하였다. 이척도는 총 29개문항으로은둔형정도를 측 정하는본문항25개와",
+      "reading_order_index": 214,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00228",
+      "block_type": "heading",
+      "text": "동기를 측 정하는 추 가문항4개로구성되어있다. 본문항은다시3개의하위요인으로구성되",
+      "reading_order_index": 215,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00229",
+      "block_type": "heading",
+      "text": "어있는데, 사회화10문항, 고립9문항그리고정서적지지6문항으로구성되어있다. 각 문항",
+      "reading_order_index": 216,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00230",
+      "block_type": "heading",
+      "text": "은5점척도(0 = 해당되지않는다, 4 = 해당된다)로 응답 하 게 되어있으며본문항은점수가",
+      "reading_order_index": 217,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00231",
+      "block_type": "heading",
+      "text": "높 을수 록 은둔형외톨이정도가심 각 하다는것을의미하며동기는 높 을수 록삶 에대한동기가",
+      "reading_order_index": 218,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00232",
+      "block_type": "heading",
+      "text": "높 은것을의미한다. 제세 령 등(2022)의연구에서나타 난 신 뢰 도계수(Cron b ach ' s Alpha)는",
+      "reading_order_index": 219,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00233",
+      "block_type": "heading",
+      "text": ".93 8 이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는.7 8 3이였다.",
+      "reading_order_index": 220,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00234",
+      "block_type": "heading",
+      "text": "우울척도",
+      "reading_order_index": 221,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00235",
+      "block_type": "heading",
+      "text": "본연구에서는청소년우울을 측 정하기위해김 광 일, 김재 환 , 원 호택 (19 8 4)가개발한간이정신진",
+      "reading_order_index": 222,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00236",
+      "block_type": "heading",
+      "text": "단검사13문항중한국청소년 패널 조사에서설문으로사용한10문항을사용하였다. 각 문항은4점",
+      "reading_order_index": 223,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00237",
+      "block_type": "heading",
+      "text": "척도(1 = 전 혀 그 렇 지않다, 4 = 매 우그 렇 다)로 응답 하 게 되어있으며본문항은점수가 높 을수 록",
+      "reading_order_index": 224,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00238",
+      "block_type": "heading",
+      "text": "청소년의우울이심 각 하다는것을의미한다. 김현정(2015)의연구에서나타 난 신 뢰 도계수",
+      "reading_order_index": 225,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00239",
+      "block_type": "heading",
+      "text": "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다.",
+      "reading_order_index": 226,
+      "source_loc": "page:9",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00242",
+      "block_type": "heading",
+      "text": "자료분석",
+      "reading_order_index": 228,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00243",
+      "block_type": "heading",
+      "text": "확인적요인분석을위해 m plus 8 .4를사용하였으며, 모형적 합 도를검증하기위해상대적",
+      "reading_order_index": 229,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00244",
+      "block_type": "heading",
+      "text": "으로 표 본크기에 민감 하지않을 뿐아니라 설명 력 과간명성을 함께 고 려 할수있는C FI",
+      "reading_order_index": 230,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00245",
+      "block_type": "heading",
+      "text": "(Co m parati v e F it I ndex), T LI (Tucker- L e w is I ndex), R M S EA( R oot Mean Sq uare Error of",
+      "reading_order_index": 231,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00246",
+      "block_type": "heading",
+      "text": "Approxi m ation)를사용하였다( S chu m acker & L o m ax, 2004). 또 한, 은둔청소년스크리닝",
+      "reading_order_index": 232,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00247",
+      "block_type": "heading",
+      "text": "척도의변별타당도와수렴타당도를확인하기위해일원변 량 분석과상관분석을실시하였으며,",
+      "reading_order_index": 233,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00248",
+      "block_type": "heading",
+      "text": "진단유용성을평가하기위해 RO C 곡 선( R ecei v er O perating Characteristic Cur v e)을사용",
+      "reading_order_index": 234,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00249",
+      "block_type": "heading",
+      "text": "하였다.",
+      "reading_order_index": 235,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00250",
+      "block_type": "heading",
+      "text": "확인적요인분석",
+      "reading_order_index": 236,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00251",
+      "block_type": "heading",
+      "text": "은둔청소년스크리닝척도에대한타당도분석을실시하였다. 이를위하여확인적요인분",
+      "reading_order_index": 237,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00252",
+      "block_type": "heading",
+      "text": "석을실시하였고, 타당도검증을위하여변별타당도와수렴타당도를확인하였다. 그리고 RO C",
+      "reading_order_index": 238,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00253",
+      "block_type": "heading",
+      "text": "척도를통해은둔청소년스크리닝척도의진단유용성을검증하였다.",
+      "reading_order_index": 239,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00254",
+      "block_type": "heading",
+      "text": "먼저탐색적요인분석을통해도출된3개의하위요인(13문항)을 바탕 으로확인적요인분석",
+      "reading_order_index": 240,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00255",
+      "block_type": "heading",
+      "text": "(C F A)을하여3요인연구모형의적 합 도를검증하였다. 그결과3요인연구모형은C FI= .956",
+      "reading_order_index": 241,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00256",
+      "block_type": "heading",
+      "text": "T LI= .945, R M S EA = .079로나타 났 다 <표 2 > . C FI 와T LI 는.90 이상, R M S EA는.05 이하이면",
+      "reading_order_index": 242,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00257",
+      "block_type": "heading",
+      "text": "좋 은적 합 도, R M S EA는.05와.0 8 사이면수용할 만 한적 합 도로판단되는점을고 려 할 때 ( 홍",
+      "reading_order_index": 243,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00258",
+      "block_type": "heading",
+      "text": "세희, 2000), 3요인연구모형은양 호 한적 합 도를보이는것으로나타 났 다. 그러나은둔청소년",
+      "reading_order_index": 244,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00259",
+      "block_type": "heading",
+      "text": "을판별하기위해3개의하위요인으로구분하여사용하는것보다1개의요인 즉총 점을 측",
+      "reading_order_index": 245,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00260",
+      "block_type": "heading",
+      "text": "정하는것이 더 적절할가 능 성을배제하기어 려워 본연구에서는3요인연구모형과1요인모",
+      "reading_order_index": 246,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00261",
+      "block_type": "heading",
+      "text": "형을비교하였다. 그결과 표 2에서보는 바 와 같 이1요인모형의적 합 도는C FI= .796,",
+      "reading_order_index": 247,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00262",
+      "block_type": "heading",
+      "text": "T LI= .755, R M S EA = .167로나타 났 다. 또 한1요인구조모형은C FI 와T LI 가.90보다 작 고",
+      "reading_order_index": 248,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00263",
+      "block_type": "heading",
+      "text": "R M S EA도.167로.1 이상이었기 때 문에수용가 능 한적 합 도를보이지않 았 다. 따라 서본연",
+      "reading_order_index": 249,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00264",
+      "block_type": "heading",
+      "text": "구에서는3요인모형이적절한것으로확인되었으며, 이는 총 점으로은둔의정도를 측 정하는",
+      "reading_order_index": 250,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00265",
+      "block_type": "heading",
+      "text": "것보다하위요인을구분하여 측 정하는것이 더 적절하다는것을의미한다. 그리고연구모형",
+      "reading_order_index": 251,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00266",
+      "block_type": "heading",
+      "text": "을분석한결과그 림 1과 같 이, 은둔청소년 체 크리스 트 의하위요인간에는모두통계적으로",
+      "reading_order_index": 252,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00267",
+      "block_type": "heading",
+      "text": "유의미한정적상관관계가있는것으로나타 났 으며, 각 문항 들 의요인부하 량 은모두.50 이상",
+      "reading_order_index": 253,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00268",
+      "block_type": "heading",
+      "text": "( .60 ∼ .96 )으로p < .001 수준에서통계적으로유의한것으로확인되었다.",
+      "reading_order_index": 254,
+      "source_loc": "page:10",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00271",
+      "block_type": "paragraph",
+      "text": "<표2> 확인적요인분석의모형적합도지수\n(N=222)\n모형\n \nd ƒ\nR M S EA\nC FI\nT LI\n1요인모형\n466.016***\n65\n.167\n.796\n.755\n3요인모형\n14 8 .076***\n62\n.079\n.956\n.945",
+      "reading_order_index": 255,
+      "source_loc": "page:11",
+      "heading_level": null,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다.",
+        "( .60 ∼ .96 )으로p < .001 수준에서통계적으로유의한것으로확인되었다."
+      ]
+    },
+    {
+      "block_id": "b00272",
+      "block_type": "heading",
+      "text": "***p<.001",
+      "reading_order_index": 256,
+      "source_loc": "page:11",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00273",
+      "block_type": "heading",
+      "text": "[그림1] 확인적요인분석결과",
+      "reading_order_index": 257,
+      "source_loc": "page:11",
+      "heading_level": 3,
+      "section_path": [
+        "측정도구",
+        "(Cron b ach ' s Alpha)는.910이였으며, 본연구에서의신 뢰 도계수(Cron b ach ' s Alpha)는. 8 0 8 이였다."
+      ]
+    },
+    {
+      "block_id": "b00274",
+      "block_type": "heading",
+      "text": "타당도검정",
+      "reading_order_index": 258,
+      "source_loc": "page:11",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00275",
+      "block_type": "heading",
+      "text": "은둔청소년스크리닝척도의변별타당도를확인하기위해집단을일반집단과은둔의심집단",
+      "reading_order_index": 259,
+      "source_loc": "page:11",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00276",
+      "block_type": "heading",
+      "text": "으로구분하고은둔청소년스크리닝척도의집단간평 균 차이를검증하였다. 이 때 은둔의심",
+      "reading_order_index": 260,
+      "source_loc": "page:11",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00277",
+      "block_type": "heading",
+      "text": "집단은선행연구와본연구에서설정한기준에 따라 , 스스로현재은둔(사회적교류단절) 상",
+      "reading_order_index": 261,
+      "source_loc": "page:11",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00278",
+      "block_type": "heading",
+      "text": "태에있으며그상태가3개월이상지 속 된경우로규정하였다. 그결과 표 3에서와 같 이",
+      "reading_order_index": 262,
+      "source_loc": "page:11",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00279",
+      "block_type": "heading",
+      "text": "은둔의심집단은일반집단에비해은둔청소년스크리닝척도의하위요인사회단절및고립",
+      "reading_order_index": 263,
+      "source_loc": "page:11",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00280",
+      "block_type": "heading",
+      "text": "( F= 213.167,  < .001), 회피( F= 99.262,  < .001), 불규칙한생활방식( F= 57.71 8 ,  < .001)에서모두",
+      "reading_order_index": 264,
+      "source_loc": "page:11",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00281",
+      "block_type": "heading",
+      "text": "통계적으로유의미하 게높 은것으로확인되었다.",
+      "reading_order_index": 265,
+      "source_loc": "page:11",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00282",
+      "block_type": "paragraph",
+      "text": "<표3> 집단별은둔청소년스크리닝척도평균과집단간차이검증결과\n(N=222)\n일반집단(N = 175)\n은둔의심집단(N = 47)\nF값\n평 균\n표 준 편 차\n평 균\n표 준 편 차\n사회단절및고립\n5.47\n3.93\n14.72\n3.55\n213.167***\n회피\n8 .2 8\n4. 8 9\n15. 8 5\n2.54\n99.262***\n불규칙한생활방식\n4.05\n3.36\n8 .00\n2.23\n57.519***\n***p<.001",
+      "reading_order_index": 266,
+      "source_loc": "page:11",
+      "heading_level": null,
+      "section_path": [
+        "측정도구",
+        "통계적으로유의미하 게높 은것으로확인되었다."
+      ]
+    },
+    {
+      "block_id": "b00285",
+      "block_type": "heading",
+      "text": "또 한수렴타당도를확인하기위해은둔형외톨이자가보고척도, 우울척도와상관관계를",
+      "reading_order_index": 268,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00286",
+      "block_type": "heading",
+      "text": "분석한결과 표 4에서와 같 이은둔청소년스크리닝척도의하위요인은모두은둔형외톨이",
+      "reading_order_index": 269,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00287",
+      "block_type": "heading",
+      "text": "자가보고척도(사회단절및고립: r = .6 8 , p < .001, 회피: r = .7 8 , p < .001, 불규칙한생활방식:",
+      "reading_order_index": 270,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00288",
+      "block_type": "heading",
+      "text": "r = 64, p < .001)와우울척도(사회단절및고립: r = .54, p < .001, 회피: r = .75, p < .001, 불규칙한생",
+      "reading_order_index": 271,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00289",
+      "block_type": "heading",
+      "text": "활방식: r = 69, p < .001)와모두통계적으로유의미한정적상관관계를보였다. 이는은둔청소년",
+      "reading_order_index": 272,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00290",
+      "block_type": "heading",
+      "text": "체 크리스 트 가변별타당도와수렴타당도를확보하고있다는것을의미한다.",
+      "reading_order_index": 273,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00291",
+      "block_type": "paragraph",
+      "text": "<표4>\n은둔청소년스크리닝척도와수렴타당도검증척도간상관관계\n(N=222)\n요인\n1\n2\n3\n4\n은둔청소년\n스크리닝\n1. 사회단절및고립\n-\n2. 회피\n.73**\n-\n3. 불규칙한생활방식\n.62***\n.74***\n-\n수렴타당도\n4. 은둔형외톨이자가척도\n.6 8 ***\n.7 8 ***\n.64***\n5. 우울척도\n.54***\n.75**\n.69***\n.70***\n***p<.001",
+      "reading_order_index": 274,
+      "source_loc": "page:12",
+      "heading_level": null,
+      "section_path": [
+        "측정도구",
+        "체 크리스 트 가변별타당도와수렴타당도를확보하고있다는것을의미한다."
+      ]
+    },
+    {
+      "block_id": "b00292",
+      "block_type": "heading",
+      "text": "은둔청소년진단의절단점",
+      "reading_order_index": 275,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "측정도구"
+      ]
+    },
+    {
+      "block_id": "b00293",
+      "block_type": "heading",
+      "text": "은둔청소년스크리닝척도의진단유용성을평가하기위해 RO C 곡 선 ( R ecei v er O perating",
+      "reading_order_index": 276,
+      "source_loc": "page:12",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00294",
+      "block_type": "heading",
+      "text": "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검",
+      "reading_order_index": 277,
+      "source_loc": "page:12",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00295",
+      "block_type": "heading",
+      "text": "증하였다. 그결과 RO C 곡 선으로 산 출된Area U nder the Cur v e(A U C)는사회단절및고립",
+      "reading_order_index": 278,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00296",
+      "block_type": "heading",
+      "text": "이.929, 회피가. 888 , 불규칙한생활방식이. 8 1 8 로나타 났 다. A U C가. 8 0 이상이면 훌륭 한예",
+      "reading_order_index": 279,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00297",
+      "block_type": "heading",
+      "text": "측력 을가지고있다고판단되는점을고 려 할 때 ( H os m er & L e m esho w , 2000), 본척도는은",
+      "reading_order_index": 280,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00298",
+      "block_type": "heading",
+      "text": "둔청소년을적절하 게 판별하고있다고할수있다. 또 한 RO C 곡 선으로분석하여하위요인 들",
+      "reading_order_index": 281,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00299",
+      "block_type": "heading",
+      "text": "의평 균 점수를 근 거로했을 때 준거집단을변별하는절단점 추 정지 표 중가 장많 이사용되",
+      "reading_order_index": 282,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00300",
+      "block_type": "heading",
+      "text": "는것중하나인Youden’s index를사용하였다( F luss, F araggi, & R eiser, 2005). Youden’s",
+      "reading_order_index": 283,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00301",
+      "block_type": "heading",
+      "text": "index는 민감 도 + 특이도-1로계 산 되며Youden’s index가1에가 까 울수 록 효 율 적인진단기준",
+      "reading_order_index": 284,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00302",
+      "block_type": "heading",
+      "text": "임을의미한다. 은둔청소년스크리닝척도의Youden’s index를 살펴 본결과 표 5에서보는",
+      "reading_order_index": 285,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00303",
+      "block_type": "heading",
+      "text": "바 와 같 이사회단절및고립은11.5점(20점 만 점)에서, 회피는13.5점(20점 만 점)에서불규칙",
+      "reading_order_index": 286,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00304",
+      "block_type": "heading",
+      "text": "한생활방식은5.5점(12점 만 점)이절단점인것으로확인되었다.",
+      "reading_order_index": 287,
+      "source_loc": "page:12",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00307",
+      "block_type": "paragraph",
+      "text": "<표5> 은둔청소년스크리닝척도하위요인별절단점, 민감도, 특이도, Youden’s J\n(N=222)\n요인\n절단점\n민감 도\n특이도\nYouden’s J\n은둔청소년\n스크리닝척도\n사회단절및고립\n11.5\n.915\n.920\n. 8 35\n회피\n13.5\n.915\n. 8 11\n.726\n불규칙한생활방식\n5.5\n.915\n.6 8 6\n.601\n[그림2] 은둔청소년스크리닝척도의ROC 곡선",
+      "reading_order_index": 289,
+      "source_loc": "page:13",
+      "heading_level": null,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검",
+        "한생활방식은5.5점(12점 만 점)이절단점인것으로확인되었다."
+      ]
+    },
+    {
+      "block_id": "b00308",
+      "block_type": "heading",
+      "text": "이상의연구결과를통해본연구에서개발한은둔청소년스크리닝척도는은둔청소년을판",
+      "reading_order_index": 290,
+      "source_loc": "page:13",
+      "heading_level": 3,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검",
+        "한생활방식은5.5점(12점 만 점)이절단점인것으로확인되었다."
+      ]
+    },
+    {
+      "block_id": "b00309",
+      "block_type": "heading",
+      "text": "별하는데적절하며, 하위요인인사회단절및고립, 회피, 불규칙한생활방식등모 든 영 역 에",
+      "reading_order_index": 291,
+      "source_loc": "page:13",
+      "heading_level": 3,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검",
+        "한생활방식은5.5점(12점 만 점)이절단점인것으로확인되었다."
+      ]
+    },
+    {
+      "block_id": "b00310",
+      "block_type": "heading",
+      "text": "서절단점이상의점수를보인청소년을은둔청소년으로판별할수있다.",
+      "reading_order_index": 292,
+      "source_loc": "page:13",
+      "heading_level": 3,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검",
+        "한생활방식은5.5점(12점 만 점)이절단점인것으로확인되었다."
+      ]
+    },
+    {
+      "block_id": "b00311",
+      "block_type": "heading",
+      "text": "본연구에서는청소년상담복지기관상담자가은둔청소년을조기에발 견 하기위하여청소년",
+      "reading_order_index": 293,
+      "source_loc": "page:13",
+      "heading_level": 3,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검",
+        "한생활방식은5.5점(12점 만 점)이절단점인것으로확인되었다."
+      ]
+    },
+    {
+      "block_id": "b00312",
+      "block_type": "heading",
+      "text": "의은둔상태의위기정도를판별하는스크리닝척도를개발하고타당화 함 으로 써 , 향 후은둔",
+      "reading_order_index": 294,
+      "source_loc": "page:13",
+      "heading_level": 3,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검",
+        "한생활방식은5.5점(12점 만 점)이절단점인것으로확인되었다."
+      ]
+    },
+    {
+      "block_id": "b00313",
+      "block_type": "heading",
+      "text": "형청소년을발굴하고개입하는데 초 석을마련하는데목적이있다. 이를위해선행연구와기",
+      "reading_order_index": 295,
+      "source_loc": "page:13",
+      "heading_level": 3,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검",
+        "한생활방식은5.5점(12점 만 점)이절단점인것으로확인되었다."
+      ]
+    },
+    {
+      "block_id": "b00314",
+      "block_type": "heading",
+      "text": "존의척도 들 을기반으로1차예비문항을 만들 었으며, 이후전문가자문및평정을 바탕 으로2차",
+      "reading_order_index": 296,
+      "source_loc": "page:13",
+      "heading_level": 3,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검",
+        "한생활방식은5.5점(12점 만 점)이절단점인것으로확인되었다."
+      ]
+    },
+    {
+      "block_id": "b00315",
+      "block_type": "heading",
+      "text": "문항을 완 성하였다. 이 렇게완 성된15개의문항을165명에 게 설문조사하여탐색적요인분석을",
+      "reading_order_index": 297,
+      "source_loc": "page:13",
+      "heading_level": 3,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검",
+        "한생활방식은5.5점(12점 만 점)이절단점인것으로확인되었다."
+      ]
+    },
+    {
+      "block_id": "b00316",
+      "block_type": "heading",
+      "text": "실시하였으며, 그결과적절하지않은2개의문항을 삭 제하고3개의요인13개의문항으로구",
+      "reading_order_index": 298,
+      "source_loc": "page:13",
+      "heading_level": 3,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검",
+        "한생활방식은5.5점(12점 만 점)이절단점인것으로확인되었다."
+      ]
+    },
+    {
+      "block_id": "b00317",
+      "block_type": "heading",
+      "text": "성된은둔청소년스크리닝척도를개발하였다. 이후확인적요인분석을실시하여3개요인이",
+      "reading_order_index": 299,
+      "source_loc": "page:13",
+      "heading_level": 3,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검",
+        "한생활방식은5.5점(12점 만 점)이절단점인것으로확인되었다."
+      ]
+    },
+    {
+      "block_id": "b00318",
+      "block_type": "heading",
+      "text": "적절한지검증하였으며, 타당도검증을한후 RO C 분석을통해은둔청소년과비은둔청소년으",
+      "reading_order_index": 300,
+      "source_loc": "page:13",
+      "heading_level": 3,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검",
+        "한생활방식은5.5점(12점 만 점)이절단점인것으로확인되었다."
+      ]
+    },
+    {
+      "block_id": "b00319",
+      "block_type": "heading",
+      "text": "로변별가 능 한지확인하였다. 본연구의주요결과및이를 바탕 으로한의의는다 음 과 같 다.",
+      "reading_order_index": 301,
+      "source_loc": "page:13",
+      "heading_level": 3,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검",
+        "한생활방식은5.5점(12점 만 점)이절단점인것으로확인되었다."
+      ]
+    },
+    {
+      "block_id": "b00322",
+      "block_type": "heading",
+      "text": "첫째 , 은둔청소년스크리닝척도는3개요인13개의문항으로구성되어있으며, 전 체 변 량 의",
+      "reading_order_index": 302,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00323",
+      "block_type": "heading",
+      "text": "70.364 % 를설명하였다. 구 체 적으로 살펴 보면, 요인1은사회적으로철수해서 혼 자고립된상",
+      "reading_order_index": 303,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00324",
+      "block_type": "heading",
+      "text": "태와관련된문항으로‘사회단절및고립’으로명명하였으며, 요인2는대인관계를회피하는",
+      "reading_order_index": 304,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00325",
+      "block_type": "heading",
+      "text": "내용과관련된문항으로‘회피’ 라 고명명하였다. 요인3은불규칙하 게 생활하는것과관련된",
+      "reading_order_index": 305,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00326",
+      "block_type": "heading",
+      "text": "문항으로‘불규칙한생활방식’으로명명하였다. 은둔청소년을선별하기위해개발된척도와",
+      "reading_order_index": 306,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00327",
+      "block_type": "heading",
+      "text": "비교해보면, 사회단절및고립은양미진등(2007), 백 형태등(2011), 김혜원등(2022) 그리고",
+      "reading_order_index": 307,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00328",
+      "block_type": "heading",
+      "text": "S akai 등(2004)이개발한은둔청소년선별척도의구성요인이었으며, 본연구에서도은둔청소",
+      "reading_order_index": 308,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00329",
+      "block_type": "heading",
+      "text": "년을스크리닝할수있는주요요인인것으로확인되었다. 다 음 으로회피는양미진등(2007)",
+      "reading_order_index": 309,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00330",
+      "block_type": "heading",
+      "text": "이개발한은둔형부적 응 청소년사회성척도에서는구성요인이 아니 었으나, 백 형태등(2011),",
+      "reading_order_index": 310,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00331",
+      "block_type": "heading",
+      "text": "김혜원등(2022) 그리고 S akai 등(2004)이개발한척도에서는모두구성요인이었다. 마지막으",
+      "reading_order_index": 311,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00332",
+      "block_type": "heading",
+      "text": "로불규칙한생활방식은김혜원등(2022)과 S akai 등(2004)이개발한척도에서 만 구성요인인",
+      "reading_order_index": 312,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00333",
+      "block_type": "heading",
+      "text": "것으로나타 났 다. 그러나본연구에서개발한은둔청소년스크리닝척도에는 몇몇 연구자 들",
+      "reading_order_index": 313,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00334",
+      "block_type": "heading",
+      "text": "(김혜원등, 2022 ; 양미진등, 2007 ; S akai 등, 2004)이개발한기존은둔청소년선별척도에",
+      "reading_order_index": 314,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00335",
+      "block_type": "heading",
+      "text": "서 포함 되었 던 정신 건강 관련요인(불안, 공격 성, 강박 , 중 독 , 우울, 활동성저하, 이해할수없",
+      "reading_order_index": 315,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00336",
+      "block_type": "heading",
+      "text": "는부적절한행동)이 포함 되지않 았 다. 이는은둔청소년중에는 병 리적문제가없는청소년 들",
+      "reading_order_index": 316,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00337",
+      "block_type": "heading",
+      "text": "도있기에(Ta j an, 2015), 은둔청소년 들 을면밀하 게 스크리닝하기위해서는정신 건강 관련요",
+      "reading_order_index": 317,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00338",
+      "block_type": "heading",
+      "text": "인을배제할필요가있다는것을반영한결과이다. 그외 백 형태등(2011)의 무 관심, 양미진",
+      "reading_order_index": 318,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00339",
+      "block_type": "heading",
+      "text": "등(2007)의대인예 민 성, 김혜원등(2022)와 S akai 등(2004)의일상적인활동의결여는불안이",
+      "reading_order_index": 319,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00340",
+      "block_type": "heading",
+      "text": "포함 되지않 았 다. 즉 , 은둔청소년스크리닝척도는청소년상담현 장 에서은둔청소년을신 속",
+      "reading_order_index": 320,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00341",
+      "block_type": "heading",
+      "text": "하 게 발굴하기위해사회단절및고립, 회피, 불규칙한생활방식이 라 고하는은둔청소년의 핵",
+      "reading_order_index": 321,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00342",
+      "block_type": "heading",
+      "text": "심요소에 초 점을 맞춘 척도 라 할수있다.",
+      "reading_order_index": 322,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00343",
+      "block_type": "heading",
+      "text": "둘째 , 은둔청소년스크리닝척도의타당도를확보하기위해변별타당도와수렴타당도를검",
+      "reading_order_index": 323,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00344",
+      "block_type": "heading",
+      "text": "증하였다. 먼저변별타당도확보를위해일반집단과은둔의심집단으로구분한후집단간",
+      "reading_order_index": 324,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00345",
+      "block_type": "heading",
+      "text": "평 균 차이를분석한결과유의미한차이를보였다. 또 한수렴타당도확보를위해은둔청소년",
+      "reading_order_index": 325,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00346",
+      "block_type": "heading",
+      "text": "스크리닝척도와은둔형외톨이자가보고척도(제세 령 등, 2022) 그리고우울척도(김 광 일,",
+      "reading_order_index": 326,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00347",
+      "block_type": "heading",
+      "text": "김재 환 , 원 호택 , 19 8 4)간의상관관계를분석한결과모두유의미한상관이있는것으로나타",
+      "reading_order_index": 327,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00348",
+      "block_type": "heading",
+      "text": "났 다. 이러한결과는은둔청소년스크리닝척도가변별타당도및수렴타당도가확보되었다는",
+      "reading_order_index": 328,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00349",
+      "block_type": "heading",
+      "text": "것을의미한다.",
+      "reading_order_index": 329,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00350",
+      "block_type": "heading",
+      "text": "셋째 , RO C 곡 선분석을통해은둔청소년스크리닝척도가은둔형집단과비은둔형집단을",
+      "reading_order_index": 330,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00351",
+      "block_type": "heading",
+      "text": "효과적으로변별할수있는지검증하였다. 그결과은둔청소년스크리닝척도의Area under",
+      "reading_order_index": 331,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00352",
+      "block_type": "heading",
+      "text": "cur v e(A U C) 값 은세하위요인에서(사회단절및고립 = .929, 회피 = . 888 , 불규칙한생활방식",
+      "reading_order_index": 332,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00353",
+      "block_type": "heading",
+      "text": "= . 8 1 8 ) 모두 높 은점수를보였다. 이는 H os m er와 L e m esho w (2000)가제시한기준(A U C = .75",
+      "reading_order_index": 333,
+      "source_loc": "page:14",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00354",
+      "block_type": "paragraph",
+      "text": "∼ .92)을 충 족하며, 은둔형집단과비은둔형집단을 잘 구분하는것을의미한다.\n또 한,",
+      "reading_order_index": 334,
+      "source_loc": "page:14",
+      "heading_level": null,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검",
+        "= . 8 1 8 ) 모두 높 은점수를보였다. 이는 H os m er와 L e m esho w (2000)가제시한기준(A U C = .75"
+      ]
+    },
+    {
+      "block_id": "b00357",
+      "block_type": "heading",
+      "text": "Youden’s index를사용하여 산 출한은둔형집단과비은둔형집단이구분되는절단점은사회",
+      "reading_order_index": 335,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00358",
+      "block_type": "heading",
+      "text": "단절및고립11.5점(20점 만 점), 회피13.5점(20점 만 점) 그리고불규칙한생활방식5.5점(12",
+      "reading_order_index": 336,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00359",
+      "block_type": "heading",
+      "text": "점 만 점)인것으로나타 났 다. 이러한절단점은은둔청소년을보다 쉽게 스크리닝하는데기여",
+      "reading_order_index": 337,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00360",
+      "block_type": "heading",
+      "text": "할것으로보인다.",
+      "reading_order_index": 338,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00361",
+      "block_type": "heading",
+      "text": "이를 바탕 으로본연구에서개발된은둔청소년판별척도가상담현 장 에서효과적으로사",
+      "reading_order_index": 339,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00362",
+      "block_type": "heading",
+      "text": "용 될 수있도 록 구 체 적인활용방안을제시하고자한다. 먼저상담자는청소년과의면담및",
+      "reading_order_index": 340,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00363",
+      "block_type": "heading",
+      "text": "관찰을통해척도를평정해 야 하며, 평정기준은행동이나타 난빈 도를기준으로한다. 즉 상",
+      "reading_order_index": 341,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00364",
+      "block_type": "heading",
+      "text": "담자는 각 문항의발생 빈 도를기준으로0점(해당없 음 )부 터 4점(해당된다) 까 지평정해 야 한",
+      "reading_order_index": 342,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00365",
+      "block_type": "heading",
+      "text": "다. 이후평정점수에 따라 위험수준을평가하고, 그에 따른 개입방안을세 워야 한다. 본",
+      "reading_order_index": 343,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00366",
+      "block_type": "heading",
+      "text": "척도는사회적단절및고립, 회피, 불규칙한생활방식의세가지하위요인으로구성되어있",
+      "reading_order_index": 344,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00367",
+      "block_type": "heading",
+      "text": "으며, 이 들 모두에서절단점을 넘 은경우고위험군으로분류한다. 고위험군은 즉각 적인심리",
+      "reading_order_index": 345,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00368",
+      "block_type": "heading",
+      "text": "적개입이필요하며, 추 가검사(예: MM PI 2, 위기스크리닝척도)를통해정신 건강 상태를평",
+      "reading_order_index": 346,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00369",
+      "block_type": "heading",
+      "text": "가할수있다. 반면1개 또 는2개의하위요인에서절단점을 넘 은경우위험군으로간주하며",
+      "reading_order_index": 347,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00370",
+      "block_type": "heading",
+      "text": "예방적개입이요구된다. 즉 정기적인모 니터링 과 함께 사회적기 술훈 련및생활 패턴 조정",
+      "reading_order_index": 348,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00371",
+      "block_type": "heading",
+      "text": "을통해은둔상태로 악 화되는것을예방해 야 한다. 이러한구 체 적인활용방안을통해본",
+      "reading_order_index": 349,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00372",
+      "block_type": "heading",
+      "text": "척도는은둔청소년을조기에발굴하고적절한개입을제 공 하는데중요한 역 할을할수있을",
+      "reading_order_index": 350,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00373",
+      "block_type": "heading",
+      "text": "것이다.",
+      "reading_order_index": 351,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00374",
+      "block_type": "heading",
+      "text": "이를 바탕 으로본연구의의의를 살펴 보면다 음 과 같 다.",
+      "reading_order_index": 352,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00375",
+      "block_type": "heading",
+      "text": "첫째 , 본연구에서개발한은둔청소년스크리닝척도는은둔청소년을조기에발굴하는데",
+      "reading_order_index": 353,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00376",
+      "block_type": "heading",
+      "text": "유용한도구로활용 될 수있다. 은둔청소년은사회적접촉이어 려워 조기발 견 이 쉽 지않으",
+      "reading_order_index": 354,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00377",
+      "block_type": "heading",
+      "text": "며, 이로인해심리적, 정서적, 행동적문제가 더욱악 화 될 수있다(양미진외, 2007). 따라 서",
+      "reading_order_index": 355,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00378",
+      "block_type": "heading",
+      "text": "이 들 을조기에발굴하는것이 매 우중요하다. 본척도는청소년스스로자신의상태를점검",
+      "reading_order_index": 356,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00379",
+      "block_type": "heading",
+      "text": "할수있을 뿐만아니라 , 교사, 청소년동반자, 청소년상담사등이은둔청소년의특성을이",
+      "reading_order_index": 357,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00380",
+      "block_type": "heading",
+      "text": "해하고이를판별하는데효과적인도구로활용 될 수있을것이다.",
+      "reading_order_index": 358,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00381",
+      "block_type": "heading",
+      "text": "둘째 , 본연구는정신 건강 영 역 을배제한은둔청소년스크리닝척도를개발했다는점에서",
+      "reading_order_index": 359,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00382",
+      "block_type": "heading",
+      "text": "중요한의의를지 닌 다. 많 은은둔청소년이 공격 성, 우울등정신 건강 문제를동반하고있어",
+      "reading_order_index": 360,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00383",
+      "block_type": "heading",
+      "text": "기존척도 들 도정신 건강 요인 들 을하위요인으로 포함 하고있다(김혜원등, 2022 ; 양미진등,",
+      "reading_order_index": 361,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00384",
+      "block_type": "heading",
+      "text": "2007 ; S akai 등, 2004). 그러나은둔청소년의정의에서는정신 건강 문제를 포함 하지않고있으",
+      "reading_order_index": 362,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00385",
+      "block_type": "heading",
+      "text": "며, 정신 건강 문제가없는은둔청소년도존재한다. 이에선행연구 들 (김혜원등, 2012 ; 사이토",
+      "reading_order_index": 363,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00386",
+      "block_type": "heading",
+      "text": "다마 키 , 2012)은은둔상태와정신 건강 문제를분리해서보고있다. 이러한배경에서본연구",
+      "reading_order_index": 364,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00387",
+      "block_type": "heading",
+      "text": "는정신 건강 문제를제외하고, 은둔상태자 체 에집중하여정신 건강 문제가없는청소년 까 지",
+      "reading_order_index": 365,
+      "source_loc": "page:15",
+      "heading_level": 2,
+      "section_path": [
+        "Characteristic Cur v e) 를통해은둔청소년집단과비은둔청소년집단을변별가 능 한지를검"
+      ]
+    },
+    {
+      "block_id": "b00388",
+      "block_type": "heading",
+      "text": "조기에발굴할수있는스크리닝척도를개발했 다는점에서의의가크다. 이를통해다양",
+      "reading_order_index": 366,
+      "source_loc": "page:15",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00389",
+      "block_type": "heading",
+      "text": "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다.",
+      "reading_order_index": 367,
+      "source_loc": "page:15",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00392",
+      "block_type": "heading",
+      "text": "마지막으로본연구의의의는은둔청소년의주요특성을 밝혀냈 다는점에있다. 본연구는",
+      "reading_order_index": 369,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00393",
+      "block_type": "heading",
+      "text": "선행연구와기존은둔청소년판별척도그리고전문가자문등을통해은둔청소년의주요특",
+      "reading_order_index": 370,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00394",
+      "block_type": "heading",
+      "text": "성이사회단절및고립, 회피, 불규칙한생활방식이 라 는것을확인하였으며, 이를은둔청소년",
+      "reading_order_index": 371,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00395",
+      "block_type": "heading",
+      "text": "스크리닝척도의구성요소로확정하였다. 은둔청소년의문제가심 각함 에도불구하고관련연",
+      "reading_order_index": 372,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00396",
+      "block_type": "heading",
+      "text": "구가부족한상황에서, 본연구는은둔청소년의주요특성을규명 함 으로 써 이 들 에대한이해",
+      "reading_order_index": 373,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00397",
+      "block_type": "heading",
+      "text": "를 높 이는데기여했다.",
+      "reading_order_index": 374,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00398",
+      "block_type": "heading",
+      "text": "본연구의제한점및 향 후연구에대한제 언 은다 음 과 같 다. 먼저본연구에서개발된은",
+      "reading_order_index": 375,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00399",
+      "block_type": "heading",
+      "text": "둔청소년스크리닝척도는신 뢰 도와타당성을 갖춘 것으로증명되었지 만 , 실제현 장 에서는",
+      "reading_order_index": 376,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00400",
+      "block_type": "heading",
+      "text": "적용을통해검증하지는못하였다. 따라 서 향 후연구에서는실제현 장 에서상담자가본척도",
+      "reading_order_index": 377,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00401",
+      "block_type": "heading",
+      "text": "를통해평정한점수와청소년의자기보고식점수간의변별 력 과상관관계를확인할필요가",
+      "reading_order_index": 378,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00402",
+      "block_type": "heading",
+      "text": "있다. 이는본척도가실제현 장 에서의유용성과적 응 가 능 성을확인하는데유용할것으로",
+      "reading_order_index": 379,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00403",
+      "block_type": "heading",
+      "text": "보인다. 또 한본연구는성별, 학년, 지 역 등다양한연구집단에대한차이를고 려 하지않 았",
+      "reading_order_index": 380,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00404",
+      "block_type": "heading",
+      "text": "고, 아직표 준화과정을거 치 지않 았 다는제한점이있다. 따라 서이척도가다 른 인구집단에",
+      "reading_order_index": 381,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00405",
+      "block_type": "heading",
+      "text": "서도동일하 게 적용 될 수있을지확인하기위해서는 추 가적인검토가필요하다. 향 후연구에",
+      "reading_order_index": 382,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00406",
+      "block_type": "heading",
+      "text": "서는다양한인구집단을대상으로 표 준화 작 업을수행하여척도의신 뢰 도와타당성을 강 화",
+      "reading_order_index": 383,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00407",
+      "block_type": "heading",
+      "text": "하고, 절단점의적 합 성을검증 함 으로 써 보다유용하 게 활용할수있는도구로발전시 켜야 할",
+      "reading_order_index": 384,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00408",
+      "block_type": "heading",
+      "text": "필요가있다.",
+      "reading_order_index": 385,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "한유형의은둔청소년을 더욱 정확하 게 판별할수있을것으로보인다."
+      ]
+    },
+    {
+      "block_id": "b00409",
+      "block_type": "heading",
+      "text": "참고문헌",
+      "reading_order_index": 386,
+      "source_loc": "page:16",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00410",
+      "block_type": "heading",
+      "text": "광 주 광역 시 (2020). 2020 광 주 광역 시은둔형외톨이실태조사 . 광 주 광역 시 .",
+      "reading_order_index": 387,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "참고문헌"
+      ]
+    },
+    {
+      "block_id": "b00411",
+      "block_type": "heading",
+      "text": "고스 게 유 코 (2012). 은둔형외톨이사 례 연구 : 한국과일본사 례 를중심으로 . 숭 실대학교",
+      "reading_order_index": 388,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "참고문헌"
+      ]
+    },
+    {
+      "block_id": "b00412",
+      "block_type": "heading",
+      "text": "대학원석사학위논문 .",
+      "reading_order_index": 389,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "참고문헌"
+      ]
+    },
+    {
+      "block_id": "b00413",
+      "block_type": "heading",
+      "text": "김 광 일 , 김재 환 , 원 호택 (19 8 4). 간이정신진단검사실시요 강 . 서울 : 중 앙 적성연구소 .",
+      "reading_order_index": 390,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "참고문헌"
+      ]
+    },
+    {
+      "block_id": "b00414",
+      "block_type": "heading",
+      "text": "김기헌 , 이윤주 , 유설희 , 배진우 (2017). 청소년사회경제실태및정 책 방안연구 . 세종 : 한국",
+      "reading_order_index": 391,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "참고문헌"
+      ]
+    },
+    {
+      "block_id": "b00415",
+      "block_type": "heading",
+      "text": "청소년정 책 연구원 .",
+      "reading_order_index": 392,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "참고문헌"
+      ]
+    },
+    {
+      "block_id": "b00416",
+      "block_type": "heading",
+      "text": "김기헌 , 배상 률 , 성재 민 (201 8 ). 청년 핵 심정 책 대상별실태및지원방안연구 Ⅰ : 청년",
+      "reading_order_index": 393,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "참고문헌"
+      ]
+    },
+    {
+      "block_id": "b00417",
+      "block_type": "heading",
+      "text": "니트 (NEET). 세종 : 한국청소년정 책 연구원 .",
+      "reading_order_index": 394,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "참고문헌"
+      ]
+    },
+    {
+      "block_id": "b00418",
+      "block_type": "heading",
+      "text": "김기헌 , 유 민 상 , 변 금 선 , 배정희 , 권향 원 , 김 창환 , 박 미선 , 성재 민 , 이철선 , 최한수 (2020).",
+      "reading_order_index": 395,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "참고문헌"
+      ]
+    },
+    {
+      "block_id": "b00419",
+      "block_type": "heading",
+      "text": "제 1 차청년정 책 기본계 획 수립연구 . 세종 : 한국청소년정 책 연구원 .",
+      "reading_order_index": 396,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "참고문헌"
+      ]
+    },
+    {
+      "block_id": "b00420",
+      "block_type": "heading",
+      "text": "김신 아 (2019). 은둔형외톨이자녀를둔부모의심리적갈등과영적경험에관한연구 .",
+      "reading_order_index": 397,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "참고문헌"
+      ]
+    },
+    {
+      "block_id": "b00421",
+      "block_type": "heading",
+      "text": "고신대학교대학원 박 사학위논문 .",
+      "reading_order_index": 398,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "참고문헌"
+      ]
+    },
+    {
+      "block_id": "b00422",
+      "block_type": "heading",
+      "text": "김현정 (2015). 청소년우울의영향요인연구 : 보호요인과위험요인 . 국 민 대학교행정대학원",
+      "reading_order_index": 399,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "참고문헌"
+      ]
+    },
+    {
+      "block_id": "b00423",
+      "block_type": "heading",
+      "text": "석사학위논문 .",
+      "reading_order_index": 400,
+      "source_loc": "page:16",
+      "heading_level": 2,
+      "section_path": [
+        "참고문헌"
+      ]
+    },
+    {
+      "block_id": "b00426",
+      "block_type": "heading",
+      "text": "김혜원 (2020). 은둔형외톨이현황과제도적지원의정립 . 서울시은둔형외톨이현황과",
+      "reading_order_index": 401,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00427",
+      "block_type": "heading",
+      "text": "지원방안토 론 회자료집 (2020. 8 .25.).",
+      "reading_order_index": 402,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00428",
+      "block_type": "heading",
+      "text": "김혜원 (2022). 은둔형외톨이청년의특성및은둔경험분석 . 청소년학연구 , 29 (10). 1-32.",
+      "reading_order_index": 403,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00429",
+      "block_type": "heading",
+      "text": "김혜원 , 조현주 , 김지연 , 김연 옥 , 김지 향 , 박찬 희 (2022). 은둔형외톨이상담 : 당사자와부모",
+      "reading_order_index": 404,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00430",
+      "block_type": "heading",
+      "text": "상담가이드북 . 서울 : 학지사",
+      "reading_order_index": 405,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00431",
+      "block_type": "heading",
+      "text": "김효 순 , 김서연 , 박 희서 (2016). 은둔형외톨이성 향 청소년의 온라 인 게 임중 독 과정에서",
+      "reading_order_index": 406,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00432",
+      "block_type": "heading",
+      "text": "사회적지지의조절효과에관한연구 . 한국컴퓨터정보학회논문지 . 21 (6). 149-156.",
+      "reading_order_index": 407,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00433",
+      "block_type": "heading",
+      "text": "백 형태 , 김 붕 년 , 신 민섭 , 안동현 , 이영식 (2011). 부모 작 성용은둔형외톨이선별도구개발 .",
+      "reading_order_index": 408,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00434",
+      "block_type": "heading",
+      "text": "소아청소년정신의학 , 22 (4), 262-270.",
+      "reading_order_index": 409,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00435",
+      "block_type": "heading",
+      "text": "복지타임 즈 (2020.12.31). 일본 , 히키코 모리 장 기화 · 고 령 화로 ‘ 8 050 문제 ’ 대두 .",
+      "reading_order_index": 410,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00436",
+      "block_type": "heading",
+      "text": "https: //www . b ok j iti m es.co m/ ne w s / articleVie w .ht m l ? idxno = 30153",
+      "reading_order_index": 411,
+      "source_loc": "page:17",
+      "heading_level": 2,
+      "section_path": [
+        "복지타임 즈 (2020.12.31). 일본 , 히키코 모리 장 기화 · 고 령 화로 ‘ 8 050 문제 ’ 대두 ."
+      ]
+    },
+    {
+      "block_id": "b00437",
+      "block_type": "heading",
+      "text": "사이토다마 키 (2012). 은둔형외톨이 : 그이해와치유법 ( 김경한 , 김혜경 , 공역 ) 서울 : 파워 북 .",
+      "reading_order_index": 412,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00438",
+      "block_type": "heading",
+      "text": "양미진 , 지 승 희 , 김태성 , 이자영 , 홍 지연 (2007). 은둔형부적 응 청소년사회성척도개발연구 .",
+      "reading_order_index": 413,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00439",
+      "block_type": "heading",
+      "text": "아시아교육연구 , 8 (2), 119-134.",
+      "reading_order_index": 414,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00440",
+      "block_type": "heading",
+      "text": "여인중 (2005) 은둔형외톨이 . 서울 : 지혜문학 .",
+      "reading_order_index": 415,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00441",
+      "block_type": "heading",
+      "text": "여성가족부 (2022). 청소년백서 . 서울 : 여성가족부 .",
+      "reading_order_index": 416,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00442",
+      "block_type": "heading",
+      "text": "여성가족부 (2023). 제 7 차청소년정책기본계획 (2023-2027) . 서울 : 여성가족부 .",
+      "reading_order_index": 417,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00443",
+      "block_type": "heading",
+      "text": "오 상 빈 (2020). 고립생활하는사람은누구인가 ? : 은둔형외톨이치유와예방 . 서울 : 솔 학 .",
+      "reading_order_index": 418,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00444",
+      "block_type": "heading",
+      "text": "윤철경 , 서보람 (2020). 은둔형외톨이현황과제도적지원의정립 . 서울시은둔형외톨이",
+      "reading_order_index": 419,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00445",
+      "block_type": "heading",
+      "text": "현황과지원방안토 론 회자료집 (2020. 8 .25.).",
+      "reading_order_index": 420,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00446",
+      "block_type": "heading",
+      "text": "윤철경 , 박 선영 , 임 말 희 , 김재희 , 문 금 화 , 김연정 (2021). 은둔형외톨이청소년가족지원을",
+      "reading_order_index": 421,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00447",
+      "block_type": "heading",
+      "text": "입한입법과제 . 서울 : 국회입 법 조사 처 .",
+      "reading_order_index": 422,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00448",
+      "block_type": "heading",
+      "text": "윤철경 , 권 세진 , 박 현정 , 서희정 , 이정현 , 황현 (2022). 2022 고립 · 은둔청년바우처지원방안",
+      "reading_order_index": 423,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00449",
+      "block_type": "heading",
+      "text": "연구 . 서울 : G L 학교밖청소년연구소 .",
+      "reading_order_index": 424,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00450",
+      "block_type": "heading",
+      "text": "이시형 , 김은정 , 김미영 , 김진영 , 이규미 , 구자경 (2000). 외톨이청소년의심리사회적특성과",
+      "reading_order_index": 425,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00451",
+      "block_type": "heading",
+      "text": "부적응 . 서울 : 삼 성생명 공익 재단사회정신 건강 연구소 .",
+      "reading_order_index": 426,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00452",
+      "block_type": "heading",
+      "text": "이윤지 , 서 민 재 , 최태영 (2015). 한국청소년에서사회적은둔의정신 병 리적특성 . 신경정신",
+      "reading_order_index": 427,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00453",
+      "block_type": "heading",
+      "text": "의학 , 54 (4), 549-555.",
+      "reading_order_index": 428,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00454",
+      "block_type": "heading",
+      "text": "이지 민 , 김영 근 (2021). 은둔형외톨이경험이있는청소년의은둔경험에관한현상학적",
+      "reading_order_index": 429,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00455",
+      "block_type": "heading",
+      "text": "연구 . 한국아동심리치료학회지 , 16 (2), 61-91.",
+      "reading_order_index": 430,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00456",
+      "block_type": "heading",
+      "text": "장휘숙 (2004). 청년심리학제 3 판 . 서울 : 박 영사 .",
+      "reading_order_index": 431,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00457",
+      "block_type": "heading",
+      "text": "제세 령 , 최태영 , 원 근 희 , 봉 수현 (2022). 은둔형외톨이자가보고척도의신 뢰 도및타당도",
+      "reading_order_index": 432,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00458",
+      "block_type": "heading",
+      "text": "연구 . Journal of Korean Neuropsychiatric Association, 61 (2), 8 0- 8 9.",
+      "reading_order_index": 433,
+      "source_loc": "page:17",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00461",
+      "block_type": "heading",
+      "text": "차주 환 , 이자영 , 편 여울 강 , 백 정원 , 어혜원 (2023). 은둔청소년발굴및지원방안 . 부 산 : 한",
+      "reading_order_index": 434,
+      "source_loc": "page:18",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00462",
+      "block_type": "heading",
+      "text": "국청소년상담복지개발원 .",
+      "reading_order_index": 435,
+      "source_loc": "page:18",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00463",
+      "block_type": "heading",
+      "text": "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,",
+      "reading_order_index": 436,
+      "source_loc": "page:18",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00464",
+      "block_type": "heading",
+      "text": "19 (1), 161-177.",
+      "reading_order_index": 437,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00465",
+      "block_type": "heading",
+      "text": "B lack, W . C., B a b in, B . J., & Anderson, R . E. (2010). Multi v ariate data analysis: A glo b al",
+      "reading_order_index": 438,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00466",
+      "block_type": "heading",
+      "text": "perspecti v e. P earson.",
+      "reading_order_index": 439,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00467",
+      "block_type": "heading",
+      "text": "D e W inter, J. C. F ., & D odou, D . (2012). F actor reco v ery b y principal axis factoring and",
+      "reading_order_index": 440,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00468",
+      "block_type": "heading",
+      "text": "m axi m u m likelihood factor analysis as a function of factor pattern and sa m ple si z e.",
+      "reading_order_index": 441,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00469",
+      "block_type": "heading",
+      "text": "Journal of Applied S tatistics, 39(4), 695-710.",
+      "reading_order_index": 442,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00470",
+      "block_type": "heading",
+      "text": "F luss, R ., F araggi, D ., & R eiser, B . (2005). Esti m ation of the Youden I ndex and its",
+      "reading_order_index": 443,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00471",
+      "block_type": "heading",
+      "text": "associated cutoff point. B io m etrical Journal: Journal of Mathe m atical Methods in B io",
+      "reading_order_index": 444,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00472",
+      "block_type": "heading",
+      "text": "sciences, 47(4), 45 8 -472.",
+      "reading_order_index": 445,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00473",
+      "block_type": "heading",
+      "text": "Kato T. A, Kan b a S , & Teo A. R . (2019). H ikiko m ori: m ultidi m ensional under ꠓ standing,",
+      "reading_order_index": 446,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00474",
+      "block_type": "heading",
+      "text": "assess m ent, and future international perspecti v es. P sychia ꠓ try Clinical Neuroscience",
+      "reading_order_index": 447,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00475",
+      "block_type": "heading",
+      "text": "73, 427-440.",
+      "reading_order_index": 448,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00476",
+      "block_type": "heading",
+      "text": "Kline, R . B . (2011). P rinciples and practice of structural e q uation m odeling (3. B ask ı ).",
+      "reading_order_index": 449,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00477",
+      "block_type": "heading",
+      "text": "NY: G uilford.",
+      "reading_order_index": 450,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00478",
+      "block_type": "heading",
+      "text": "H os m er, D . W ., & L e m esho w , S . (2000). Applied L ogistic R egression (2nd ed.). W iley.",
+      "reading_order_index": 451,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00479",
+      "block_type": "paragraph",
+      "text": "S akai M, I ishika w a S , S ato H , S akano Y.(2004).\nD e v elop m ent of hikiko m ori b eha v ior\nchecklist\n( HB C L )\nand\nexa m ination of\nits\nrelia b ility and\nv alidity.\nJapanese",
+      "reading_order_index": 452,
+      "source_loc": "page:18",
+      "heading_level": null,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,",
+        "H os m er, D . W ., & L e m esho w , S . (2000). Applied L ogistic R egression (2nd ed.). W iley."
+      ]
+    },
+    {
+      "block_id": "b00480",
+      "block_type": "heading",
+      "text": "Journal of Counseling S cience. 37, 210-220.",
+      "reading_order_index": 453,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00481",
+      "block_type": "heading",
+      "text": "S chu m acker, R . E., & L o m ax, R . G . (2004). A b eginner ' s guide to structural e q uation",
+      "reading_order_index": 454,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00482",
+      "block_type": "heading",
+      "text": "m odeling. NY: P sychology P ress",
+      "reading_order_index": 455,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00483",
+      "block_type": "heading",
+      "text": "Ta j an, N. (2015) S ocial W ithdra w al and P sychiatry: A Co m prehensi v e R e v ie w of H ikiko m ori.",
+      "reading_order_index": 456,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00484",
+      "block_type": "heading",
+      "text": "Neuropsychiatrie de l’Enfance et de l’Adolescence, 63, 324-331.",
+      "reading_order_index": 457,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00485",
+      "block_type": "heading",
+      "text": "Teo, A. R ., Chen, J. I ., Ku b o, H ., Katsuki, R ., S ato ‐ Kasai, M., S hi m oka w a, N., ... & Kato,",
+      "reading_order_index": 458,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00486",
+      "block_type": "heading",
+      "text": "T. A. (201 8 ). D e v elop m ent and v alidation of the 25 ‐ ite m H ikiko m ori Q uestionnaire",
+      "reading_order_index": 459,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00487",
+      "block_type": "heading",
+      "text": "( HQ ‐ 25). P sychiatry and clinical neurosciences, 72(10), 7 8 0-7 88 .",
+      "reading_order_index": 460,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00488",
+      "block_type": "heading",
+      "text": "W ong, P . W ., L i, T. M., Chan, M., L a w , Y. W ., Chau, M., Cheng, C., F u, K. W ., B acon- S hone,",
+      "reading_order_index": 461,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00489",
+      "block_type": "heading",
+      "text": "J., & Yip, P . S . (2015) “ The pre v alence and correlates of se v ere social w ithdra w al",
+      "reading_order_index": 462,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00490",
+      "block_type": "heading",
+      "text": "(hikiko m ori) in H ong Kong: A cross-sectional telephone- b ased sur v ey study ” , The",
+      "reading_order_index": 463,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00491",
+      "block_type": "heading",
+      "text": "I nternational j ournal of social psychiatry, 61(4), 330 – 342.",
+      "reading_order_index": 464,
+      "source_loc": "page:18",
+      "heading_level": 2,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,"
+      ]
+    },
+    {
+      "block_id": "b00492",
+      "block_type": "heading",
+      "text": "[ 원고접수일: 2024. 09. 06. / 수정원고접수일: 2024. 10. 23. / 게 재결정일: 2024. 10. 30. ]",
+      "reading_order_index": 465,
+      "source_loc": "page:18",
+      "heading_level": 3,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,",
+        "I nternational j ournal of social psychiatry, 61(4), 330 – 342."
+      ]
+    },
+    {
+      "block_id": "b00493",
+      "block_type": "paragraph",
+      "text": "- 269 -\n청소년상담연구\nThe Korea Journal of Youth Counseling\n2024, Vol. 32, No. 2, 251-269",
+      "reading_order_index": 466,
+      "source_loc": "page:19",
+      "heading_level": null,
+      "section_path": [
+        "홍 세희 (2000). 구조방정식모형의적 합 도지수선정기준과그 근 거 . 한국심리학회지 : 임상 ,",
+        "I nternational j ournal of social psychiatry, 61(4), 330 – 342.",
+        "[ 원고접수일: 2024. 09. 06. / 수정원고접수일: 2024. 10. 23. / 게 재결정일: 2024. 10. 30. ]"
+      ]
+    },
+    {
+      "block_id": "b00494",
+      "block_type": "heading",
+      "text": "Development and Validation of a Screening Scale for",
+      "reading_order_index": 467,
+      "source_loc": "page:19",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00495",
+      "block_type": "heading",
+      "text": "Discrimination of Reclusive Adolescents",
+      "reading_order_index": 468,
+      "source_loc": "page:19",
+      "heading_level": 1,
+      "section_path": []
+    },
+    {
+      "block_id": "b00496",
+      "block_type": "paragraph",
+      "text": "Ju-hwan Cha, Ja-young Lee, Jeong-won Baik, Yu-wool-kang Pyun, Hye-won Eo\nKorea Youth Counseling & W elfare I nstitute\nH anyang Cy b er U ni v ersity\nThe purpose of this study is to de v elop a screening scale necessary to effecti v ely identify\nreclusi v e adolescents in a w ay that experts in youth counseling and w elfare institutions\ne v aluate.\nF irst, a literature re v ie w w as conducted to de v elop a scale for reclusi v e adolescents, fro m\nw hich the factor structure and preli m inary ite m s w ere deri v ed. F eed b ack and e v aluations\nfro m experts in the rele v ant field w ere then gathered to refine the preli m inary ite m s.\nS u b se q uently, a sur v ey enco m passing b oth reclusi v e adolescents ( w ith rele v ant experiences)\nand general adolescents w as conducted. The Exploratory F actor Analysis and Confir m atory\nF actor Analysis results de m onstrated that the scale exhi b its appropriate relia b ility and\nv alidity. The final scale consists of three su b -factors (social disconnection and isolation,\na v oidance, and irregular lifestyle) co m prising 13 ite m s. P articipants rated these ite m s on a\nfi v e-point L ikert scale (ranging fro m 0 to 4 for each ite m ). Cut-off scores for identifying\nreclusi v e adolescents w ere set at 11.5 for social disconnection and isolation, 13.5 for\na v oidance, and 5.5 for irregular lifestyle. An indi v idual exceeding the cut-off scores in all\nthree su b -factors w as classified as a reclusi v e (high-risk) adolescent. Nota b ly, the strength\nof this study is the de v elop m ent of a screening scale for professionals in adolescent\ncounseling and w elfare institutes, despite the current lack of clarity in the literature regarding\nthe concept or characteristics of reclusi v e adolescents.\nKey w ords : R eclusi v e Adolescents, Early I nter v ention, D etection and S upport P lan",
+      "reading_order_index": 469,
+      "source_loc": "page:19",
+      "heading_level": null,
+      "section_path": [
+        "Discrimination of Reclusive Adolescents"
+      ]
+    }
+  ],
+  "parse_quality_flags": [
+    "multi_column_detected"
+  ],
+  "parsed_at": "2026-06-22T13:26:42.987946+00:00"
+}

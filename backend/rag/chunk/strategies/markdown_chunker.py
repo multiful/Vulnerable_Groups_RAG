@@ -20,6 +20,15 @@ from ..chunk_schema import ChunkConfig, ChunkMetadata, ChunkRecord
 from ..token_utils import count_tokens, split_by_tokens
 
 
+def _source_type_from_ir(ir: ParseIR) -> str:
+    p = ir.parser_used
+    if p == "html":
+        return "html"
+    if p == "docx":
+        return "docx"
+    return "pdf"
+
+
 def chunk_with_markdown(
     ir: ParseIR,
     config: ChunkConfig,
@@ -136,7 +145,7 @@ def _append_chunk(
 
     metadata = ChunkMetadata(
         cert_id=cert_id,
-        source_type="pdf",
+        source_type=_source_type_from_ir(ir),
         doc_type=doc_type,
         doc_id=ir.doc_id,
         chunk_id=chunk_id,

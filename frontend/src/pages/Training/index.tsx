@@ -33,7 +33,56 @@ const NCS_CATEGORIES = [
   '보건/의료', '사회복지/종교', '교육/자연/사회과학', '화학/바이오',
   '환경/에너지/안전', '금융/보험', '문화/예술/디자인/방송',
   '음식서비스', '이용/숙박/여행/오락/스포츠', '사업관리',
+  '재료', '운전/운송', '섬유/의복', '인쇄/목재/가구/공예', '농림어업',
+  '법률/경찰/소방/교도/국방', '영업판매',
 ];
+
+// DIDIM 도메인 ID → Work24 NCS 1차 분류 매핑
+const DOMAIN_TO_NCS: Record<string, string> = {
+  domain_0001: '정보통신',   // 데이터/AI
+  domain_0002: '정보통신',   // 소프트웨어개발
+  domain_0003: '정보통신',   // IT인프라/보안
+  domain_0004: '정보통신',   // 정보통신/무선
+  domain_0005: '전기/전자',  // 전기/전자
+  domain_0006: '기계',       // 기계/제조
+  domain_0007: '재료',       // 재료/금속
+  domain_0008: '화학/바이오',// 화학/바이오
+  domain_0009: '환경/에너지/안전', // 에너지/원자력
+  domain_0010: '건설',       // 건축/실내건축
+  domain_0011: '건설',       // 토목/측량/공간정보
+  domain_0012: '환경/에너지/안전', // 환경/안전
+  domain_0013: '기계',       // 자동차/모빌리티정비
+  domain_0014: '법률/경찰/소방/교도/국방', // 소방/방재
+  domain_0015: '기계',       // 비파괴검사/품질검사
+  domain_0016: '금융/보험',  // 금융/회계
+  domain_0017: '경영/회계/사무', // 경영/사무
+  domain_0018: '경영/회계/사무', // 유통/물류/무역
+  domain_0019: '영업판매',   // 영업/CS
+  domain_0020: '경영/회계/사무', // 부동산/감정/주택관리
+  domain_0021: '경영/회계/사무', // 공공/행정
+  domain_0022: '법률/경찰/소방/교도/국방', // 법률
+  domain_0023: '보건/의료',  // 의료/보건
+  domain_0024: '사회복지/종교', // 사회복지/상담
+  domain_0025: '이용/숙박/여행/오락/스포츠', // 스포츠/레저/재활
+  domain_0026: '이용/숙박/여행/오락/스포츠', // 반려동물/생활케어
+  domain_0027: '교육/자연/사회과학', // 교육
+  domain_0028: '경영/회계/사무', // 언어/문서/속기
+  domain_0029: '이용/숙박/여행/오락/스포츠', // 관광/항공/호텔
+  domain_0030: '음식서비스', // 조리/식품
+  domain_0031: '이용/숙박/여행/오락/스포츠', // 미용/패션
+  domain_0032: '섬유/의복',  // 의류/패션제작
+  domain_0033: '문화/예술/디자인/방송', // 디자인
+  domain_0034: '문화/예술/디자인/방송', // 콘텐츠/미디어
+  domain_0035: '인쇄/목재/가구/공예', // 공예/목재/주얼리
+  domain_0036: '문화/예술/디자인/방송', // 음악/공연
+  domain_0037: '문화/예술/디자인/방송', // 문화유산/보존수리
+  domain_0038: '농림어업',   // 농림/축산/수산
+  domain_0039: '재료',       // 광산
+  domain_0040: '운전/운송',  // 철도/교통운송
+  domain_0041: '운전/운송',  // 선박/해양
+  domain_0042: '운전/운송',  // 항공/조종
+  domain_0043: '법률/경찰/소방/교도/국방', // 국방/특수
+};
 
 function CourseCard({ course }: { course: TrainingCourse }) {
   const name = course.course_name || '(과정명 없음)';
@@ -104,9 +153,14 @@ const Training: React.FC = () => {
     ? (searchParams.get('tab') as Tab) : 'courses';
   const [tab, setTab] = useState<Tab>(initialTab);
 
+  // 도메인 파라미터: ?domain=domain_XXXX&domain_name=데이터/AI
+  const domainParam     = searchParams.get('domain') || '';
+  const domainNameParam = searchParams.get('domain_name') || '';
+  const autoNcs         = domainParam ? (DOMAIN_TO_NCS[domainParam] || '') : '';
+
   const [keyword, setKeyword] = useState(searchParams.get('keyword') || '');
   const [region, setRegion] = useState('');
-  const [ncsCategory, setNcsCategory] = useState('');
+  const [ncsCategory, setNcsCategory] = useState(autoNcs);
   const [results, setResults] = useState<TrainingCourse[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -150,15 +204,19 @@ const Training: React.FC = () => {
     setLoading(false);
   }, []);
 
-  // keyword가 URL 파라미터로 넘어온 경우 자동 검색
+  // keyword 또는 domain 파라미터로 자동 검색
   useEffect(() => {
+    if (didAutoSearch.current) return;
     const kw = searchParams.get('keyword');
-    if (kw && !didAutoSearch.current) {
+    if (kw) {
       didAutoSearch.current = true;
       setKeyword(kw);
-      fetchCourses(kw, '', '');
+      fetchCourses(kw, '', autoNcs);
+    } else if (autoNcs) {
+      didAutoSearch.current = true;
+      fetchCourses('', '', autoNcs);
     }
-  }, [searchParams, fetchCourses]);
+  }, [searchParams, fetchCourses, autoNcs]);
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -171,6 +229,13 @@ const Training: React.FC = () => {
         <h1 className="tc-title">훈련과정</h1>
         <p className="tc-sub">국민내일배움카드 훈련과정, 과정평가형 자격, 일학습병행 경로를 한곳에서 확인하세요.</p>
       </div>
+
+      {domainNameParam && autoNcs && (
+        <div className="tc-domain-banner">
+          <span className="tc-domain-badge">{domainNameParam}</span>
+          <span className="tc-domain-label">분야 훈련과정을 자동 조회합니다 · NCS: <strong>{autoNcs}</strong></span>
+        </div>
+      )}
 
       {/* 탭 */}
       <div className="tc-tab-bar">
@@ -310,7 +375,7 @@ const Training: React.FC = () => {
             <h2 className="tc-info-title">과정평가형 자격</h2>
             <p className="tc-info-desc">
               NCS 기반 교육훈련 과정을 이수하고 내부·외부 평가를 거쳐 자격을 취득하는 방식입니다.<br />
-              필기·실기 시험 부담 없이 교육 이수만으로 자격 취득 가능 — 4~5단계 청년에게 권장 경로입니다.
+              필기·실기 시험 부담 없이 교육 이수만으로 자격 취득 가능 — 활동 제한형 고립청년·은둔 청년에게 권장 경로입니다.
             </p>
             <div className="tc-info-tags">
               <span className="tc-info-tag tc-tag-green">시험 부담 낮음</span>
@@ -355,7 +420,7 @@ const Training: React.FC = () => {
             <h2 className="tc-info-title">일학습병행</h2>
             <p className="tc-info-desc">
               기업에 취업해 일하면서 NCS 기반 현장훈련을 받고 자격을 취득하는 제도입니다.<br />
-              취업과 자격 취득을 동시에 해결할 수 있는 고위험군(4~5단계) 청년을 위한 대안 경로입니다.
+              취업과 자격 취득을 동시에 해결할 수 있는 활동형·활동 제한형 고립청년을 위한 대안 경로입니다.
             </p>
             <div className="tc-info-tags">
               <span className="tc-info-tag tc-tag-green">취업 + 자격 동시</span>
@@ -395,6 +460,17 @@ const Training: React.FC = () => {
         .tc-header { display: flex; flex-direction: column; gap: .35rem; }
         .tc-title { font-size: 1.75rem; font-weight: 900; color: var(--text); margin: 0; }
         .tc-sub { font-size: .9rem; color: var(--text-muted); margin: 0; }
+        .tc-domain-banner {
+          display: flex; align-items: center; gap: .625rem;
+          padding: .625rem 1rem; background: #eff6ff;
+          border: 1px solid #bfdbfe; border-radius: var(--radius-sm);
+        }
+        .tc-domain-badge {
+          font-size: .78rem; font-weight: 700; color: #1d4ed8;
+          background: #dbeafe; padding: .2rem .6rem; border-radius: 20px;
+          white-space: nowrap;
+        }
+        .tc-domain-label { font-size: .82rem; color: #1e40af; }
 
         /* 탭 */
         .tc-tab-bar { display: flex; gap: .375rem; border-bottom: 2px solid var(--border); }

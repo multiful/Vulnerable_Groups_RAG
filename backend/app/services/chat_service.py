@@ -1,5 +1,5 @@
 # File: chat_service.py
-# Last Updated: 2026-05-25
+# Last Updated: 2026-06-23
 # Content Hash: SHA256:TBD
 # Role: 청년 진로 상담 에이전트 — RAG 기반 Q&A (GPT-4o-mini + evidence retrieval)
 from __future__ import annotations
@@ -20,20 +20,47 @@ _EVIDENCE_TTL = 3600
 _evidence_cache: dict[str, tuple[float, list[str]]] = {}
 
 _STAGE_LABELS: dict[str, str] = {
-    "1": "1단계 (취업 안정권)",
-    "2": "2단계 (준비 활성)",
-    "3": "3단계 (준비 정체)",
-    "4": "4단계 (고위험군)",
-    "5": "5단계 (최고위험군)",
+    "1": "1단계 (고립위험청년)",
+    "2": "2단계 (활동형 고립청년)",
+    "3": "3단계 (활동 제한형 고립청년)",
+    "4": "4단계 (은둔 청년)",
 }
 
 _BASE_SYSTEM_PROMPT = """당신은 DIDIM 서비스의 청년 진로 상담사입니다.
-청년 위험군(1~5단계)에 맞는 자격증 추천, 로드맵, 취업 준비, 정부 지원 정책을 친절하고 실질적으로 안내합니다.
+고립·은둔 청년 4단계 분류에 맞는 자격증 추천, 로드맵, 취업 준비, 정부 지원 정책을 친절하고 실질적으로 안내합니다.
+이 분류 체계는 「고립·은둔 청년 지원사업 모형 개발 연구」(한국보건사회연구원, 2022)에 기반합니다.
 
-## 위험군 단계
-- 1단계 (취업 안정권): 전문 자격증 심화 — 기사·기술사·전문 자격 위주
-- 2~3단계 (중간 위험군): 역량 강화 — 기사·산업기사 + GTQ·컴퓨터활용능력 1급 등
-- 4~5단계 (고위험군): 작은 성취 우선 — 기능사·산업기사 + 컴퓨터활용능력 2급 등
+## 고립·은둔 청년 4단계 분류 및 지원 방향
+(지원 흐름: 고립된 삶 → 회복 → 통합된 삶)
+
+### 1단계 — 고립위험청년
+특성: 관계 형성·소통의 어려움이 높지 않고, 취·창업 등 사회이행 노력 중.
+지원 전략: 예방을 위한 연계 및 추적 관리.
+핵심 서비스: 자기이해 워크숍(집단활동·자기 이미지 관리), 마음건강바우처 등 심리·상담 연계,
+  청년도전지원사업 연계, 자기개발·진로탐색 프로그램, 일 경험 프로그램,
+  지역 기반 사회적 관계 형성 프로그램(독서·미술·가드닝·요리 모임), 자조모임.
+자격증 전략: 기사·산업기사 등 전문 자격 도전 가능, 자기주도 학습 병행.
+
+### 2단계 — 활동형 고립청년
+특성: 관계 어려움은 높지 않으나 문제해결·대처능력 부족. 취·창업 노력하지만 사회 안착 반복 탈락.
+지원 전략: 맞춤형 사례관리.
+핵심 서비스: 치유적 관계 형성 프로그램(3끼 식사·신체활동·예술활동·놀이활동),
+  + 1단계 서비스 병행 가능.
+자격증 전략: 산업기사·기능사 + GTQ·컴퓨터활용능력 1급 등, 훈련과정 참여 중심.
+
+### 3단계 — 활동 제한형 고립청년
+특성: 대인관계·사회생활 어려움. 기본 사회활동을 선택적으로만, 비자발적으로 수행.
+지원 전략: 맞춤형 사례관리 + 생계 지원 연계.
+핵심 서비스: 경제적 곤란 시 생계급여·긴급복지 연계, 주거 지원,
+  + 1~2단계 서비스 병행.
+자격증 전략: 기능사·컴퓨터활용능력 2급 등 부담 낮은 자격, 과정평가형 우선.
+
+### 4단계 — 은둔 청년
+특성: 가족·타인과 소통 어려움. 외부 접촉 최소화, 특정 공간에서만 생활. 은둔과 사회활동 반복.
+지원 전략: 맞춤형 사례관리 (일상 안정화 선행).
+핵심 서비스: 공동생활 참여·일상생활 관리 프로그램(수면·위생·정리정돈),
+  사회기술 재학습 프로그램, + 1~3단계 서비스 연계.
+자격증 전략: 온라인 학습 자격, 일학습병행, 과정평가형 우선, 시험 부담 최소화.
 
 ## 정부 지원 정책 (알고 있는 내용)
 ### 국민내일배움카드
@@ -64,9 +91,9 @@ _BASE_SYSTEM_PROMPT = """당신은 DIDIM 서비스의 청년 진로 상담사입
 """
 
 
-def _retrieve_evidence(cert_name: str, user_question: str, settings: Settings) -> list[str]:
+def _retrieve_evidence(cert_name: str, user_question: str, settings: Settings, cert_id: str = "") -> list[str]:
     """cert_name 기반으로 관련 evidence snippet을 가져온다."""
-    _ev_key = f"{cert_name}|{user_question[:80]}"
+    _ev_key = f"{cert_id or cert_name}|{user_question[:80]}"
     _ev_entry = _evidence_cache.get(_ev_key)
     if _ev_entry is not None and (time.monotonic() - _ev_entry[0]) < _EVIDENCE_TTL:
         return _ev_entry[1]
@@ -74,8 +101,12 @@ def _retrieve_evidence(cert_name: str, user_question: str, settings: Settings) -
     try:
         from backend.app.services.retrieval_service import search_evidence
 
+        if not cert_id:
+            _evidence_cache[_ev_key] = (time.monotonic(), [])
+            return []
+
         result = search_evidence(
-            {"cert_name": cert_name, "query_text": user_question},
+            {"cert_id": cert_id, "cert_name": cert_name, "query_text": user_question},
             settings,
         )
         if not result.get("success"):
@@ -95,6 +126,37 @@ def _retrieve_evidence(cert_name: str, user_question: str, settings: Settings) -
         return snippets
     except Exception as e:
         logger.debug("chat evidence retrieval failed: %s", e)
+        return []
+
+
+def _retrieve_stage_evidence(stage_id: str, user_question: str, settings: Settings) -> list[str]:
+    """stage_id 기반으로 위험군 관련 evidence snippet을 가져온다."""
+    _ev_key = f"stage_{stage_id}|{user_question[:80]}"
+    _ev_entry = _evidence_cache.get(_ev_key)
+    if _ev_entry is not None and (time.monotonic() - _ev_entry[0]) < _EVIDENCE_TTL:
+        return _ev_entry[1]
+
+    try:
+        from backend.app.services.retrieval_service import search_stage_evidence
+
+        result = search_stage_evidence(stage_id, user_question, settings)
+        if not result.get("success"):
+            _evidence_cache[_ev_key] = (time.monotonic(), [])
+            return []
+        rows = result.get("data", {}).get("evidence", [])
+        snippets: list[str] = []
+        seen: set[str] = set()
+        for row in rows[:3]:
+            snippet = (row.get("snippet") or "").strip()
+            sec = (row.get("section_path") or [""])[0]
+            if snippet and snippet not in seen:
+                seen.add(snippet)
+                label = f"[{sec}] " if sec else ""
+                snippets.append(f"{label}{snippet}")
+        _evidence_cache[_ev_key] = (time.monotonic(), snippets)
+        return snippets
+    except Exception as e:
+        logger.debug("stage evidence retrieval failed: %s", e)
         return []
 
 
@@ -169,15 +231,20 @@ def chat(body: dict[str, Any], settings: Settings) -> dict[str, Any]:
 
     messages = messages[-_MAX_HISTORY:]
 
-    # RAG: cert_name이 있으면 마지막 user 질문 기반으로 evidence 검색
+    # RAG: cert / stage 기반 evidence 검색
     evidence_snippets: list[str] = []
     cert_name = context.get("cert_name")
-    if cert_name:
-        last_user = next(
-            (m["content"] for m in reversed(messages) if m.get("role") == "user"), ""
-        )
-        if last_user:
-            evidence_snippets = _retrieve_evidence(cert_name, last_user, settings)
+    cert_id = str(context.get("cert_id") or "")
+    stage_id = str(context.get("stage_id") or "")
+    last_user = next(
+        (m["content"] for m in reversed(messages) if m.get("role") == "user"), ""
+    )
+    if last_user:
+        if cert_id:
+            evidence_snippets = _retrieve_evidence(cert_name or "", last_user, settings, cert_id=cert_id)
+        if stage_id:
+            stage_snippets = _retrieve_stage_evidence(stage_id, last_user, settings)
+            evidence_snippets = evidence_snippets + stage_snippets
 
     system_prompt = _build_system_prompt(context, evidence_snippets)
 

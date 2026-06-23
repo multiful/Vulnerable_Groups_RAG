@@ -170,23 +170,21 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 function scoreToStage(score: number, safetyTriggered: boolean): string {
   const pct = score / TOTAL_MAX;
-  if (safetyTriggered && pct < 0.8) {
-    /* Safety override: 위기 응답 시 최소 4단계 이상 */
-    return pct < 0.6 ? '4' : '5';
+  if (safetyTriggered && pct < 0.75) {
+    /* Safety override: 위기 응답 시 최소 3단계 이상 */
+    return pct < 0.5 ? '3' : '4';
   }
-  if (pct < 0.2)  return '1';
-  if (pct < 0.38) return '2';
-  if (pct < 0.56) return '3';
-  if (pct < 0.74) return '4';
-  return '5';
+  if (pct < 0.25) return '1';
+  if (pct < 0.5)  return '2';
+  if (pct < 0.75) return '3';
+  return '4';
 }
 
 const STAGE_LABELS: Record<string, { label: string; sub: string; color: string }> = {
-  '1': { label: '1단계', sub: '취업 안정권', color: '#10b981' },
-  '2': { label: '2단계', sub: '준비 활성',   color: '#0ea5e9' },
-  '3': { label: '3단계', sub: '준비 정체',   color: '#6366f1' },
-  '4': { label: '4단계', sub: '고위험군',    color: '#f59e0b' },
-  '5': { label: '5단계', sub: '최고위험군',  color: '#f43f5e' },
+  '1': { label: '1단계', sub: '고립위험청년',          color: '#10b981' },
+  '2': { label: '2단계', sub: '활동형 고립청년',       color: '#0ea5e9' },
+  '3': { label: '3단계', sub: '활동 제한형 고립청년',  color: '#f59e0b' },
+  '4': { label: '4단계', sub: '은둔 청년',             color: '#f43f5e' },
 };
 
 const RiskAssessment: React.FC = () => {
@@ -395,16 +393,19 @@ const RiskAssessment: React.FC = () => {
           </div>
         </div>
 
-        {/* 고위험군 청년 지원 안내 (4~5단계) */}
-        {(stage === '4' || stage === '5') && (
+        {/* 활동 제한형·은둔 청년 지원 안내 (3~4단계) */}
+        {(stage === '3' || stage === '4') && (
           <div className="wellness-card">
             <div className="wellness-card-top">
               <span className="wellness-icon">🌱</span>
-              <span className="wellness-title">혼자 하지 않아도 괜찮아요</span>
+              <span className="wellness-title">
+                {stage === '4' ? '함께라면 한 걸음씩 나아갈 수 있어요' : '작은 시작이 큰 변화를 만들어요'}
+              </span>
             </div>
             <p className="wellness-body">
-              지금 상황이 쉽지 않으시겠지만, 서울시에는 청년을 위한 무료 공간과 상담 지원이 마련돼 있어요.
-              가까운 일자리카페나 청년 건강 지원 공간을 편하게 방문해 보세요.
+              {stage === '4'
+                ? '지금 밖으로 나오기 어려우시다면, 온라인 상담이나 방문 지원 서비스를 이용해 보세요. 서울시 청년 지원 공간에서는 부담 없이 연결을 시작할 수 있습니다.'
+                : '활동에 어려움이 있으시더라도 낮은 부담의 훈련과정이나 청년 공간을 통해 작은 성취를 경험해 보세요. 서울시 청년 일자리카페가 가까이 있습니다.'}
             </p>
             <div className="wellness-links">
               <a href="https://job.seoul.go.kr/main" target="_blank" rel="noopener noreferrer" className="wellness-link">

@@ -1,0 +1,9 @@
+{
+  "n_items": 12,
+  "mean_cohen_h": 0.9534,
+  "proxy_auc": 0.7499,
+  "isolated_expected_score": 79.54,
+  "general_expected_score": 20.46,
+  "total_weight": 100.0,
+  "items_higher_in_isolated": 10
+}

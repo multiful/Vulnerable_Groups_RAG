@@ -107,12 +107,13 @@ function buildCertSummary(cert: CertCandidate): string {
 }
 
 const RISK_LABEL: Record<string, string> = {
-  '1': '1단계 (취업 안정권)', '2': '2단계 (준비 활성)', '3': '3단계 (준비 정체)',
-  '4': '4단계 (고위험군)', '5': '5단계 (최고위험군)',
+  '1': '1단계 (고립위험청년)',
+  '2': '2단계 (활동형 고립청년)',
+  '3': '3단계 (활동 제한형 고립청년)',
+  '4': '4단계 (은둔 청년)',
 };
 const RISK_IDS: Record<string, string> = {
-  '1': 'risk_0001', '2': 'risk_0002', '3': 'risk_0003',
-  '4': 'risk_0004', '5': 'risk_0005',
+  '1': 'risk_0001', '2': 'risk_0002', '3': 'risk_0003', '4': '4단계',
 };
 const GRADE_LABEL: Record<string, string> = {
   '5_기능장': '기능장', '4_기술사': '기술사', '3_기사': '기사',
@@ -1627,7 +1628,7 @@ const Recommendation: React.FC = () => {
                     <span className="naeil-chip">최대 500만원 지원</span>
                   </div>
                 </div>
-                {/* 국민취업지원제도 안내 카드 — 2~5단계 표시 */}
+                {/* 국민취업지원제도 안내 카드 — 2~4단계 표시 */}
                 {stageParam && stageParam !== '1' && (
                   <div className="naeil-card naeil-card-green">
                     <div className="naeil-card-header">
@@ -1647,6 +1648,14 @@ const Recommendation: React.FC = () => {
                       <span className="naeil-chip naeil-chip-green">취업지원 서비스 병행</span>
                     </div>
                   </div>
+                )}
+                {domainParam && domainName && (
+                  <a
+                    href={`/training?domain=${encodeURIComponent(domainParam)}&domain_name=${encodeURIComponent(domainName)}`}
+                    className="tc-domain-more-link"
+                  >
+                    {domainName} 분야 훈련과정 더 보기 →
+                  </a>
                 )}
                 {!exec.loading && exec.fetched && (
                   exec.trainingItems.length > 0
@@ -2677,6 +2686,8 @@ const Recommendation: React.FC = () => {
         .naeil-card-desc-green{color:#166534}
         .naeil-chip-green{background:rgba(22,163,74,.12);color:#15803d}
         /* 훈련과정 */
+        .tc-domain-more-link{display:inline-flex;align-items:center;gap:.35rem;font-size:.8rem;font-weight:600;color:#2563eb;text-decoration:none;padding:.35rem .75rem;border:1px solid #bfdbfe;border-radius:var(--radius-sm);background:#eff6ff;transition:background .15s;margin-bottom:.25rem}
+        .tc-domain-more-link:hover{background:#dbeafe}
         .exec-train-row{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:#fff;border:1px solid #e2e8f0;border-radius:6px}
         .exec-train-row-rich{flex-wrap:wrap}
         .exec-train-main{display:flex;flex-direction:column;gap:.1rem;flex:1;min-width:0}

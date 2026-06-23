@@ -1,0 +1,264 @@
+{
+  "doc_id": "NCS_능력단위별_자격종목_조회",
+  "source_path": "data/raw/docx/NCS_능력단위별_자격종목_조회.docx",
+  "file_hash": "sha256:f581b716b3058be42b01de02e072800de808640016e4c339b77fcc11a1070163",
+  "parse_hash": "sha256:50488c028152431372dd413caacac5c5a53f131792d440236be5ccdecf14a5be",
+  "parser_used": "docx",
+  "page_count": 1,
+  "blocks": [
+    {
+      "block_id": "b00000",
+      "block_type": "paragraph",
+      "text": "공공데이터 오픈API 활용가이드",
+      "reading_order_index": 0,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00001",
+      "block_type": "paragraph",
+      "text": "1. 서비스 명세\t3",
+      "reading_order_index": 1,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00002",
+      "block_type": "paragraph",
+      "text": "1.1 NCS 능력단위별 자격 종목 조회 서비스\t3",
+      "reading_order_index": 2,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00003",
+      "block_type": "paragraph",
+      "text": "가. API 서비스 개요\t3",
+      "reading_order_index": 3,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00004",
+      "block_type": "paragraph",
+      "text": "나. 상세기능 목록\t4",
+      "reading_order_index": 4,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00005",
+      "block_type": "paragraph",
+      "text": "다. 상세기능내역\t4",
+      "reading_order_index": 5,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00006",
+      "block_type": "paragraph",
+      "text": "1) NCS 능력단위별 자격 종목 목록 조회\t4",
+      "reading_order_index": 6,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00007",
+      "block_type": "paragraph",
+      "text": "2. OpenAPI 에러 코드정리\t11",
+      "reading_order_index": 7,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00008",
+      "block_type": "paragraph",
+      "text": "1. 서비스 명세",
+      "reading_order_index": 8,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00009",
+      "block_type": "paragraph",
+      "text": "1.1 NCS 능력단위별 자격 종목 조회 서비스",
+      "reading_order_index": 9,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00010",
+      "block_type": "paragraph",
+      "text": "가. API 서비스 개요",
+      "reading_order_index": 10,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00011",
+      "block_type": "table",
+      "text": "| API 서비스 정보 | API명(영문) | ncsClCdJm | ncsClCdJm | ncsClCdJm |\n| --- | --- | --- | --- | --- |\n| API 서비스 정보 | API명(국문) | NCS 능력단위별 자격 종목 조회 서비스 | NCS 능력단위별 자격 종목 조회 서비스 | NCS 능력단위별 자격 종목 조회 서비스 |\n| API 서비스 정보 | API 설명 | NCS 능력단위를 기준으로 해당 NCS 능력단위가 포함된 자격 종목 목록을 조회하는 NCS 능력단위별 자격 종목 조회 서비스. | NCS 능력단위를 기준으로 해당 NCS 능력단위가 포함된 자격 종목 목록을 조회하는 NCS 능력단위별 자격 종목 조회 서비스. | NCS 능력단위를 기준으로 해당 NCS 능력단위가 포함된 자격 종목 목록을 조회하는 NCS 능력단위별 자격 종목 조회 서비스. |\n| API 서비스 보안적용 기술 수준 | 서비스 인증/권한 | [O] serviceKey    [ ] 인증서 (GPKI/NPKI) [ ] Basic (ID/PW)  [ ] 없음 | [O] serviceKey    [ ] 인증서 (GPKI/NPKI) [ ] Basic (ID/PW)  [ ] 없음 | [O] serviceKey    [ ] 인증서 (GPKI/NPKI) [ ] Basic (ID/PW)  [ ] 없음 |\n| API 서비스 보안적용 기술 수준 | 메시지 레벨 암호화 | [ ] 전자서명   [ ] 암호화   [O] 없음 | [ ] 전자서명   [ ] 암호화   [O] 없음 | [ ] 전자서명   [ ] 암호화   [O] 없음 |\n| API 서비스 보안적용 기술 수준 | 전송 레벨 암호화 | [ ] SSL   [O] 없음 | [ ] SSL   [O] 없음 | [ ] SSL   [O] 없음 |\n| API 서비스 보안적용 기술 수준 | 인터페이스 표준 | [ ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [O] REST (GET) [ ] RSS 1.0   [ ] RSS 2.0   [ ] Atom 1.0   [ ] 기타 | [ ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [O] REST (GET) [ ] RSS 1.0   [ ] RSS 2.0   [ ] Atom 1.0   [ ] 기타 | [ ] SOAP 1.2 (RPC-Encoded, Document Literal, Document Literal Wrapped) [O] REST (GET) [ ] RSS 1.0   [ ] RSS 2.0   [ ] Atom 1.0   [ ] 기타 |\n| API 서비스 보안적용 기술 수준 | 교환 데이터 표준 (중복선택가능) | [O] XML   [O] JSON   [ ] MIME   [ ] MTOM | [O] XML   [O] JSON   [ ] MIME   [ ] MTOM | [O] XML   [O] JSON   [ ] MIME   [ ] MTOM |\n| API 서비스 배포정보 | 서비스 URL | http://apis.data.go.kr/B490007/ncsClCdJm | http://apis.data.go.kr/B490007/ncsClCdJm | http://apis.data.go.kr/B490007/ncsClCdJm |\n| API 서비스 배포정보 | 서비스 명세 URL (WSDL 또는 WADL) | N/A | N/A | N/A |\n| API 서비스 배포정보 | 서비스 버전 | 1.0 | 1.0 | 1.0 |\n| API 서비스 배포정보 | 서비스 시작일 | 2020-12-07 | 서비스 배포일 | 2020-12-07 |\n| API 서비스 배포정보 | 서비스 이력 | 2020-12-07 : 서비스 시작 | 2020-12-07 : 서비스 시작 | 2020-12-07 : 서비스 시작 |\n| API 서비스 배포정보 | 메시지 교환유형 | [O] Request-Response   [ ] Publish-Subscribe [ ] Fire-and-Forgot   [ ] Notification | [O] Request-Response   [ ] Publish-Subscribe [ ] Fire-and-Forgot   [ ] Notification | [O] Request-Response   [ ] Publish-Subscribe [ ] Fire-and-Forgot   [ ] Notification |\n| API 서비스 배포정보 | 서비스 제공자 | 신수복/정보화기획부 /052-714-8134/sbshin@hrdkorea.or.kr | 신수복/정보화기획부 /052-714-8134/sbshin@hrdkorea.or.kr | 신수복/정보화기획부 /052-714-8134/sbshin@hrdkorea.or.kr |\n| API 서비스 배포정보 | 데이터 갱신주기 | 년 1회 | 년 1회 | 년 1회 |",
+      "reading_order_index": 11,
+      "source_loc": "docx:table",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00012",
+      "block_type": "paragraph",
+      "text": "나. 상세기능 목록",
+      "reading_order_index": 12,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00013",
+      "block_type": "table",
+      "text": "| 번호 | API명(국문) | 상세기능명(영문) | 상세기능명(국문) |\n| --- | --- | --- | --- |\n| 1 | NCS 능력단위별 자격 종목 조회 서비스 | getNcsClCdJmList | NCS 능력단위별 자격 종목 목록 조회 |",
+      "reading_order_index": 13,
+      "source_loc": "docx:table",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00014",
+      "block_type": "paragraph",
+      "text": "다. 상세기능내역",
+      "reading_order_index": 14,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00015",
+      "block_type": "paragraph",
+      "text": "1) 상세기능명세",
+      "reading_order_index": 15,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00016",
+      "block_type": "paragraph",
+      "text": "a) 상세기능정보",
+      "reading_order_index": 16,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00017",
+      "block_type": "table",
+      "text": "| 상세기능 번호 | 1 | 상세기능 유형 | 조회 (목록) |\n| --- | --- | --- | --- |\n| 상세기능명(국문) | NCS 능력단위별 자격 종목 목록 조회 | NCS 능력단위별 자격 종목 목록 조회 | NCS 능력단위별 자격 종목 목록 조회 |\n| 상세기능 설명 | NCS 능력단위를 기준으로 해당 NCS 능력단위가 포함된 자격 종목 코드/명, 기준 버전, 자격 종목 총 훈련시간, 직업기초능력시간, 해당 능력단위 최소 훈련시간 등을 조회하는 NCS 능력단위별 자격 종목 목록 조회 기능 | NCS 능력단위를 기준으로 해당 NCS 능력단위가 포함된 자격 종목 코드/명, 기준 버전, 자격 종목 총 훈련시간, 직업기초능력시간, 해당 능력단위 최소 훈련시간 등을 조회하는 NCS 능력단위별 자격 종목 목록 조회 기능 | NCS 능력단위를 기준으로 해당 NCS 능력단위가 포함된 자격 종목 코드/명, 기준 버전, 자격 종목 총 훈련시간, 직업기초능력시간, 해당 능력단위 최소 훈련시간 등을 조회하는 NCS 능력단위별 자격 종목 목록 조회 기능 |\n| Call Back URL | http://apis.data.go.kr/B490007/ncsClCdJm/getNcsClCdJmList | http://apis.data.go.kr/B490007/ncsClCdJm/getNcsClCdJmList | http://apis.data.go.kr/B490007/ncsClCdJm/getNcsClCdJmList |\n| 최대 메시지 사이즈 | [8000] byte | [8000] byte | [8000] byte |\n| 평균 응답 시간 | [300] ms | 초당 최대 트랙잭션 | [50] tps |",
+      "reading_order_index": 17,
+      "source_loc": "docx:table",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00018",
+      "block_type": "paragraph",
+      "text": "b) 요청 메시지 명세",
+      "reading_order_index": 18,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00019",
+      "block_type": "table",
+      "text": "| 항목명(영문) | 항목명(국문) | 항목크기 | 항목구분 | 샘플데이터 | 항목설명 |\n| --- | --- | --- | --- | --- | --- |\n| serviceKey | 인증키 | 100 | 1 | 인증키 (URL Encode) | 공공데이터포털에서 발급받은 인증키 |\n| numOfRows | 한 페이지 결과 수 | 4 | 1 | 10 | 한 페이지 결과 수 |\n| pageNo | 페이지 번호 | 4 | 1 | 1 | 페이지 번호 |\n| dataFormat | 응답 데이터 포맷 | 4 | 1 | xml | 응답 데이터 표준 형식 - xml / json (대소문자 구분 없음) |\n| ncsClCd | NCS 능력단위코드 | 20 | 1 | 1501020207_14v2 | 검색을 원하는 NCS 능력단위코드 값 (c.q-net.or.kr 사이트 종목정보 참고) |",
+      "reading_order_index": 19,
+      "source_loc": "docx:table",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00020",
+      "block_type": "paragraph",
+      "text": "※ 항목구분 : 필수(1), 옵션(0)",
+      "reading_order_index": 20,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00021",
+      "block_type": "paragraph",
+      "text": "c) 응답 메시지 명세",
+      "reading_order_index": 21,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00022",
+      "block_type": "table",
+      "text": "| 항목명(영문) | 항목명(영문) | 항목명(국문) | 항목크기 | 항목구분 | 샘플데이터 | 항목설명 |\n| --- | --- | --- | --- | --- | --- | --- |\n| resultCode | resultCode | 결과코드 | 2 | 1 | 00 | 결과코드 |\n| resultMsg | resultMsg | 결과메세지 | 50 | 1 | NORMAL SERVICE | 결과메시지 |\n| items | items |  |  |  |  |  |\n|  | jmCd | 종목코드 | 4 | 1 | B080 | 종목코드 값 |\n|  | jmNm | 종목명 | 100 | 1 | 기계설계기사 | 종목명 |\n|  | organStdVerCd | 기준버전 | 10 | 1 | v2.0 | 기준버전 값 |\n|  | eduTrngStdTmSum | 교육훈련 기준시간 합계 | 5 | 1 | 825 | 교육훈련 기준시간 합계 값 |\n|  | jobBasisAbltStdTm | 직업기초훈련 기준시간 | 5 | 1 | 40 | 직업기초훈련 기준시간 값 |\n|  | mandAbltUnitStdTm | 필수능력단위 기준시간 | 5 | 1 | 480 | 필수능력단위 기준시간 값 |\n|  | selAbltUnitStdTm | 선택능력단위 기준시간 | 5 | 1 | 305 | 선택능력단위 기준시간 값 |\n|  | examInstiNm | 시험기관명 | 100 | 1 | 한국산업인력공단 | 종목 시험기관명 |\n|  | ncsClCd | NCS 능력단위코드 | 20 | 1 | 1501020207_14v2 | NCS 능력단위코드 값 |\n|  | compeUnitName | 능력단위명 | 100 | 1 | 요소부품제작성검토 | NCS 능력단위명 |\n|  | abltUnitTypCd | 능력단위 유형코드 | 30 | 1 | SEL | NCS 능력단위 유형코드 값 |\n|  | abltUnitTypNm | 능력단위 유형명 | 100 | 1 | 선택 | NCS 능력단위 유형명 |\n|  | minEduTrngTm | 능력단위 최소훈련시간 | 5 | 1 | 30 | 능력단위 최소 훈련시간 값 |\n| numOfRows | numOfRows | 한 페이지 결과 수 | 4 | 1 | 10 | 한 페이지당 표출 데이터 수 |\n| pageNo | pageNo | 페이지 수 | 4 | 1 | 1 | 페이지 수 |\n| totalCount | totalCount | 데이터 총 개수 | 4 | 1 | 17 | 데이터 총 개수 |",
+      "reading_order_index": 22,
+      "source_loc": "docx:table",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00023",
+      "block_type": "paragraph",
+      "text": "※ 항목구분 : 필수(1), 옵션(0)",
+      "reading_order_index": 23,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00024",
+      "block_type": "paragraph",
+      "text": "d) 요청/응답 메시지 예제",
+      "reading_order_index": 24,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00025",
+      "block_type": "table",
+      "text": "| 요청메시지 |\n| --- |\n| http://apis.data.go.kr/B490007/ncsClCdJm/getNcsClCdJmList?serviceKey=서비스키&numOfRows=10&pageNo=1&ncsClCd=1501020207_14v2&dataFormat=xml |\n| 응답메시지(XML) |\n| <response> <header> <resultCode>00</resultCode> <resultMsg>NORMAL SERVICE</resultMsg> </header> <body> <items> <item> <jmCd>B080</jmCd> <jmNm>기계설계기사</jmNm> <organStdVerCd>v2.0</organStdVerCd> <eduTrngStdTmSum>825</eduTrngStdTmSum> <jobBasisAbltStdTm>40</jobBasisAbltStdTm> <mandAbltUnitStdTm>480</mandAbltUnitStdTm> <selAbltUnitStdTm>305</selAbltUnitStdTm> <examInstiNm>한국산업인력공단</examInstiNm> <ncsClCd>1501020207_14v2</ncsClCd> <compeUnitName>요소부품제작성검토</compeUnitName> <abltUnitTypCd>SEL</abltUnitTypCd> <abltUnitTypNm>선택</abltUnitTypNm> <minEduTrngTm>30</minEduTrngTm> </item> <item> <jmCd>B080</jmCd> <jmNm>기계설계기사</jmNm> <organStdVerCd>v1.0</organStdVerCd> <eduTrngStdTmSum>825</eduTrngStdTmSum> <jobBasisAbltStdTm>45</jobBasisAbltStdTm> <mandAbltUnitStdTm>480</mandAbltUnitStdTm> <selAbltUnitStdTm>300</selAbltUnitStdTm> <examInstiNm>한국산업인력공단</examInstiNm> <ncsClCd>1501020207_14v2</ncsClCd> <compeUnitName>요소부품제작성검토</compeUnitName> <abltUnitTypCd>SEL</abltUnitTypCd> <abltUnitTypNm>선택</abltUnitTypNm> <minEduTrngTm>30</minEduTrngTm> </item> <item> <jmCd>C031</jmCd> <jmNm>기계설계산업기사</jmNm> <organStdVerCd>v1.0</organStdVerCd> <eduTrngStdTmSum>600</eduTrngStdTmSum> <jobBasisAbltStdTm>30</jobBasisAbltStdTm> <mandAbltUnitStdTm>360</mandAbltUnitStdTm> <selAbltUnitStdTm>210</selAbltUnitStdTm> <examInstiNm>한국산업인력공단</examInstiNm> <ncsClCd>1501020207_14v2</ncsClCd> <compeUnitName>요소부품제작성검토</compeUnitName> <abltUnitTypCd>MAND</abltUnitTypCd> <abltUnitTypNm>필수</abltUnitTypNm> <minEduTrngTm>15</minEduTrngTm> </item> <item> <jmCd>C034</jmCd> <jmNm>생산자동화산업기사</jmNm> <organStdVerCd>v1.0</organStdVerCd> <eduTrngStdTmSum>630</eduTrngStdTmSum> <jobBasisAbltStdTm>30</jobBasisAbltStdTm> <mandAbltUnitStdTm>420</mandAbltUnitStdTm> <selAbltUnitStdTm>180</selAbltUnitStdTm> <examInstiNm>한국산업인력공단</examInstiNm> <ncsClCd>1501020207_14v2</ncsClCd> <compeUnitName>요소부품제작성검토</compeUnitName> <abltUnitTypCd>SEL</abltUnitTypCd> <abltUnitTypNm>선택</abltUnitTypNm> <minEduTrngTm>15</minEduTrngTm> </item> <item> <jmCd>E151</jmCd> <jmNm>전산응용기계제도기능사</jmNm> <organStdVerCd>v1.0</organStdVerCd> <eduTrngStdTmSum>595</eduTrngStdTmSum> <jobBasisAbltStdTm>34</jobBasisAbltStdTm> <mandAbltUnitStdTm>374</mandAbltUnitStdTm> <selAbltUnitStdTm>187</selAbltUnitStdTm> <examInstiNm>한국산업인력공단</examInstiNm> <ncsClCd>1501020207_14v2</ncsClCd> <compeUnitName>요소부품제작성검토</compeUnitName> <abltUnitTypCd>SEL</abltUnitTypCd> <abltUnitTypNm>선택</abltUnitTypNm> <minEduTrngTm>17</minEduTrngTm> </item> </items> <numOfRows>5</numOfRows> <pageNo>1</pageNo> <totalCount>7</totalCount> </body> </response> |\n| 응답메시지(JSON) |\n| {   \"header\":{     \"resultCode\":\"00\",     \"resultMsg\":\"NORMAL SERVICE\"   },   \"body\":{     \"items\":[       {         \"jmCd\":\"B080\", \t\"jmNm\":\"기계설계기사\", \t\"organStdVerCd\":\"v2.0\", \t\"eduTrngStdTmSum\":825, \t\"jobBasisAbltStdTm\":40, \t\"mandAbltUnitStdTm\":480, \t\"selAbltUnitStdTm\":305, \t\"examInstiNm\":\"한국산업인력공단\", \t\"ncsClCd\":\"1501020207_14v2\", \t\"compeUnitName\":\"요소부품제작성검토\", \t\"abltUnitTypCd\":\"SEL\", \t\"abltUnitTypNm\":\"선택\", \t\"minEduTrngTm\":30       },{         \"jmCd\":\"B080\", \t\"jmNm\":\"기계설계기사\", \t\"organStdVerCd\":\"v1.0\", \t\"eduTrngStdTmSum\":825, \t\"jobBasisAbltStdTm\":45, \t\"mandAbltUnitStdTm\":480, \t\"selAbltUnitStdTm\":300, \t\"examInstiNm\":\"한국산업인력공단\", \t\"ncsClCd\":\"1501020207_14v2\", \t\"compeUnitName\":\"요소부품제작성검토\", \t\"abltUnitTypCd\":\"SEL\", \t\"abltUnitTypNm\":\"선택\", \t\"minEduTrngTm\":30       },{ \t\"jmCd\":\"C031\", \t\"jmNm\":\"기계설계산업기사\", \t\"organStdVerCd\":\"v1.0\", \t\"eduTrngStdTmSum\":600, \t\"jobBasisAbltStdTm\":30, \t\"mandAbltUnitStdTm\":360, \t\"selAbltUnitStdTm\":210, \t\"examInstiNm\":\"한국산업인력공단\", \t\"ncsClCd\":\"1501020207_14v2\", \t\"compeUnitName\":\"요소부품제작성검토\", \t\"abltUnitTypCd\":\"MAND\", \t\"abltUnitTypNm\":\"필수\", \t\"minEduTrngTm\":15       },{         \"jmCd\":\"C034\", \t\"jmNm\":\"생산자동화산업기사\", \t\"organStdVerCd\":\"v1.0\", \t\"eduTrngStdTmSum\":630, \t\"jobBasisAbltStdTm\":30, \t\"mandAbltUnitStdTm\":420, \t\"selAbltUnitStdTm\":180, \t\"examInstiNm\":\"한국산업인력공단\", \t\"ncsClCd\":\"1501020207_14v2\", \t\"compeUnitName\":\"요소부품제작성검토\", \t\"abltUnitTypCd\":\"SEL\", \t\"abltUnitTypNm\":\"선택\", \t\"minEduTrngTm\":15       },{         \"jmCd\":\"E151\", \t\"jmNm\":\"전산응용기계제도기능사\", \t\"organStdVerCd\":\"v1.0\", \t\"eduTrngStdTmSum\":595, \t\"jobBasisAbltStdTm\":34, \t\"mandAbltUnitStdTm\":374, \t\"selAbltUnitStdTm\":187, \t\"examInstiNm\":\"한국산업인력공단\", \t\"ncsClCd\":\"1501020207_14v2\", \t\"compeUnitName\":\"요소부품제작성검토\", \t\"abltUnitTypCd\":\"SEL\", \t\"abltUnitTypNm\":\"선택\", \t\"minEduTrngTm\":17       }     ],     \"numOfRows\":10,     \"pageNo\":1,     \"totalCount\":17   } } |",
+      "reading_order_index": 25,
+      "source_loc": "docx:table",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00026",
+      "block_type": "paragraph",
+      "text": "2. OpenAPI 에러 코드정리",
+      "reading_order_index": 26,
+      "source_loc": "docx",
+      "heading_level": null,
+      "section_path": []
+    },
+    {
+      "block_id": "b00027",
+      "block_type": "table",
+      "text": "| 에러코드 | 에러메시지 | 설명 |\n| --- | --- | --- |\n| 1 | APPLICATION_ERROR | 어플리케이션 에러 |\n| 10 | INVALID_REQUEST_PARAMETER_ERROR | 잘못된 요청 파라미터 에러 |\n| 12 | NO_OPENAPI_SERVICE_ERROR | 해당 오픈API서비스가 없거나 폐기됨 |\n| 20 | SERVICE_ACCESS_DENIED_ERROR | 서비스 접근거부 |\n| 22 | LIMITED_NUMBER_OF_SERVICE_REQUESTS_EXCEEDS_ERROR | 서비스 요청제한횟수 초과에러 |\n| 30 | SERVICE_KEY_IS_NOT_REGISTERED_ERROR | 등록되지 않은 서비스키 |\n| 31 | DEADLINE_HAS_EXPIRED_ERROR | 기한이 만료된 서비스키 |\n| 32 | UNREGISTERED_IP_ERROR | 등록되지 않은 IP |\n| 99 | UNKNOWN_ERROR | 기타에러 |\n| 900 | 공공데이터포털 게이트웨이 인증 오류가 발생하였습니다. | 공공데이터 포털과 한국산업인력공단 오픈 API 시스템의 게이트웨이 인증 오류가 발생한 경우 |\n| 910 | 필수 파라미터 값이 누락되었습니다. | 오픈 API 호출을 위한 필수 파라미터가 누락된 경우 |\n| 920 | 잘못된 dataFormat 값을 호출하였습니다. json 또는 xml만 호출이 가능합니다. | 응답 데이터 포맷(dataFormat)에 json 또는 xml이 아닌 다른 값이 입력된 경우 |\n| 930 | 한 페이지당 조회 가능한 최대 목록 수를 초과했습니다. | 한 페이지당 조회 가능한 최대 목록 수를 초과하는 경우 |\n| 940 | 잘못된 토큰 파라미터 입니다. | 잘못된 토큰 파라미터로 구성된 경우 |\n| 941 | 토큰 유효기한이 만료되었습니다. 파일 다운로드 가능기한은 목록 취득 후 1시간내 입니다. | 목록 취득 후 토큰 유효기한인 1시간이 지났을 경우 |\n| 950 | 지정된 파일을 찾을 수 없습니다. | 해당 파일이 서버에 존재하지 않는 경우 |\n| 990 | HRDK 오픈 API 서버에러가 발생하였습니다. | HRDK 오픈 API 서버에 예상하지 못한 서버 에러가 발생한 경우 |",
+      "reading_order_index": 27,
+      "source_loc": "docx:table",
+      "heading_level": null,
+      "section_path": []
+    }
+  ],
+  "parse_quality_flags": [],
+  "parsed_at": "2026-06-22T13:35:09.237959+00:00"
+}

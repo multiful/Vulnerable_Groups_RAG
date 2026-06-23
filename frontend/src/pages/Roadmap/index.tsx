@@ -211,13 +211,13 @@ const SUPPORT_RESOURCE_ICON: Record<string, string> = {
 };
 
 const RISK_LABELS: Record<string, string> = {
-  '1': '1단계 (취업 안정권)', '2': '2단계 (준비 활성)',
-  '3': '3단계 (준비 정체)',   '4': '4단계 (고위험군)',
-  '5': '5단계 (최고위험군)',
+  '1': '1단계 (고립위험청년)',
+  '2': '2단계 (활동형 고립청년)',
+  '3': '3단계 (활동 제한형 고립청년)',
+  '4': '4단계 (은둔 청년)',
 };
 const RISK_IDS: Record<string, string> = {
-  '1': 'risk_0001', '2': 'risk_0002', '3': 'risk_0003',
-  '4': 'risk_0004', '5': 'risk_0005',
+  '1': 'risk_0001', '2': 'risk_0002', '3': 'risk_0003', '4': '4단계',
 };
 
 const ACTION_TYPE_EMOJI: Record<string, string> = {
@@ -240,13 +240,12 @@ const LOCAL_STAGES: StageInfo[] = [
   { id: 'roadmap_stage_0005', name: '유지 및 정착', order: 5, description: '형성된 진로 경로와 생활 리듬을 유지하며 장기 계획으로 정착하는 단계입니다.' },
 ];
 
-/* roadmap_stage_master.csv 기준: risk_0001→0003, risk_0002/0003→0002, risk_0004/0005→0001 */
+/* 위험군 단계 → 로드맵 시작 스텝: 1단계는 역량준비부터, 2단계는 탐색부터, 3~4단계는 상태인식부터 */
 const STARTING_STAGE_MAP: Record<number, string> = {
   1: 'roadmap_stage_0003',
   2: 'roadmap_stage_0002',
-  3: 'roadmap_stage_0002',
-  4: 'roadmap_stage_0002',
-  5: 'roadmap_stage_0002',
+  3: 'roadmap_stage_0001',
+  4: 'roadmap_stage_0001',
 };
 
 function extractPassRate(text: string): number | null {
@@ -259,11 +258,11 @@ function calcAchievability(tier: string, riskNum: number): string {
   const t = parseInt(tier.charAt(0)) || 3;
   // 기능사(1): 위험군 무관 항상 바로 도전 가능
   if (t <= 1) return 'immediate';
-  // 산업기사(2): 위험군 4~5단계는 단기 목표, 1~3단계는 바로 도전
-  if (t <= 2) return riskNum >= 4 ? 'near_term' : 'immediate';
-  // 기사(3): 위험군 1~2단계만 바로 도전, 나머지는 단기 목표
+  // 산업기사(2): 활동 제한형·은둔(3~4단계)은 단기 목표, 고립위험·활동형(1~2단계)은 바로 도전
+  if (t <= 2) return riskNum >= 3 ? 'near_term' : 'immediate';
+  // 기사(3): 고립위험·활동형(1~2단계)만 바로 도전, 나머지는 단기 목표
   if (t <= 3) return riskNum <= 2 ? 'immediate' : 'near_term';
-  // 기술사/기능장(4~5): 위험군 1~2단계는 단기, 나머지는 장기
+  // 기술사/기능장: 고립위험·활동형(1~2단계)은 단기, 활동 제한형·은둔(3~4단계)은 장기
   return riskNum <= 2 ? 'near_term' : 'long_term';
 }
 

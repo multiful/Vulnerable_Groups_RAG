@@ -169,8 +169,10 @@ def _process_paragraph(para, idx: int) -> ParseBlock | None:
 
 def _has_list_format(para) -> bool:
     """단락에 numPr(번호매기기) XML 요소가 있으면 리스트 항목으로 판정."""
-    return para._element.find(qn("w:pPr") + "/" + qn("w:numPr")) is not None or \
-           para._element.xpath("./w:pPr/w:numPr", namespaces={"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}) != []
+    pPr = para._element.find(qn("w:pPr"))
+    if pPr is None:
+        return False
+    return pPr.find(qn("w:numPr")) is not None
 
 
 def _process_table(tbl, idx: int) -> ParseBlock | None:
