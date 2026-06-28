@@ -20,7 +20,7 @@ from backend.app.schemas.envelope import err_envelope, ok_envelope
 
 logger = logging.getLogger(__name__)
 
-_SEOUL_BASE = "https://openapi.seoul.go.kr:8088"
+_SEOUL_BASE = "http://openapi.seoul.go.kr:8088"
 
 _TTL = 3600  # 서울시 시설 정보는 하루 단위로 바뀜 — 1시간 캐시
 _seoul_cache: dict[str, tuple[float, Any]] = {}

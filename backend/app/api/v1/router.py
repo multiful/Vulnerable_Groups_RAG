@@ -1,5 +1,5 @@
 # File: router.py
-# Last Updated: 2026-05-15
+# Last Updated: 2026-06-26 (hrd_extended 라우터 추가)
 # Content Hash: SHA256:TBD
 # Role: /api/v1 라우터 집결
 from __future__ import annotations
@@ -14,6 +14,8 @@ from backend.app.api.v1.routes import (
     cert_videos,
     chat,
     health,
+    hrd_extended,
+    isolation_policy,
     jobs,
     jobs_info,
     map,
@@ -25,6 +27,7 @@ from backend.app.api.v1.routes import (
     seoul,
     support,
     training,
+    youth_center,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -46,3 +49,6 @@ api_router.include_router(cert_info.router, tags=["cert_info"])
 api_router.include_router(ncs.router, tags=["ncs"])
 api_router.include_router(chat.router, tags=["chat"])
 api_router.include_router(support.router, tags=["support"])
+api_router.include_router(isolation_policy.router, tags=["isolation_policy"])
+api_router.include_router(youth_center.router, tags=["youth_center"])
+api_router.include_router(hrd_extended.router, tags=["hrd_extended"])

@@ -15,6 +15,7 @@ import Jobs from './pages/Jobs';
 import Privacy from './pages/Privacy';
 import Contact from './pages/Contact';
 import NotFound from './pages/NotFound';
+import IsolationDashboard from './pages/IsolationDashboard';
 
 const App: React.FC = () => {
   return (
@@ -34,6 +35,7 @@ const App: React.FC = () => {
             <Route path="jobs" element={<Jobs />} />
             <Route path="privacy" element={<Privacy />} />
             <Route path="contact" element={<Contact />} />
+            <Route path="isolation/dashboard" element={<IsolationDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

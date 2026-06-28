@@ -1,5 +1,5 @@
 # File: config.py
-# Last Updated: 2026-05-14
+# Last Updated: 2026-06-26 (Work24 확장 3종 API 키 추가)
 # Content Hash: SHA256:TBD
 # Role: Pydantic Settings — CORS, Supabase, 임베딩, RAG 경로, YouTube API, 외부 공공데이터 API
 from __future__ import annotations
@@ -107,6 +107,48 @@ class Settings(BaseSettings):
         description="Kakao REST API 키 — 주소→좌표(지오코딩) 변환용. env: KAKAO_REST_API_KEY",
     )
 
+    # --- 한국사회보장정보원 (복지로 OPEN API) ---
+    bokjiro_api_key: str | None = Field(
+        default=None,
+        description="복지로 OPEN API 인증키 — 중앙부처·지자체 복지서비스 조회. env: BOKJIRO_API_KEY",
+    )
+    bokjiro_api_timeout: int = Field(default=10)
+
+    # --- 성평등가족부 (여성가족부) ---
+    gender_welfare_api_key: str | None = Field(
+        default=None,
+        description="성평등가족부 OPEN API 인증키 — 건강가정지원센터·시설정보 조회. env: GENDER_WELFARE_API_KEY",
+    )
+    gender_welfare_api_timeout: int = Field(default=10)
+
+    # --- 워크넷 정부지원일자리 참여자모집 ---
+    worknet_govt_jobs_api_key: str | None = Field(
+        default=None,
+        description="워크넷 정부지원일자리정보 API 인증키 — 참여자모집상세정보 조회. env: WORKNET_GOVT_JOBS_API_KEY",
+    )
+    worknet_govt_jobs_api_timeout: int = Field(default=10)
+
+    # --- 온통청년 (youthcenter.go.kr) ---
+    youth_center_api_key: str | None = Field(
+        default=None,
+        description="온통청년 OPEN API 인증키 — 청년정책·청년공간·청년콘텐츠 조회. env: YOUTH_CENTER_API_KEY",
+    )
+    youth_center_api_timeout: int = Field(default=10)
+
+    # --- Work24 확장 훈련과정 (HRD-Korea) ---
+    get_workstudy_api_key: str | None = Field(
+        default=None,
+        description="일학습병행 훈련과정 API 인증키 (313L01). env: GET_WORKSTUDY_API_KEY",
+    )
+    get_program_api_key: str | None = Field(
+        default=None,
+        description="구직자취업역량 강화프로그램 API 인증키. env: GET_PROGRAM_API_KEY",
+    )
+    get_humande_api_key: str | None = Field(
+        default=None,
+        description="국가인적자원개발 컨소시엄 훈련과정 API 인증키 (312L01). env: GET_HUMANDE_API_KEY",
+    )
+
     @field_validator(
         "supabase_url", "openai_api_key", "youtube_api_key",
         "hrdkorea_api_key_in", "hrdkorea_api_key_de",
@@ -114,6 +156,13 @@ class Settings(BaseSettings):
         "seoul_api_key", "seoul_api_key2", "seoul_api_key3",
         "career_net_api_key",
         "kakao_rest_api_key",
+        "bokjiro_api_key",
+        "gender_welfare_api_key",
+        "worknet_govt_jobs_api_key",
+        "youth_center_api_key",
+        "get_workstudy_api_key",
+        "get_program_api_key",
+        "get_humande_api_key",
         mode="before",
     )
     @classmethod

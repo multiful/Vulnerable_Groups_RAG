@@ -425,13 +425,27 @@ const RiskAssessment: React.FC = () => {
             }}>
             <ArrowLeft size={15} /> 다시 진단
           </button>
-          <button className="btn-primary" onClick={() => {
+          <button
+            className="btn-primary"
+            style={{ background: info.color, border: 'none' }}
+            onClick={() => {
+              try { sessionStorage.removeItem(SURVEY_KEY); } catch {}
+              navigate(`/isolation/dashboard?cluster_id=${stage}`);
+            }}>
+            나에게 맞는 지원 보기 <ArrowRight size={15} />
+          </button>
+        </div>
+
+        <div style={{ display:'flex', justifyContent:'center', marginTop:'.25rem' }}>
+          <button
+            style={{ background:'none', border:'none', cursor:'pointer', fontSize:'.8rem', color:'var(--text-muted)' }}
+            onClick={() => {
               clearPipeline();
               savePipeline({ stage });
               try { sessionStorage.removeItem(SURVEY_KEY); } catch {}
               navigate(`/interests?stage=${stage}`);
             }}>
-            관심 분야 선택하기 <ArrowRight size={15} />
+            자격증 추천 받기 →
           </button>
         </div>
 

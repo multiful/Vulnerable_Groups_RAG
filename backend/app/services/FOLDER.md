@@ -2,7 +2,7 @@
 
 > **파일명**: FOLDER.md
 > **폴더 경로**: `backend/app/services/`
-> **최종 수정일**: 2026-05-15
+> **최종 수정일**: 2026-06-26 (hrd_extended_service 추가 — F-29/F-30/F-31)
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 백엔드 비즈니스 로직 서비스 계층 설명
 > **연계 경로**: backend/app/api/v1/routes/
@@ -48,6 +48,16 @@ API 엔드포인트에서 전달된 요청을 처리하고, Supabase / 로컬 CS
 | `career_net_service.py` | 커리어넷 직업정보(JOB) + 학과정보(MAJOR) API 연동 (career_net_api_key) | ✅ 활성 |
 | `cert_info_service.py` | 한국산업인력공단 Q-Net 국가자격 종목별 자격정보(항목 8) + 시험정보(항목 9) API 연동 (hrdkorea_api_key_in) | ✅ 활성 |
 | `ncs_service.py` | NCS 능력단위별 자격 종목 조회 (항목 10) — cert_ncs_mapping.csv + ncs_master.csv 로컬 기반 | ✅ 활성 |
+| `welfare_central_service.py` | 복지로 OPEN API — 중앙부처복지서비스 목록 조회 (bokjiro_api_key) | ✅ 활성 |
+| `welfare_local_service.py` | 복지로 OPEN API — 지자체복지서비스 목록 조회 (bokjiro_api_key) | ✅ 활성 |
+| `family_center_service.py` | 성평등가족부 — 건강가정지원센터 시설 조회 (gender_welfare_api_key) | ✅ 활성 |
+| `gender_facility_service.py` | 성평등가족부 — 여성·가족·청소년·권익시설 조회 (gender_welfare_api_key) | ✅ 활성 |
+| `worknet_govt_jobs_service.py` | 워크넷 정부지원일자리 참여자모집 조회 (worknet_govt_jobs_api_key) | ✅ 활성 |
+| `isolation_policy_service.py` | 고립군 군집(1~4) → 서비스 매트릭스 필터 → 정책 추천 + DIDIM 서비스 허브 오케스트레이션 | ✅ 활성 |
+| `cluster_service_matrix.py` | DIDIM 전체 서비스 카탈로그 + 군집별 활성/비활성 결정 매트릭스 (하드코딩, LLM 불관여) | ✅ 활성 |
+| `llm_isolation_service.py` | 군집별 DIDIM 서비스 활성/비활성 이유를 GPT-4o-mini로 설명 생성 (결정은 matrix 담당) | ✅ 활성 |
+| `youth_center_service.py` | 온통청년 OPEN API — 청년정책(F-26)·청년공간(F-27)·청년콘텐츠(F-28) 조회 + 대분류 카테고리 분류 | ✅ 활성 |
+| `hrd_extended_service.py` | Work24 확장 훈련과정 — 일학습병행(F-29, 313L01)·국가인적자원개발컨소시엄(F-30, 312L01)·구직자취업역량강화(F-31, 키 발급완료/엔드포인트 승인대기) | ✅ 활성 |
 
 ---
 

@@ -151,6 +151,115 @@ _DEFAULT_ACTIONS: list[dict[str, str]] = [
     }
 ]
 
+# 고립군 군집별 전용 행동 템플릿 (cluster_id 1~4)
+# 취업·자격증 중심이 아닌 사회참여·치유·복지 중심
+_ISOLATION_ACTION_TEMPLATES: dict[str, list[dict[str, str]]] = {
+    "1": [  # 고립위험청년 — 사회참여 동기 강화
+        {
+            "action_type": "connect",
+            "title": "관심 분야 모임 1개 찾기",
+            "description": "{region} 주변 관심 있는 모임이나 커뮤니티를 하나 검색해 보세요.",
+            "cta": "지역 서비스 찾기",
+            "cta_path": "/isolation/policy",
+            "effort_minutes": 15,
+        },
+        {
+            "action_type": "apply",
+            "title": "일경험 프로그램 확인하기",
+            "description": "청년도전지원사업 등 일경험 프로그램 1개의 모집 조건을 확인해 보세요.",
+            "cta": "정부지원 일자리 보기",
+            "cta_path": "/isolation/policy",
+            "effort_minutes": 20,
+        },
+        {
+            "action_type": "study",
+            "title": "관심 자격증 강의 1강 보기",
+            "description": "오늘 관심 자격증 관련 무료 강의를 1강만 들어보세요.",
+            "cta": "관련 강의 찾기",
+            "cta_path": "/certs/videos",
+            "effort_minutes": 30,
+        },
+    ],
+    "2": [  # 활동형고립청년 — 관계 형성 + 사회활동 연결
+        {
+            "action_type": "connect",
+            "title": "자조모임 프로그램 알아보기",
+            "description": "{region} 지역 청년 자조모임이나 관계 회복 프로그램을 찾아보세요.",
+            "cta": "지역 복지서비스 보기",
+            "cta_path": "/isolation/policy",
+            "effort_minutes": 15,
+        },
+        {
+            "action_type": "space",
+            "title": "일자리카페 방문 계획 세우기",
+            "description": "{region} 근처 일자리카페에 이번 주 한 번 방문해 보세요. 꼭 무언가를 하지 않아도 괜찮아요.",
+            "cta": "일자리카페 찾기",
+            "cta_path": "/seoul/job-cafes",
+            "effort_minutes": 60,
+        },
+        {
+            "action_type": "training",
+            "title": "그룹 훈련과정 1개 검색",
+            "description": "혼자 공부보다 여럿이 함께하는 훈련과정을 1개 찾아보세요.",
+            "cta": "훈련과정 보기",
+            "cta_path": "/training/courses",
+            "effort_minutes": 15,
+        },
+    ],
+    "3": [  # 활동제한형고립청년 — 온라인·집 기반 지원
+        {
+            "action_type": "welfare",
+            "title": "온라인 복지서비스 신청 확인",
+            "description": "지금 이용할 수 있는 복지서비스 1가지를 오늘 확인해 보세요. 신청은 나중에 해도 괜찮아요.",
+            "cta": "복지서비스 보기",
+            "cta_path": "/isolation/policy",
+            "effort_minutes": 15,
+        },
+        {
+            "action_type": "study",
+            "title": "집에서 관련 영상 1개 보기",
+            "description": "오늘 집에서 10분짜리 관심 분야 영상을 1개만 보세요.",
+            "cta": "관련 강의 찾기",
+            "cta_path": "/certs/videos",
+            "effort_minutes": 15,
+        },
+        {
+            "action_type": "family",
+            "title": "가족지원 서비스 알아보기",
+            "description": "건강가정지원센터의 프로그램 중 집에서 신청할 수 있는 것을 확인해 보세요.",
+            "cta": "가족지원 서비스",
+            "cta_path": "/isolation/policy",
+            "effort_minutes": 10,
+        },
+    ],
+    "4": [  # 은둔청년 — 아주 작은 첫 걸음
+        {
+            "action_type": "micro",
+            "title": "심리상담 정보 1가지 보기",
+            "description": "지금 당장 상담을 받지 않아도 괜찮아요. 어떤 상담이 있는지 1가지만 알아보는 것부터 시작해요.",
+            "cta": "심리상담 서비스 보기",
+            "cta_path": "/isolation/policy",
+            "effort_minutes": 5,
+        },
+        {
+            "action_type": "wellness",
+            "title": "가까운 건강증진센터 위치 확인",
+            "description": "{region} 근처 건강증진센터가 어디 있는지 오늘 확인만 해보세요. 방문은 준비되면 해요.",
+            "cta": "건강증진센터 찾기",
+            "cta_path": "/seoul/health-centers",
+            "effort_minutes": 5,
+        },
+        {
+            "action_type": "micro",
+            "title": "오늘 창문 1번 열기",
+            "description": "오늘 가장 작은 것 하나를 해보세요. 창문을 열거나 짧게 바깥 공기를 마시는 것도 충분합니다.",
+            "cta": "복지서비스 안내",
+            "cta_path": "/isolation/policy",
+            "effort_minutes": 1,
+        },
+    ],
+}
+
 
 @lru_cache(maxsize=1)
 def _load_cert_names() -> dict[str, str]:
@@ -212,3 +321,44 @@ def _get_motivation_message(stage: str) -> str:
         "risk_0005": "지금 이 순간 여기 있는 것만으로도 충분히 잘 하고 있습니다.",
     }
     return messages.get(stage, "오늘 하루도 조금씩 앞으로 나아가고 있습니다.")
+
+
+_ISOLATION_MOTIVATION: dict[str, str] = {
+    "1": "사회참여의 문을 조금씩 열어가고 있습니다. 오늘도 한 걸음씩.",
+    "2": "혼자가 아닌 함께하는 경험이 쌓여갑니다. 천천히 가도 괜찮아요.",
+    "3": "지금 상황에서 할 수 있는 것부터, 작은 것부터 시작해요.",
+    "4": "오늘 여기 있는 것만으로도 충분합니다. 아주 작은 것 하나면 됩니다.",
+}
+
+
+def get_isolation_action(
+    cluster_id: str,
+    region: str | None = None,
+) -> dict:
+    """
+    고립군 군집별 오늘의 한 가지 행동 제안.
+    기존 risk_stage_id 기반 get_today_action과 독립적으로 동작.
+
+    Args:
+        cluster_id: '1'~'4' (고립위험청년~은둔청년)
+        region: 거주 지역 (기본 '서울')
+    """
+    region_str = region or "서울"
+    templates = _ISOLATION_ACTION_TEMPLATES.get(cluster_id)
+    if not templates:
+        templates = _DEFAULT_ACTIONS
+
+    chosen = random.choice(templates)
+    filled: dict[str, Any] = {}
+    for k, v in chosen.items():
+        if isinstance(v, str):
+            filled[k] = v.replace("{region}", region_str)
+        else:
+            filled[k] = v
+
+    return ok_envelope({
+        "cluster_id": cluster_id,
+        "region":     region_str,
+        "action":     filled,
+        "motivation": _ISOLATION_MOTIVATION.get(cluster_id, "오늘 하루도 조금씩 앞으로 나아가고 있습니다."),
+    })

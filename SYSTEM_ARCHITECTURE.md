@@ -1,7 +1,7 @@
 # SYSTEM_ARCHITECTURE.md
 
 > **파일명**: SYSTEM_ARCHITECTURE.md  
-> **최종 수정일**: 2026-05-14  
+> **최종 수정일**: 2026-06-25  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 시스템 구성, 계층, 책임, 데이터 흐름 정의 문서  
 > **문서 우선순위**: 3  
@@ -152,7 +152,13 @@ CORS·`VITE_API_BASE_URL` 등 환경변수로 출처를 맞춘다. **LlamaIndex*
        ├─ jobs_service           (WorkNet 채용)
        ├─ training_service       (Work24 훈련)
        ├─ seoul_service          (서울시 공공데이터)
-       └─ action_service         (오늘의 행동 제안)
+       ├─ action_service         (오늘의 행동 제안)
+       ├─ welfare_central_service   (복지로 중앙부처복지서비스)
+       ├─ welfare_local_service     (복지로 지자체복지서비스)
+       ├─ family_center_service     (성평등가족부_건강가정지원센터)
+       ├─ gender_facility_service   (성평등가족부_여성가족청소년시설)
+       ├─ worknet_govt_jobs_service (워크넷 정부지원일자리 참여자모집)
+       └─ isolation_policy_service  (고립군 군집별 정책 추천 오케스트레이션)
 
 ────────────────────────────────────────────────────────
 
@@ -163,7 +169,10 @@ CORS·`VITE_API_BASE_URL` 등 환경변수로 출처를 맞춘다. **LlamaIndex*
      ├─ Q-Net (시험·접수 일정, 과정평가형)
      ├─ WorkNet (채용정보)
      ├─ Work24 (훈련과정)
-     └─ Seoul Open API (일자리카페·건강증진센터·공공예약)
+     ├─ Seoul Open API (일자리카페·건강증진센터·공공예약)
+├─ 복지로 OPEN API (중앙부처·지자체 복지서비스)
+├─ 성평등가족부 OPEN API (건강가정지원센터·여성가족청소년시설)
+└─ 워크넷 정부지원일자리 API (참여자모집상세정보)
 
          ↓
 
@@ -471,6 +480,12 @@ exact match 보강용 선택 저장소
 - 위험군 단계 기반 오늘의 한 가지 행동 제안 (`action_service`)
 - cert_id ↔ NCS ↔ WorkNet/Work24 데이터 체인 (`cert_lookup_service`)
 - YouTube 자격증 강의 영상 캐싱 (`youtube_service`)
+- 복지로 중앙부처복지서비스 조회 (`welfare_central_service`)
+- 복지로 지자체복지서비스 조회 (`welfare_local_service`)
+- 건강가정지원센터 시설 조회 (`family_center_service`)
+- 여성·가족·청소년·권익시설 조회 (`gender_facility_service`)
+- 워크넷 정부지원일자리 참여자모집 조회 (`worknet_govt_jobs_service`)
+- 고립군 군집별 맞춤 정책 추천 번들 (`isolation_policy_service`)
 
 ### reserved
 - reranker 활성화
