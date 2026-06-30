@@ -1,5 +1,5 @@
 // Content Hash: SHA256:TBD
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Home, Calendar, CalendarDays, Compass, Briefcase } from 'lucide-react';
 import { loadPipeline } from '../../utils/pipelineState';
@@ -112,6 +112,7 @@ function StepIndicator({ pathname }: { pathname: string }) {
 const MainLayout: React.FC = () => {
   const location = useLocation();
   const mainRef  = useRef<HTMLElement>(null);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   const isActive = (path: string) =>
     path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
@@ -119,7 +120,15 @@ const MainLayout: React.FC = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
     mainRef.current?.focus();
+    setOpenMenu(null);
   }, [location.pathname]);
+
+  // Close open menu on ESC
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenMenu(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
     <div className="app-root">
@@ -146,21 +155,32 @@ const MainLayout: React.FC = () => {
             ))}
 
             {/* 탐색 드롭다운 */}
-            <div className="support-nav-wrap">
+            <div
+              className="support-nav-wrap"
+              onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setOpenMenu(null); }}
+            >
               <button
                 type="button"
                 className={['header-nav-link support-nav-btn', ['/explore', '/training', '/jobs'].some(p => location.pathname.startsWith(p)) ? 'active' : ''].filter(Boolean).join(' ')}
-                aria-haspopup="true"
+                aria-haspopup="menu"
+                aria-expanded={openMenu === 'explore'}
+                aria-controls="nav-explore-menu"
+                onClick={() => setOpenMenu(m => m === 'explore' ? null : 'explore')}
               >
-                탐색 <span className="support-nav-arrow">▾</span>
+                탐색 <span className="support-nav-arrow" aria-hidden="true">▾</span>
               </button>
-              <div className="support-mega-panel explore-panel" role="menu">
+              <div
+                id="nav-explore-menu"
+                className={`support-mega-panel explore-panel${openMenu === 'explore' ? ' menu-open' : ''}`}
+                role="menu"
+              >
                 {EXPLORE_LINKS.map(item => (
                   <div key={item.path} className="support-mega-group">
                     <Link
                       to={item.path}
                       className="support-mega-title explore-link"
                       role="menuitem"
+                      onClick={() => setOpenMenu(null)}
                     >
                       {item.label}
                     </Link>
@@ -170,12 +190,26 @@ const MainLayout: React.FC = () => {
               </div>
             </div>
 
-            {/* 청년지원제도 드롭다운 탭 */}
-            <div className="support-nav-wrap">
-              <button type="button" className="header-nav-link support-nav-btn" aria-haspopup="true">
-                지원제도 <span className="support-nav-arrow">▾</span>
+            {/* 청년지원제도 드롭다운 */}
+            <div
+              className="support-nav-wrap"
+              onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setOpenMenu(null); }}
+            >
+              <button
+                type="button"
+                className="header-nav-link support-nav-btn"
+                aria-haspopup="menu"
+                aria-expanded={openMenu === 'support'}
+                aria-controls="nav-support-menu"
+                onClick={() => setOpenMenu(m => m === 'support' ? null : 'support')}
+              >
+                지원제도 <span className="support-nav-arrow" aria-hidden="true">▾</span>
               </button>
-              <div className="support-mega-panel" role="menu">
+              <div
+                id="nav-support-menu"
+                className={`support-mega-panel${openMenu === 'support' ? ' menu-open' : ''}`}
+                role="menu"
+              >
                 {SUPPORT_LINKS.map(item => (
                   <div key={item.url} className="support-mega-group">
                     <a
@@ -338,7 +372,8 @@ const MainLayout: React.FC = () => {
           grid-template-columns: repeat(4, 1fr);
           gap: 1rem;
         }
-        .support-nav-wrap:hover .support-mega-panel {
+        .support-nav-wrap:hover .support-mega-panel,
+        .support-mega-panel.menu-open {
           display: grid;
         }
         /* 탐색 드롭다운 (4열 좁은 버전) */
@@ -448,13 +483,9 @@ const MainLayout: React.FC = () => {
         .footer-logo-text {
           font-size: 1.1rem;
           font-weight: 900;
-          background: linear-gradient(135deg, #818cf8, #38bdf8);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          color: #a5b4fc;
         }
-        .footer-tagline { font-size: .78rem; color: #64748b; line-height: 1.6; margin: 0; }
-        .footer-team { font-size: .72rem; color: #475569; margin: 0; }
+        .footer-tagline { font-size: .78rem; color: #4b6280; line-height: 1.6; margin: 0; }
         .footer-links-group {
           display: flex;
           gap: 2.5rem;
@@ -471,13 +502,13 @@ const MainLayout: React.FC = () => {
           font-size: .72rem;
           font-weight: 700;
           letter-spacing: .06em;
-          color: #cbd5e1;
+          color: #94a3b8;
           text-transform: uppercase;
           margin: 0 0 .25rem;
         }
         .footer-link {
           font-size: .8rem;
-          color: #64748b;
+          color: #4b6280;
           text-decoration: none;
           transition: color .15s;
           width: fit-content;
@@ -485,15 +516,15 @@ const MainLayout: React.FC = () => {
         .footer-link:hover { color: #94a3b8; }
         .footer-bottom {
           padding-top: 1.5rem;
-          border-top: 1px solid #1e293b;
+          border-top: 1px solid #1a2538;
           display: flex;
           flex-direction: column;
           gap: .375rem;
         }
-        .footer-copy { font-size: .72rem; color: #475569; margin: 0; line-height: 1.6; }
-        .footer-copy-link { color: #64748b; text-decoration: none; }
+        .footer-copy { font-size: .72rem; color: #3d536b; margin: 0; line-height: 1.6; }
+        .footer-copy-link { color: #4b6280; text-decoration: none; }
         .footer-copy-link:hover { color: #94a3b8; text-decoration: underline; }
-        .footer-disclaimer { font-size: .68rem; color: #334155; margin: 0; line-height: 1.6; }
+        .footer-disclaimer { font-size: .68rem; color: #2a3d52; margin: 0; line-height: 1.6; }
 
         /* ── Header ── */
         .app-header {
