@@ -107,7 +107,7 @@ const Privacy: React.FC = () => {
         .policy-table th { font-weight: 700; color: var(--text); }
         .policy-table td { color: var(--text-muted); }
         .policy-section a { color: var(--primary); }
-        .policy-contact-box { padding: 1.25rem 1.5rem; background: var(--surface-2); border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: .35rem; }
+        .policy-contact-box { padding: 1.25rem 1.5rem; background: var(--primary-light); border: 1px solid rgba(37,99,235,.2); border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: .35rem; }
         .policy-contact-box strong { font-size: .9rem; color: var(--text); }
         .policy-contact-box p { font-size: .82rem; color: var(--text-muted); margin: 0; }
         .policy-contact-box a { color: var(--primary); }

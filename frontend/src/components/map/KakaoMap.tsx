@@ -213,7 +213,7 @@ const KakaoMap: React.FC<Props> = ({ points, height = '360px', center = SEOUL })
           padding: .2rem .65rem; border-radius: 99px;
           border: 1.5px solid var(--lc, #94a3b8);
           background: none; cursor: pointer; font-size: .72rem; font-weight: 600;
-          color: #64748b; opacity: .45; transition: all .15s;
+          color: #64748b; opacity: .45; transition: opacity .15s, background .15s, color .15s;
         }
         .kmap-legend-btn.active { opacity: 1; color: var(--lc); background: color-mix(in srgb, var(--lc) 10%, white); }
         .kmap-legend-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lc); flex-shrink: 0; }

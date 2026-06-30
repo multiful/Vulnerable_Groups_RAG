@@ -128,13 +128,6 @@ function gradeBadgeClass(tier: string): string {
   if (tier.startsWith('1')) return 'badge-warning';
   return 'badge-neutral';
 }
-function gradeColor(tier: string): string {
-  if (tier.startsWith('4') || tier.startsWith('5')) return '#6366f1';
-  if (tier.startsWith('3')) return '#0ea5e9';
-  if (tier.startsWith('2')) return '#10b981';
-  if (tier.startsWith('1')) return '#f59e0b';
-  return '#94a3b8';
-}
 
 function fmtDate(s: string | null): string {
   if (!s) return '';
@@ -381,7 +374,7 @@ const CertCard = memo(({
             {rateLabel && <span className="cert-rate-tag" style={{ background: rateColor + '18', color: rateColor }}>{rateLabel}</span>}
           </div>
           <div className="cert-rate-track">
-            <div className="cert-rate-fill" style={{ width: `${pct}%`, background: rateColor }} />
+            <div className="cert-rate-fill" style={{ transform: `scaleX(${pct / 100})`, background: rateColor }} />
           </div>
         </div>
       )}
@@ -961,7 +954,7 @@ const Recommendation: React.FC = () => {
       {featuredCert && (
         <div
           className={`featured-cert card${evidence.certId === featuredCert.cert_id && showEvidence ? ' featured-cert-active' : ''}`}
-          style={{ borderLeftColor: gradeColor(featuredCert.cert_grade_tier), cursor: 'pointer' }}
+          style={{ cursor: 'pointer' }}
           onClick={() => { fetchEvidence(featuredCert.cert_id); fetchDag(featuredCert.cert_id); }}
           role="button" tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter') { fetchEvidence(featuredCert.cert_id); fetchDag(featuredCert.cert_id); } }}
@@ -988,15 +981,18 @@ const Recommendation: React.FC = () => {
 
       {showEvidence && (
         <div className="modal-backdrop" onClick={() => setShowEvidence(false)} role="presentation">
-        <div className="evidence-modal modal-card card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+        <div className="evidence-modal modal-card card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="ev-dialog-title">
           <div className="ev-header">
             <div className="ev-header-left">
               <BookOpen size={15} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-              <span className="ev-title">{evidenceCertName}을 추천하는 이유</span>
+              <span id="ev-dialog-title" className="ev-title">{evidenceCertName}을 추천하는 이유</span>
             </div>
             <button className="ev-close" onClick={() => setShowEvidence(false)} aria-label="닫기"><X size={15} /></button>
           </div>
           <div className="evidence-panel">
+          <p aria-live="polite" aria-atomic="true" className="sr-only">
+            {certExplain.loading ? `${evidenceCertName} AI 분석 중…` : certExplain.text ? `${evidenceCertName} AI 분석 완료` : ''}
+          </p>
 
           {/* AI 추천 이유 — 패널 최상단의 핵심 결론 */}
           {certExplain.certId === evidence.certId && (certExplain.loading || certExplain.text) && (
@@ -2058,7 +2054,7 @@ const Recommendation: React.FC = () => {
                                         return (
                                           <div key={label} className="jd-score-item">
                                             <span className="jd-score-label">{label}</span>
-                                            <div className="jd-score-bar"><div className="jd-score-fill" style={{ width: `${v}%`, background: c }} /></div>
+                                            <div className="jd-score-bar"><div className="jd-score-fill" style={{ transform: `scaleX(${v / 100})`, background: c }} /></div>
                                             <span className="jd-score-num" style={{ color: c }}>{Math.round(v)}</span>
                                           </div>
                                         );
@@ -2362,7 +2358,7 @@ const Recommendation: React.FC = () => {
         .rec-wrap{display:flex;flex-direction:column;gap:1.5rem}
         .back-btn{display:inline-flex;align-items:center;gap:.35rem;font-size:.85rem;font-weight:500;color:var(--text-muted);margin-bottom:.25rem;background:none;border:none;cursor:pointer;padding:0;transition:color .15s;width:fit-content}
         .back-btn:hover{color:var(--primary)}
-        .featured-cert{border-left-width:4px;padding:1.5rem;display:flex;flex-direction:column;gap:.75rem}
+        .featured-cert{padding:1.5rem;display:flex;flex-direction:column;gap:.75rem}
         .featured-tag-row{display:flex}
         .featured-tag{font-size:.68rem;font-weight:700;letter-spacing:.07em;padding:.2rem .625rem;background:var(--primary-light);color:var(--primary);border-radius:var(--radius-full);border:1px solid rgba(99,102,241,.2)}
         .featured-body{display:flex;flex-direction:column;gap:.3rem}
@@ -2372,7 +2368,7 @@ const Recommendation: React.FC = () => {
         .featured-actions{display:flex;gap:.75rem;flex-wrap:wrap;padding-top:.25rem}
         /* 모달 backdrop & 카드 */
         .modal-backdrop{
-          position:fixed;inset:0;z-index:1000;
+          position:fixed;inset:0;z-index:var(--z-modal-backdrop, 400);
           background:rgba(15,23,42,.55);
           backdrop-filter:blur(2px);
           -webkit-backdrop-filter:blur(2px);
@@ -2392,7 +2388,12 @@ const Recommendation: React.FC = () => {
         }
         .evidence-modal{
           max-height:90vh;display:flex;flex-direction:column;overflow:hidden;
-          border-left:3px solid var(--primary);
+        }
+        @media(max-width:640px){
+          .modal-backdrop{padding:1vh .5rem;align-items:flex-end}
+          .modal-card{max-width:100%;width:100%;border-radius:var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-sm)}
+          .evidence-modal{max-height:95dvh}
+          .ev-header{padding:.75rem 1rem}
         }
         .ev-header{
           display:flex;align-items:center;justify-content:space-between;gap:.75rem;
@@ -2419,7 +2420,7 @@ const Recommendation: React.FC = () => {
           border:1.5px dashed var(--primary);
           border-radius:var(--radius-sm);
           font-size:.9rem;font-weight:700;
-          width:fit-content;cursor:pointer;transition:all .15s;
+          width:fit-content;cursor:pointer;transition:background .15s, color .15s, border-color .15s;
         }
         .btn-videos-cta:hover{background:var(--primary);color:#fff}
         .btn-videos-hint{font-size:.7rem;font-weight:500;opacity:.7;margin-left:.25rem}
@@ -2444,9 +2445,9 @@ const Recommendation: React.FC = () => {
         .ev-source-badge{padding:.15rem .5rem;background:var(--primary-light);color:var(--primary);border-radius:var(--radius-xs);font-size:.64rem;font-weight:700;letter-spacing:.06em}
         .ev-src-tag{padding:.1rem .4rem;border-radius:3px;font-size:.62rem;font-weight:700;letter-spacing:.05em;flex-shrink:0}
         .ev-src-db{background:#ede9fe;color:#6d28d9}
-        .ev-src-local{background:#f1f5f9;color:#64748b}
-        .ev-src-catalog{background:#fef3c7;color:#92400e}
-        .ev-src-national{background:#dbeafe;color:#1e40af}
+        .ev-src-local{background:var(--surface-2);color:var(--text-muted)}
+        .ev-src-catalog{background:var(--warning-light);color:var(--warning-text)}
+        .ev-src-national{background:var(--primary-light);color:var(--primary)}
         .ev-row-catalog{border-color:rgba(245,158,11,.3);background:#fffbeb}
         .ev-catalog-list{margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:.3rem}
         .ev-catalog-list li{font-size:.84rem;color:var(--text-muted);line-height:1.65}
@@ -2458,7 +2459,7 @@ const Recommendation: React.FC = () => {
         .ev-section{font-size:.75rem;color:var(--text-light)}
         .ev-link{display:inline-flex;align-items:center;gap:.25rem;font-size:.75rem;color:var(--secondary);text-decoration:none;margin-left:auto}
         .ev-link:hover{text-decoration:underline}
-        .ev-snippet{font-size:.855rem;color:var(--text-muted);line-height:1.7;border-left:3px solid var(--primary-light);padding-left:.75rem}
+        .ev-snippet{font-size:.855rem;color:var(--text-muted);line-height:1.7;background:var(--surface-2);padding:.5rem .75rem;border-radius:var(--radius-xs)}
         .cert-match-tag{margin-left:auto;padding:.1rem .45rem;background:#f0fdf4;border:1px solid rgba(16,185,129,.3);border-radius:var(--radius-xs);font-size:.62rem;font-weight:700;color:#065f46;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px}
         .cert-match-tag[data-cross="true"]{background:#eff6ff;border-color:rgba(37,99,235,.25);color:var(--primary)}
         .search-clear{position:absolute;right:.5rem;background:none;border:none;cursor:pointer;color:var(--text-light);display:flex;align-items:center;padding:.25rem;transition:color .15s;border-radius:var(--radius-xs)}
@@ -2508,7 +2509,7 @@ const Recommendation: React.FC = () => {
         .cert-rate-pct{font-size:.8rem;font-weight:800;letter-spacing:-.01em}
         .cert-rate-tag{font-size:.6rem;font-weight:700;letter-spacing:.04em;padding:.1rem .45rem;border-radius:99px}
         .cert-rate-track{height:5px;background:var(--surface-3,#e2e8f0);border-radius:99px;overflow:hidden}
-        .cert-rate-fill{height:100%;border-radius:99px;transition:width .4s ease}
+        .cert-rate-fill{height:100%;width:100%;border-radius:99px;transform-origin:left;transition:transform .4s ease}
         /* 데이터 출처 */
         .cert-data-src{font-size:.62rem;color:var(--text-light);line-height:1.4;margin-top:auto;padding-top:.375rem;border-top:1px solid var(--border)}
         /* 페이지 하단 데이터 출처 푸터 */
@@ -2517,22 +2518,22 @@ const Recommendation: React.FC = () => {
         .data-src-sep{color:var(--border-strong);font-size:.75rem}
         .data-src-link{font-size:.68rem;color:var(--text-light);text-decoration:none;transition:color .15s}
         .data-src-link:hover{color:var(--primary);text-decoration:underline}
-        .featured-cert-active{border-left-color:var(--primary)!important;background:#f5f3ff}
-        .ev-intro-box{padding:.875rem 1rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.4rem}
-        .ev-intro-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:#1d4ed8;text-transform:uppercase}
-        .ev-intro-text{font-size:.875rem;color:#1e3a5f;line-height:1.7;margin:0}
-        .ev-career-box{padding:.875rem 1rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.4rem}
-        .ev-career-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:#15803d;text-transform:uppercase}
-        .ev-career-text{font-size:.855rem;color:#14532d;line-height:1.7;margin:0}
+        .featured-cert-active{background:var(--primary-light);border-color:rgba(37,99,235,.3)}
+        .ev-intro-box{padding:.875rem 1rem;background:var(--primary-light);border:1px solid rgba(37,99,235,.2);border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.4rem}
+        .ev-intro-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:var(--primary);text-transform:uppercase}
+        .ev-intro-text{font-size:.875rem;color:var(--text);line-height:1.7;margin:0}
+        .ev-career-box{padding:.875rem 1rem;background:var(--success-light);border:1px solid rgba(16,185,129,.25);border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.4rem}
+        .ev-career-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:var(--success-dark);text-transform:uppercase}
+        .ev-career-text{font-size:.855rem;color:var(--success-dark);line-height:1.7;margin:0}
         .ev-exam-section{padding:.875rem 1rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.5rem}
         .ev-exam-section-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:var(--primary);text-transform:uppercase}
         .ev-exam-row{display:flex;flex-wrap:wrap;gap:.5rem}
         .ev-exam-pill{display:inline-flex;align-items:center;padding:.25rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-full);font-size:.8rem;font-weight:600;color:var(--text);white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-        .ev-gasanjeom{padding:.875rem 1rem;background:#fefce8;border:1px solid #fde68a;border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.35rem}
-        .ev-gasanjeom-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:#92400e;text-transform:uppercase}
-        .ev-gasanjeom-text{font-size:.855rem;color:#78350f;line-height:1.65;margin:0}
-        .videos-panel{padding:1.25rem;display:flex;flex-direction:column;gap:.875rem;border-left:3px solid #ef4444}
-        .cache-badge{padding:.1rem .4rem;background:#f1f5f9;color:#64748b;border-radius:3px;font-size:.62rem;font-weight:700;letter-spacing:.05em;flex-shrink:0}
+        .ev-gasanjeom{padding:.875rem 1rem;background:var(--warning-light);border:1px solid rgba(245,158,11,.3);border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.35rem}
+        .ev-gasanjeom-label{font-size:.68rem;font-weight:800;letter-spacing:.07em;color:var(--warning-text);text-transform:uppercase}
+        .ev-gasanjeom-text{font-size:.855rem;color:var(--warning-text);line-height:1.65;margin:0}
+        .videos-panel{padding:1.25rem;display:flex;flex-direction:column;gap:.875rem;border:1px solid rgba(239,68,68,.2);background:#fff5f5;border-radius:var(--radius-sm)}
+        .cache-badge{padding:.1rem .4rem;background:var(--surface-2);color:var(--text-muted);border-radius:3px;font-size:.62rem;font-weight:700;letter-spacing:.05em;flex-shrink:0}
         .videos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.875rem}
         .video-card{display:flex;flex-direction:column;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;text-decoration:none;color:inherit;transition:transform .2s,box-shadow .2s,border-color .2s}
         .video-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.08);border-color:rgba(239,68,68,.3)}
@@ -2547,29 +2548,23 @@ const Recommendation: React.FC = () => {
         /* AI 추천 이유 (5번 — 패널 최상단 핵심 결론으로 격상) */
         .ai-reasoning-card{
           padding:1.125rem 1.25rem;
-          background:#eff6ff;
+          background:var(--primary-light);
           border:1.5px solid rgba(37,99,235,.35);
           border-radius:10px;
           display:flex;flex-direction:column;gap:.6rem;
           box-shadow:0 4px 14px rgba(37,99,235,.10);
-          position:relative;
-        }
-        .ai-reasoning-card::before{
-          content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
-          background:#2563eb;
-          border-radius:10px 0 0 10px;
         }
         .ai-reasoning-header{display:flex;align-items:center;gap:.5rem}
-        .ai-reasoning-icon{color:#2563eb;flex-shrink:0;animation:ai-pulse 2.4s ease-in-out infinite}
+        .ai-reasoning-icon{color:var(--primary);flex-shrink:0;animation:ai-pulse 2.4s ease-in-out infinite}
         @keyframes ai-pulse{0%,100%{opacity:.85;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
-        .ai-reasoning-label{font-size:.85rem;font-weight:800;color:#1d4ed8;letter-spacing:-.01em}
+        .ai-reasoning-label{font-size:.85rem;font-weight:800;color:var(--primary);letter-spacing:-.01em}
         .ai-reasoning-badge{
           margin-left:auto;font-size:.62rem;font-weight:700;letter-spacing:.05em;
-          padding:.15rem .5rem;background:#2563eb;color:#fff;
+          padding:.15rem .5rem;background:var(--primary);color:#fff;
           border-radius:99px;text-transform:uppercase;
         }
-        .ai-reasoning-loading{display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:#2563eb;padding-top:.2rem}
-        .ai-reasoning-text{font-size:.95rem;color:#1e3a8a;line-height:1.75;margin:0;font-weight:500}
+        .ai-reasoning-loading{display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:var(--primary);padding-top:.2rem}
+        .ai-reasoning-text{font-size:.95rem;color:var(--text);line-height:1.75;margin:0;font-weight:500}
 
         /* 보조 근거 헤더 */
         .ev-supporting-header{
@@ -2583,39 +2578,39 @@ const Recommendation: React.FC = () => {
         .ev-supporting-sub{font-size:.72rem;color:var(--text-light);margin-left:.3rem}
 
         /* 검정 현황 — 표 렌더링 */
-        .ev-row-stats{background:#f8fafc;border-color:#e2e8f0}
+        .ev-row-stats{background:var(--surface-2);border-color:var(--border)}
         .ev-stats-years{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;margin-bottom:.1rem}
         .ev-stats-year-chip{
-          padding:.15rem .55rem;background:#dbeafe;color:#1e40af;
+          padding:.15rem .55rem;background:var(--primary-light);color:var(--primary);
           border-radius:99px;font-size:.68rem;font-weight:700;
         }
-        .ev-stats-year-label{font-size:.68rem;color:#64748b;margin-left:.2rem}
-        .ev-stats-table-wrap{overflow-x:auto;border-radius:6px;border:1px solid #e2e8f0}
+        .ev-stats-year-label{font-size:.68rem;color:var(--text-muted);margin-left:.2rem}
+        .ev-stats-table-wrap{overflow-x:auto;border-radius:6px;border:1px solid var(--border)}
         .ev-stats-table{
           width:100%;border-collapse:collapse;font-size:.8rem;
         }
-        .ev-stats-table thead tr{background:#f1f5f9}
+        .ev-stats-table thead tr{background:var(--surface-2)}
         .ev-stats-table th{
           padding:.45rem .75rem;text-align:right;font-size:.72rem;font-weight:700;
-          color:#475569;border-bottom:1px solid #e2e8f0;white-space:nowrap;
+          color:var(--text-muted);border-bottom:1px solid var(--border);white-space:nowrap;
         }
         .ev-stats-table th:first-child{text-align:left}
         .ev-stats-table td{
-          padding:.4rem .75rem;text-align:right;color:#334155;
-          border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums;
+          padding:.4rem .75rem;text-align:right;color:var(--text);
+          border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums;
         }
-        .ev-stats-table td:first-child{text-align:left;font-weight:600;color:#1e293b}
+        .ev-stats-table td:first-child{text-align:left;font-weight:600;color:var(--text)}
         .ev-stats-table tbody tr:last-child td{border-bottom:none}
-        .ev-stats-table tbody tr:hover td{background:#f8fafc}
+        .ev-stats-table tbody tr:hover td{background:var(--surface-2)}
         .ev-stats-disclaimer{
-          font-size:.68rem;color:#94a3b8;margin:0;line-height:1.5;
-          border-top:1px solid #f1f5f9;padding-top:.4rem;
+          font-size:.68rem;color:var(--text-light);margin:0;line-height:1.5;
+          border-top:1px solid var(--border);padding-top:.4rem;
         }
         .ev-stats-pre{
           font-size:.72rem;
           font-family:'Menlo','Consolas','D2Coding',monospace;
-          color:#334155;line-height:1.75;white-space:pre-wrap;word-break:break-all;
-          background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;
+          color:var(--text);line-height:1.75;white-space:pre-wrap;word-break:break-all;
+          background:var(--surface-2);border:1px solid var(--border);border-radius:6px;
           padding:.625rem .875rem;margin:0;max-height:160px;overflow-y:auto;
           scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;
         }
@@ -2623,19 +2618,19 @@ const Recommendation: React.FC = () => {
         .ev-stats-year-block { margin-bottom: .75rem; }
         .ev-stats-year-block:last-child { margin-bottom: 0; }
         .ev-stats-year-head {
-          font-size:.75rem;font-weight:800;color:#1e40af;
-          background:#eff6ff;padding:.3rem .75rem;border-radius:4px 4px 0 0;
-          border:1px solid #bfdbfe;border-bottom:none;
+          font-size:.75rem;font-weight:800;color:var(--primary);
+          background:var(--primary-light);padding:.3rem .75rem;border-radius:4px 4px 0 0;
+          border:1px solid rgba(37,99,235,.2);border-bottom:none;
         }
         .ev-stats-year-block .ev-stats-table { border-top:none; border-radius:0 0 6px 6px; }
-        .ev-td-label { font-weight:700 !important; color:#0f172a !important; }
-        .ev-td-rate { color:#0369a1 !important; font-weight:600 !important; }
+        .ev-td-label { font-weight:700 !important; color:var(--text) !important; }
+        .ev-td-rate { color:var(--primary) !important; font-weight:600 !important; }
         /* fallback: 파싱 실패 시 정제된 텍스트 */
         .ev-stats-fallback { display:flex; flex-direction:column; gap:.5rem; }
         .ev-stats-raw-text {
-          font-size:.78rem;color:#475569;line-height:1.8;
+          font-size:.78rem;color:var(--text-muted);line-height:1.8;
           white-space:normal;word-break:keep-all;
-          background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;
+          background:var(--surface-2);border:1px solid var(--border);border-radius:6px;
           padding:.625rem .875rem;margin:0;
         }
 
@@ -2648,18 +2643,18 @@ const Recommendation: React.FC = () => {
         .exec-empty{font-size:.82rem;color:var(--text-light);padding:.375rem 0;margin:0}
         .exec-list{display:flex;flex-direction:column;gap:.375rem}
         /* 시험 일정 */
-        .exec-sched-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;background:#fff;border:1px solid #e2e8f0;border-radius:6px;gap:.5rem}
+        .exec-sched-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;gap:.5rem}
         .exec-sched-row-v2{flex-direction:column;align-items:stretch;gap:.4rem}
         .exec-sched-header-row{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
         .exec-sched-right{display:flex;flex-direction:column;align-items:flex-end;gap:.25rem;flex-shrink:0}
-        .exec-sched-reg-open{font-size:.66rem;font-weight:700;padding:.12rem .4rem;border-radius:var(--radius-xs);background:#dcfce7;color:#15803d;margin-left:.4rem}
-        .exec-sched-past{font-size:.66rem;font-weight:600;padding:.1rem .35rem;border-radius:var(--radius-xs);background:#f1f5f9;color:#94a3b8;margin-left:.3rem}
-        .exec-sched-urgent{font-size:.66rem;font-weight:700;padding:.12rem .4rem;border-radius:var(--radius-xs);background:#fee2e2;color:#dc2626;margin-left:.3rem}
+        .exec-sched-reg-open{font-size:.66rem;font-weight:700;padding:.12rem .4rem;border-radius:var(--radius-xs);background:var(--success-light);color:var(--success-dark);margin-left:.4rem}
+        .exec-sched-past{font-size:.66rem;font-weight:600;padding:.1rem .35rem;border-radius:var(--radius-xs);background:var(--surface-2);color:var(--text-light);margin-left:.3rem}
+        .exec-sched-urgent{font-size:.66rem;font-weight:700;padding:.12rem .4rem;border-radius:var(--radius-xs);background:var(--danger-light);color:var(--danger-text);margin-left:.3rem}
         .exec-qnet-btn{display:inline-flex;align-items:center;gap:.35rem;font-size:.75rem;font-weight:600;color:var(--primary);text-decoration:none;padding:.3rem .6rem;border:1px solid var(--primary);border-radius:var(--radius-xs);width:fit-content;margin-top:.25rem;transition:background .15s}
         .exec-qnet-btn:hover{background:var(--primary-light)}
         .exec-qnet-fallback{display:flex;flex-direction:column;gap:.375rem;margin-top:.375rem}
         .exec-qnet-fallback-primary{display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;font-weight:700;color:#fff;background:var(--primary);text-decoration:none;padding:.45rem .75rem;border-radius:var(--radius-xs);width:fit-content;transition:background .15s}
-        .exec-qnet-fallback-primary:hover{background:#1d4ed8}
+        .exec-qnet-fallback-primary:hover{background:var(--primary-dark,#1d4ed8)}
         .exec-qnet-fallback-secondary{font-size:.78rem;color:var(--primary);text-decoration:none;font-weight:600;padding:.2rem 0;width:fit-content}
         .exec-qnet-fallback-secondary:hover{text-decoration:underline}
         .exec-sched-empty-wrap{display:flex;flex-direction:column;gap:.25rem}
@@ -2667,25 +2662,25 @@ const Recommendation: React.FC = () => {
         .exec-sched-split{display:flex;flex-direction:column;gap:.375rem}
         .exec-sched-sub{display:flex;flex-direction:column;gap:.2rem}
         .exec-sched-sub-label{display:inline-flex;font-size:.65rem;font-weight:800;letter-spacing:.05em;padding:.1rem .4rem;border-radius:4px;width:fit-content;margin-bottom:.1rem}
-        .exec-sched-written{background:#dbeafe;color:#1e40af}
-        .exec-sched-practical{background:#dcfce7;color:#15803d}
+        .exec-sched-written{background:var(--primary-light);color:var(--primary)}
+        .exec-sched-practical{background:var(--success-light);color:var(--success-dark)}
         .exec-sched-sub-dates{display:flex;flex-direction:column;gap:.15rem;padding-left:.25rem}
-        .exec-sched-date-line{font-size:.76rem;color:#475569;display:flex;align-items:center;flex-wrap:wrap;gap:.15rem}
+        .exec-sched-date-line{font-size:.76rem;color:var(--text-muted);display:flex;align-items:center;flex-wrap:wrap;gap:.15rem}
         .exec-sched-left{display:flex;flex-direction:column;gap:.1rem}
-        .exec-sched-round{font-size:.82rem;font-weight:700;color:#1e293b}
-        .exec-sched-period{font-size:.72rem;color:#64748b}
-        .exec-sched-exam{font-size:.72rem;color:#0ea5e9;margin-top:.1rem;display:block}
-        .exec-dday{font-size:.78rem;font-weight:800;padding:.2rem .625rem;border-radius:99px;background:#f1f5f9;color:#475569;white-space:nowrap}
-        .exec-dday-open{background:#dcfce7;color:#166534}
-        .exec-dday-soon{background:#fef3c7;color:#92400e}
+        .exec-sched-round{font-size:.82rem;font-weight:700;color:var(--text)}
+        .exec-sched-period{font-size:.72rem;color:var(--text-light)}
+        .exec-sched-exam{font-size:.72rem;color:var(--primary);margin-top:.1rem;display:block}
+        .exec-dday{font-size:.78rem;font-weight:800;padding:.2rem .625rem;border-radius:99px;background:var(--surface-2);color:var(--text-muted);white-space:nowrap}
+        .exec-dday-open{background:var(--success-light);color:var(--success-dark)}
+        .exec-dday-soon{background:var(--warning-light);color:var(--warning-text)}
         /* 채용공고 */
-        .exec-job-row{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:#fff;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:inherit;transition:border-color .15s}
-        .exec-job-row:hover{border-color:#6366f1}
+        .exec-job-row{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;text-decoration:none;color:inherit;transition:border-color .15s}
+        .exec-job-row:hover{border-color:var(--primary)}
         .exec-job-main{display:flex;flex-direction:column;gap:.1rem;flex:1;min-width:0}
-        .exec-job-title{font-size:.82rem;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .exec-job-company{font-size:.72rem;color:#64748b}
-        .exec-job-close{font-size:.7rem;color:#94a3b8;white-space:nowrap}
-        .exec-job-icon{color:#94a3b8;flex-shrink:0}
+        .exec-job-title{font-size:.82rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .exec-job-company{font-size:.72rem;color:var(--text-light)}
+        .exec-job-close{font-size:.7rem;color:var(--text-light);white-space:nowrap}
+        .exec-job-icon{color:var(--text-light);flex-shrink:0}
         .exec-hiring-fallback{display:flex;flex-direction:column;gap:.5rem;padding:.75rem;background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px}
         .exec-hiring-fallback-msg{font-size:.78rem;color:#6b21a8;margin:0;line-height:1.5}
         .exec-hiring-fallback-btn{display:inline-flex;align-items:center;gap:.35rem;padding:.45rem .875rem;background:#7c3aed;color:#fff;border-radius:6px;text-decoration:none;font-size:.8rem;font-weight:600;transition:background .15s;width:fit-content}
@@ -2693,50 +2688,50 @@ const Recommendation: React.FC = () => {
         .exec-hiring-fallback-secondary{font-size:.75rem;color:#7c3aed;text-decoration:none;font-weight:500;align-self:flex-start}
         .exec-hiring-fallback-secondary:hover{text-decoration:underline}
         .exec-fair-more{display:block;text-align:center;font-size:.76rem;font-weight:600;color:var(--primary);text-decoration:none;padding:.4rem;border-top:1px solid var(--border);margin-top:.125rem;transition:color .15s}
-        .exec-fair-more:hover{color:#4338ca;text-decoration:underline}
+        .exec-fair-more:hover{color:var(--primary);text-decoration:underline}
         /* 국민내일배움카드 안내 카드 */
-        .naeil-card{background:linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);border:1px solid rgba(59,130,246,.22);border-radius:8px;padding:.75rem 1rem;display:flex;flex-direction:column;gap:.45rem;margin-bottom:.5rem}
+        .naeil-card{background:linear-gradient(135deg,var(--primary-light) 0%,var(--success-light) 100%);border:1px solid rgba(37,99,235,.2);border-radius:8px;padding:.75rem 1rem;display:flex;flex-direction:column;gap:.45rem;margin-bottom:.5rem}
         .naeil-card-header{display:flex;align-items:center;justify-content:space-between}
-        .naeil-card-badge{font-size:.73rem;font-weight:800;color:#1d4ed8;letter-spacing:.03em}
-        .naeil-card-link{font-size:.72rem;font-weight:700;color:#1d4ed8;text-decoration:none}
+        .naeil-card-badge{font-size:.73rem;font-weight:800;color:var(--primary);letter-spacing:.03em}
+        .naeil-card-link{font-size:.72rem;font-weight:700;color:var(--primary);text-decoration:none}
         .naeil-card-link:hover{text-decoration:underline}
-        .naeil-card-desc{font-size:.77rem;color:#1e40af;margin:0;line-height:1.55}
+        .naeil-card-desc{font-size:.77rem;color:var(--text);margin:0;line-height:1.55}
         .naeil-card-desc strong{font-weight:800}
         .naeil-card-chips{display:flex;gap:.35rem;flex-wrap:wrap}
-        .naeil-chip{font-size:.65rem;font-weight:600;background:rgba(59,130,246,.12);color:#1d4ed8;padding:.1rem .45rem;border-radius:999px}
-        .naeil-card-green{background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border-color:rgba(22,163,74,.22)}
-        .naeil-card-badge-green{color:#15803d}
-        .naeil-card-link-green{color:#15803d}
-        .naeil-card-desc-green{color:#166534}
-        .naeil-chip-green{background:rgba(22,163,74,.12);color:#15803d}
+        .naeil-chip{font-size:.65rem;font-weight:600;background:var(--primary-light);color:var(--primary);padding:.1rem .45rem;border-radius:999px}
+        .naeil-card-green{background:linear-gradient(135deg,var(--success-light) 0%,rgba(16,185,129,.08) 100%);border-color:rgba(22,163,74,.22)}
+        .naeil-card-badge-green{color:var(--success-dark)}
+        .naeil-card-link-green{color:var(--success-dark)}
+        .naeil-card-desc-green{color:var(--success-dark)}
+        .naeil-chip-green{background:rgba(16,185,129,.12);color:var(--success-dark)}
         /* 훈련과정 */
-        .tc-domain-more-link{display:inline-flex;align-items:center;gap:.35rem;font-size:.8rem;font-weight:600;color:#2563eb;text-decoration:none;padding:.35rem .75rem;border:1px solid #bfdbfe;border-radius:var(--radius-sm);background:#eff6ff;transition:background .15s;margin-bottom:.25rem}
-        .tc-domain-more-link:hover{background:#dbeafe}
-        .exec-train-row{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:#fff;border:1px solid #e2e8f0;border-radius:6px}
+        .tc-domain-more-link{display:inline-flex;align-items:center;gap:.35rem;font-size:.8rem;font-weight:600;color:var(--primary);text-decoration:none;padding:.35rem .75rem;border:1px solid rgba(37,99,235,.2);border-radius:var(--radius-sm);background:var(--primary-light);transition:background .15s;margin-bottom:.25rem}
+        .tc-domain-more-link:hover{background:var(--primary-light)}
+        .exec-train-row{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:6px}
         .exec-train-row-rich{flex-wrap:wrap}
         .exec-train-main{display:flex;flex-direction:column;gap:.1rem;flex:1;min-width:0}
-        .exec-train-name{font-size:.82rem;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .exec-train-name-link{color:#1d4ed8;text-decoration:none}
+        .exec-train-name{font-size:.82rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .exec-train-name-link{color:var(--primary);text-decoration:none}
         .exec-train-name-link:hover{text-decoration:underline}
-        .exec-train-org{font-size:.72rem;color:#64748b}
-        .exec-train-rate{font-size:.75rem;font-weight:700;color:#0369a1;white-space:nowrap;flex-shrink:0}
+        .exec-train-org{font-size:.72rem;color:var(--text-light)}
+        .exec-train-rate{font-size:.75rem;font-weight:700;color:var(--primary);white-space:nowrap;flex-shrink:0}
         .exec-train-badges{display:flex;gap:.3rem;flex-wrap:wrap;flex-shrink:0;align-items:center}
         .exec-train-badge{font-size:.67rem;font-weight:700;padding:.1rem .4rem;border-radius:4px;white-space:nowrap}
-        .exec-train-badge-free{background:#dcfce7;color:#15803d}
-        .exec-train-badge-supp{background:#dbeafe;color:#1d4ed8}
-        .exec-train-badge-rate{background:#f0f9ff;color:#0369a1}
+        .exec-train-badge-free{background:var(--success-light);color:var(--success-dark)}
+        .exec-train-badge-supp{background:var(--primary-light);color:var(--primary)}
+        .exec-train-badge-rate{background:var(--primary-light);color:var(--primary)}
 
         /* 자격정보 탭 */
         .certinfo-wrap{display:flex;flex-direction:column;gap:.75rem}
         .certinfo-block{display:flex;flex-direction:column;gap:.5rem}
         .certinfo-block-title{font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--primary);text-transform:uppercase;margin:0}
         .certinfo-grid{display:flex;flex-direction:column;gap:.3rem}
-        .certinfo-row{display:flex;gap:.5rem;align-items:flex-start;padding:.35rem .5rem;background:#fff;border-radius:4px;border:1px solid #f1f5f9}
-        .certinfo-key{font-size:.74rem;font-weight:700;color:#475569;width:90px;flex-shrink:0}
-        .certinfo-val{font-size:.8rem;color:#1e293b;line-height:1.5;flex:1}
+        .certinfo-row{display:flex;gap:.5rem;align-items:flex-start;padding:.35rem .5rem;background:var(--surface);border-radius:4px;border:1px solid var(--border)}
+        .certinfo-key{font-size:.74rem;font-weight:700;color:var(--text-muted);width:90px;flex-shrink:0}
+        .certinfo-val{font-size:.8rem;color:var(--text);line-height:1.5;flex:1}
         .certinfo-link{font-size:.8rem;color:var(--primary);text-decoration:none;display:inline-flex;align-items:center;gap:.2rem}
         .certinfo-link:hover{text-decoration:underline}
-        .certinfo-src{font-size:.65rem;color:#94a3b8;margin:0;border-top:1px solid #f1f5f9;padding-top:.375rem}
+        .certinfo-src{font-size:.65rem;color:var(--text-light);margin:0;border-top:1px solid var(--border);padding-top:.375rem}
         .certinfo-stat-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem}
         .certinfo-stat-chip{display:flex;flex-direction:column;align-items:center;padding:.35rem .7rem;border-radius:8px;min-width:64px;gap:.1rem}
         .certinfo-stat-label{font-size:.62rem;font-weight:600;opacity:.75}
@@ -2749,26 +2744,26 @@ const Recommendation: React.FC = () => {
         .certinfo-stat-type{background:#f0fdf4;color:#15803d}
         .certinfo-job-tags{display:flex;flex-wrap:wrap;gap:.35rem}
         .certinfo-job-tag{padding:.2rem .6rem;background:#f0f9ff;border:1px solid #bae6fd;border-radius:99px;font-size:.75rem;color:#0369a1;font-weight:500}
-        .certinfo-job-btn{cursor:pointer;transition:all .15s;border:1px solid #bae6fd}
+        .certinfo-job-btn{cursor:pointer;transition:background .15s, color .15s, border-color .15s;border:1px solid #bae6fd}
         .certinfo-job-btn:hover{background:#0369a1;color:#fff;border-color:#0369a1}
         .certinfo-job-selected{background:#0369a1!important;color:#fff!important;border-color:#0369a1!important}
         .certinfo-job-more{background:#f8fafc;border-color:#e2e8f0;color:#64748b}
-        .certinfo-job-more-btn{padding:.2rem .75rem;background:#f8fafc;border:1.5px dashed #94a3b8;border-radius:99px;font-size:.75rem;color:#64748b;cursor:pointer;transition:all .15s;font-weight:600}
+        .certinfo-job-more-btn{padding:.2rem .75rem;background:#f8fafc;border:1.5px dashed #94a3b8;border-radius:99px;font-size:.75rem;color:#64748b;cursor:pointer;transition:background .15s, border-color .15s, color .15s;font-weight:600}
         .certinfo-job-more-btn:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary)}
         .certinfo-job-hint{font-size:.62rem;font-weight:500;color:#94a3b8;text-transform:none;letter-spacing:0}
-        .jd-scores{display:flex;flex-direction:column;gap:.25rem;background:#e0f2fe;border-radius:6px;padding:.5rem .625rem;margin-bottom:.25rem}
+        .jd-scores{display:flex;flex-direction:column;gap:.25rem;background:var(--primary-light);border-radius:6px;padding:.5rem .625rem;margin-bottom:.25rem}
         .jd-score-item{display:grid;grid-template-columns:60px 1fr 24px;align-items:center;gap:.35rem}
-        .jd-score-label{font-size:.65rem;font-weight:600;color:#0369a1}
-        .jd-score-bar{height:5px;background:#bae6fd;border-radius:99px;overflow:hidden}
-        .jd-score-fill{height:100%;border-radius:99px;transition:width .4s}
+        .jd-score-label{font-size:.65rem;font-weight:600;color:var(--primary)}
+        .jd-score-bar{height:5px;background:rgba(37,99,235,.15);border-radius:99px;overflow:hidden}
+        .jd-score-fill{height:100%;width:100%;border-radius:99px;transform-origin:left;transition:transform .4s ease}
         .jd-score-num{font-size:.67rem;font-weight:800;text-align:right}
-        .job-detail-card{margin-top:.5rem;padding:.75rem .875rem;background:#f0f9ff;border:1px solid #bae6fd;border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.35rem;animation:fade-in .15s ease}
+        .job-detail-card{margin-top:.5rem;padding:.75rem .875rem;background:var(--primary-light);border:1px solid rgba(37,99,235,.2);border-radius:var(--radius-sm);display:flex;flex-direction:column;gap:.35rem;animation:fade-in .15s ease}
         @keyframes fade-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
-        .job-detail-name{font-size:.85rem;font-weight:800;color:#0c4a6e;margin:0 0 .2rem}
+        .job-detail-name{font-size:.85rem;font-weight:800;color:var(--text);margin:0 0 .2rem}
         .job-detail-row{display:flex;gap:.5rem;align-items:flex-start}
         .job-detail-row-block{flex-direction:column}
-        .job-detail-key{font-size:.7rem;font-weight:700;color:#0369a1;white-space:nowrap;min-width:70px}
-        .job-detail-val{font-size:.8rem;color:#0c4a6e;line-height:1.55}
+        .job-detail-key{font-size:.7rem;font-weight:700;color:var(--primary);white-space:nowrap;min-width:70px}
+        .job-detail-val{font-size:.8rem;color:var(--text);line-height:1.55}
         .job-detail-content{white-space:pre-wrap;word-break:keep-all}
         /* 임금 시각화 */
         .job-salary-viz{display:flex;flex-direction:column;gap:.35rem}
@@ -2801,7 +2796,6 @@ const Recommendation: React.FC = () => {
           padding:1.125rem 1.375rem;
           background:#fff7ed;
           border:1.5px solid #fed7aa;
-          border-left:4px solid #f97316;
           border-radius:var(--radius-sm);
         }
         .survey-required-icon{color:#f97316;flex-shrink:0}

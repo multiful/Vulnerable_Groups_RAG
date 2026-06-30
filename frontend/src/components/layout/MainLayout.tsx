@@ -1,7 +1,7 @@
 // Content Hash: SHA256:TBD
 import React, { useRef, useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, Home, Calendar, CalendarDays, Compass, Briefcase } from 'lucide-react';
+import { CheckCircle2, Home, Calendar, Activity, Compass, Briefcase } from 'lucide-react';
 import { loadPipeline } from '../../utils/pipelineState';
 import ChatWidget from '../ChatWidget';
 
@@ -133,6 +133,8 @@ const MainLayout: React.FC = () => {
   return (
     <div className="app-root">
 
+      <a href="#main-content" className="skip-nav">본문 바로가기</a>
+
       {/* ── Header ── */}
       <header className="app-header">
         <div className="container header-inner">
@@ -250,7 +252,7 @@ const MainLayout: React.FC = () => {
 
       {/* ── Body — full width, no sidebar ── */}
       <div className="app-body container">
-        <main className="main-content" ref={mainRef} tabIndex={-1}>
+        <main className="main-content" id="main-content" ref={mainRef} tabIndex={-1}>
           <Outlet />
         </main>
       </div>
@@ -258,11 +260,11 @@ const MainLayout: React.FC = () => {
       {/* ── Mobile bottom nav ── */}
       <nav className="mobile-nav" aria-label="하단 메뉴">
         {([
-          { label: '홈',      path: '/',         Icon: Home },
-          { label: '시험일정', path: '/schedule', Icon: Calendar },
-          { label: '직업탐색', path: '/explore',  Icon: Compass },
-          { label: '채용행사', path: '/jobs',      Icon: CalendarDays },
-          { label: '훈련',    path: '/training',  Icon: Briefcase },
+          { label: '홈',      path: '/',                  Icon: Home },
+          { label: '시험일정', path: '/schedule',          Icon: Calendar },
+          { label: '직업탐색', path: '/explore',           Icon: Compass },
+          { label: '진단',    path: '/risk-assessment',   Icon: Activity },
+          { label: '훈련',    path: '/training',          Icon: Briefcase },
         ] as const).map(item => (
           <Link
             key={item.path}
@@ -384,7 +386,7 @@ const MainLayout: React.FC = () => {
           transform: none;
         }
         .explore-link {
-          color: #2563eb !important;
+          color: var(--primary) !important;
           font-size: 0.82rem !important;
           font-weight: 700 !important;
           text-decoration: none !important;
@@ -431,7 +433,7 @@ const MainLayout: React.FC = () => {
           text-decoration: none;
           padding: 0.3rem 0.6rem;
           border-radius: 6px;
-          transition: all 0.12s ease;
+          transition: background 0.12s ease, color 0.12s ease;
           white-space: nowrap;
         }
         .support-mega-item:hover {
@@ -557,10 +559,7 @@ const MainLayout: React.FC = () => {
           font-size: 1.25rem;
           font-weight: 900;
           letter-spacing: -0.04em;
-          background: var(--gradient-primary);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          color: var(--primary);
         }
         .logo-en {
           font-size: 0.7rem;

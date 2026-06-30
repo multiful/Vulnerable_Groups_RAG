@@ -1436,7 +1436,7 @@ const Roadmap: React.FC = () => {
           padding: .55rem 1.25rem; font-size: .875rem; font-weight: 600;
           background: none; border: none; cursor: pointer; color: var(--text-muted);
           border-bottom: 2px solid transparent; margin-bottom: -2px;
-          transition: all .15s; display: inline-flex; align-items: center; gap: .35rem;
+          transition: color .15s, border-color .15s; display: inline-flex; align-items: center; gap: .35rem;
         }
         .rm-tab:hover { color: var(--primary); }
         .rm-tab-active { color: var(--primary); border-bottom-color: var(--primary); }
@@ -1593,7 +1593,7 @@ const Roadmap: React.FC = () => {
           display: flex; align-items: stretch;
           border-radius: var(--radius-xs);
           border: 1px solid var(--border); background: var(--surface);
-          transition: all .18s; width: 100%; overflow: hidden;
+          transition: border-color .18s, box-shadow .18s, transform .18s, background .18s; width: 100%; overflow: hidden;
         }
         .tl-cert-row:hover { border-color: rgba(99,102,241,.35); transform: translateX(2px); box-shadow: 2px 0 0 0 var(--primary); }
         .tl-cert-row-active { border-color: var(--primary); box-shadow: 2px 0 0 0 var(--primary); background: #f5f3ff; }
@@ -1606,31 +1606,20 @@ const Roadmap: React.FC = () => {
         .tl-cert-row-active .tl-cert-main { background: transparent; }
         .tl-locked .tl-cert-row { opacity: .6; }
 
-        /* ── 진단 로드맵 매칭 색 (왼쪽 4px 바만 색칠, 둘 다 매칭은 바를 위/아래 반반 분할) ── */
-        .tl-cert-match-domain  { border-left: 4px solid #a5b4fc; }
-        .tl-cert-match-job     { border-left: 4px solid #fdba74; }
-        .tl-cert-match-both    {
-          border-left: none;
-          background-image: linear-gradient(180deg, #a5b4fc 0 50%, #fdba74 50% 100%);
-          background-repeat: no-repeat;
-          background-size: 4px 100%;
-          background-position: left top;
-          padding-left: 4px;
-        }
-        .tl-cert-match-neither { border-left: 4px solid #e5e7eb; }
+        /* ── 진단 로드맵 매칭 색 (배경 틴트로 구분) ── */
+        .tl-cert-match-domain  { background: rgba(165,180,252,.08); }
+        .tl-cert-match-job     { background: rgba(253,186,116,.08); }
+        .tl-cert-match-both    { background: linear-gradient(135deg, rgba(165,180,252,.06), rgba(253,186,116,.06)); }
+        .tl-cert-match-neither { }
 
         /* 매칭 색 범례 (헤더 아래) */
         .rm-legend { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: .625rem; font-size: .75rem; color: var(--text-muted); }
         .rm-legend-item { display: inline-flex; align-items: center; gap: .375rem; padding: .25rem .55rem; background: var(--surface-2); border-radius: 999px; }
         .rm-legend-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
-        /* hover 시에도 좌측 액센트 톤 보존 */
-        .tl-cert-row.tl-cert-match-domain:hover  { box-shadow: 2px 0 0 0 #a5b4fc; }
-        .tl-cert-row.tl-cert-match-job:hover     { box-shadow: 2px 0 0 0 #fdba74; }
-        .tl-cert-row.tl-cert-match-neither:hover { box-shadow: 2px 0 0 0 #cbd5e1; }
         .tl-drawer-btn {
           flex-shrink: 0; width: 36px; display: flex; align-items: center; justify-content: center;
           background: none; border: none; border-left: 1px solid var(--border);
-          color: var(--text-light); cursor: pointer; transition: all .15s;
+          color: var(--text-light); cursor: pointer; transition: background .15s, color .15s;
           font-size: .64rem; font-weight: 700; flex-direction: column; gap: .1rem;
         }
         .tl-drawer-btn:hover { background: rgba(99,102,241,.08); color: var(--primary); }
@@ -1658,7 +1647,6 @@ const Roadmap: React.FC = () => {
           display: flex; flex-direction: column; gap: .3rem;
           padding: .5rem .625rem; background: var(--surface);
           border-radius: var(--radius-xs); border: 1px solid var(--border);
-          border-left: 3px solid var(--primary-light);
         }
         .rm-ev-card-hdr { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
         .rm-ev-src {
@@ -1708,14 +1696,13 @@ const Roadmap: React.FC = () => {
         .rm-ev-exam-label { font-size: .62rem; font-weight: 800; letter-spacing: .07em; color: var(--primary); text-transform: uppercase; }
         .rm-ev-exam-row { display: flex; flex-wrap: wrap; gap: .35rem; }
         .rm-ev-exam-pill { display: inline-flex; align-items: center; padding: .2rem .6rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: .74rem; font-weight: 600; color: var(--text); white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
-        .rm-ev-gasanjeom { padding: .5rem .75rem; background: #fefce8; border: 1px solid #fde68a; border-radius: var(--radius-xs); display: flex; flex-direction: column; gap: .25rem; }
-        .rm-ev-gasanjeom-label { font-size: .62rem; font-weight: 800; letter-spacing: .07em; color: #92400e; text-transform: uppercase; }
-        .rm-ev-gasanjeom-text { font-size: .8rem; color: #78350f; line-height: 1.6; margin: 0; }
+        .rm-ev-gasanjeom { padding: .5rem .75rem; background: var(--warning-light); border: 1px solid rgba(245,158,11,.3); border-radius: var(--radius-xs); display: flex; flex-direction: column; gap: .25rem; }
+        .rm-ev-gasanjeom-label { font-size: .62rem; font-weight: 800; letter-spacing: .07em; color: var(--warning-text); text-transform: uppercase; }
+        .rm-ev-gasanjeom-text { font-size: .8rem; color: var(--warning-text); line-height: 1.6; margin: 0; }
         .tl-cert-reason {
           font-size: .76rem; color: var(--text-muted); line-height: 1.55;
-          font-style: italic; padding-left: .25rem;
-          border-left: 2px solid var(--success-light);
-          padding-left: .5rem; margin: 0;
+          font-style: italic; padding-left: .5rem; margin: 0;
+          opacity: .85;
         }
         .tl-cert-badge {
           padding: .15rem .5rem; border-radius: var(--radius-xs);
@@ -1799,15 +1786,16 @@ const Roadmap: React.FC = () => {
           font-size: .83rem; color: var(--text-muted); line-height: 1.6; margin: 0;
         }
         .rm-today-motivation {
-          font-size: .77rem; color: #15803d; font-style: italic;
-          border-left: 2px solid rgba(16,185,129,.35); padding-left: .6rem; margin: 0;
+          font-size: .77rem; color: var(--success-dark); font-style: italic;
+          background: rgba(16,185,129,.07); padding: .4rem .6rem;
+          border-radius: var(--radius-xs); margin: 0;
         }
         .rm-today-footer { display: flex; justify-content: flex-end; margin-top: .25rem; }
         .rm-today-cta {
           font-size: .75rem; font-weight: 600; color: var(--primary);
           background: none; border: 1px solid rgba(99,102,241,.3);
           border-radius: var(--radius-xs); padding: .2rem .7rem;
-          cursor: pointer; transition: all .15s;
+          cursor: pointer; transition: background .15s, border-color .15s;
         }
         .rm-today-cta:hover { background: var(--primary-light); border-color: var(--primary); }
 
@@ -1899,9 +1887,20 @@ const Roadmap: React.FC = () => {
           background: none; border: 1px solid rgba(20,184,166,.3);
           border-radius: var(--radius-xs); padding: .25rem .75rem;
           cursor: pointer; display: inline-flex; align-items: center; gap: .35rem;
-          align-self: flex-start; transition: all .15s;
+          align-self: flex-start; transition: background .15s, color .15s;
         }
         .rm-support-expand-btn:hover { background: rgba(20,184,166,.08); }
+
+        @media (max-width: 600px) {
+          .rm-wrap { gap: 1rem; }
+          .rm-tab { padding: .45rem .875rem; font-size: .82rem; }
+          .rm-ai-loading { min-height: 200px; padding: 1.25rem; }
+          .rm-today-cta { width: 100%; justify-content: center; }
+          .rm-support-wrap { padding: 1rem; }
+          .rm-support-item { flex-direction: column; align-items: flex-start; }
+          .rm-support-item-meta { margin-top: .35rem; }
+          .rm-support-expand-btn { width: 100%; justify-content: center; }
+        }
       `}</style>
     </div>
   );

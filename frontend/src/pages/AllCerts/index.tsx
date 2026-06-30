@@ -192,9 +192,9 @@ const AllCerts: React.FC = () => {
         </div>
         <div className="filter-row-ac">
           <div className="filter-group">
-            <label className="filter-label">등급 필터</label>
+            <label className="filter-label" htmlFor="filter-grade">등급 필터</label>
             <div className="select-wrap">
-              <select className="select" value={selectedGrade} onChange={e => { const v = e.target.value; startFilterTransition(() => setSelectedGrade(v)); }}>
+              <select id="filter-grade" className="select" value={selectedGrade} onChange={e => { const v = e.target.value; startFilterTransition(() => setSelectedGrade(v)); }}>
                 <option value="">전체 등급</option>
                 <option value="1_기능사">기능사</option>
                 <option value="2_산업기사">산업기사</option>
@@ -207,9 +207,9 @@ const AllCerts: React.FC = () => {
           </div>
 
           <div className="filter-group">
-            <label className="filter-label">분야 필터</label>
+            <label className="filter-label" htmlFor="filter-domain">분야 필터</label>
             <div className="select-wrap">
-              <select className="select" value={selectedDomain} onChange={e => { const v = e.target.value; startFilterTransition(() => setSelectedDomain(v)); }}>
+              <select id="filter-domain" className="select" value={selectedDomain} onChange={e => { const v = e.target.value; startFilterTransition(() => setSelectedDomain(v)); }}>
                 <option value="">전체 분야</option>
                 {domainOptions.map(([id, name]) => (
                   <option key={id} value={id}>{name}</option>

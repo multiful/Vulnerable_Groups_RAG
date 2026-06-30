@@ -87,7 +87,7 @@ const Home: React.FC = () => {
       <div className="hero-inner">
         <div className="hero-text">
           <div className="hero-badge">청년 위험군 맞춤 자격증 추천</div>
-          <h1 className="hero-title">내 상황에 맞는<br/><span className="gradient-text">자격증과 성장 경로</span></h1>
+          <h1 className="hero-title">내 상황에 맞는<br/><span style={{color:'var(--primary)'}}>자격증과 성장 경로</span></h1>
           <p className="hero-sub">위험군 진단 후 관심 도메인을 선택하면 맞춤 로드맵과 자격증을 추천합니다.</p>
           <div className="hero-actions">
             <Link to="/risk-assessment" className="btn-primary hero-main-btn">진단 시작하기 <ArrowRight size={17}/></Link>
@@ -96,7 +96,14 @@ const Home: React.FC = () => {
         </div>
         <div className="hero-visual">
           <div className="mascot-figure">
-            <div className="mascot-wrap" onClick={handleMascotClick}>
+            <div
+              className="mascot-wrap"
+              role="button"
+              tabIndex={0}
+              aria-label="디딤이와 인사하기"
+              onClick={handleMascotClick}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleMascotClick(); } }}
+            >
               <img
                 src={happy ? '/didimi_smile.png' : '/didimi.png'}
                 alt="디딤이"
@@ -111,26 +118,23 @@ const Home: React.FC = () => {
 
     {/* 서비스 빠른 접근 */}
     <section>
-      <p className="eyebrow">공공데이터 실시간 연동</p>
       <h2 className="sec-title">자격증 추천 이후도 함께합니다</h2>
       <div className="service-grid">
         {SERVICES.map(s => (
-          <Link key={s.path} to={s.path} className="service-card card" style={{'--sc': s.color, '--sc-bg': s.bg} as React.CSSProperties}>
+          <Link key={s.path} to={s.path} className="service-item">
             <div className="service-icon-wrap" style={{background: s.bg}}>
-              <s.icon size={20} style={{color: s.color}} />
+              <s.icon size={22} style={{color: s.color}} />
             </div>
             <div className="service-info">
               <span className="service-title">{s.title}</span>
               <span className="service-desc">{s.desc}</span>
             </div>
-            <ArrowRight size={14} className="service-arrow" />
           </Link>
         ))}
       </div>
     </section>
 
     <section>
-      <p className="eyebrow">이용 흐름</p>
       <h2 className="sec-title">4단계로 완성되는 맞춤 추천</h2>
       <div className="flow-row">
         {FLOW.map((s, i) => (
@@ -149,13 +153,11 @@ const Home: React.FC = () => {
     </section>
 
     <section>
-      <p className="eyebrow">디딤의 3가지 약속</p>
       <h2 className="sec-title">추천을 행동으로 바꿉니다</h2>
       <div className="promise-grid">
         {PROMISES.map(p => (
           <div key={p.num} className={`promise-card card ${p.color}`}>
-            <div className="promise-bg-num">{p.num}</div>
-            <p className="promise-kw">{p.keyword}</p>
+            <div className="promise-bg-num" aria-hidden="true">{p.num}</div>
             <h3 className="promise-title">{p.title}</h3>
             <p className="promise-desc">{p.desc}</p>
           </div>
@@ -237,14 +239,15 @@ const Home: React.FC = () => {
       .hero-main-btn{padding:.75rem 1.5rem;font-size:.975rem}
       .hero-visual{display:flex;justify-content:center}
       .mascot-figure{display:flex;justify-content:center;align-items:center;width:100%;position:relative}
-      .mascot-figure::before{content:'';position:absolute;width:290px;height:290px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.07) 0%,rgba(99,102,241,.03) 55%,transparent 75%);border:1px dashed rgba(99,102,241,.15);pointer-events:none}
+      .mascot-figure::before{content:'';position:absolute;width:290px;height:290px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,.06) 0%,rgba(37,99,235,.02) 55%,transparent 75%);border:1px dashed rgba(37,99,235,.15);pointer-events:none}
       .mascot-wrap{position:relative;width:260px;height:260px;flex-shrink:0;cursor:pointer;animation:mascot-float 2.4s ease-in-out infinite}
-      .mascot-img{width:260px;height:260px;object-fit:contain;filter:drop-shadow(0 12px 32px rgba(99,102,241,.25));transition:filter .2s ease,transform .2s ease}
-      .mascot-wrap:hover .mascot-img:not(.mascot-happy){filter:drop-shadow(0 18px 42px rgba(99,102,241,.4));transform:scale(1.05)}
-      .mascot-img.mascot-happy{animation:mascot-bounce-scale .55s cubic-bezier(.34,1.56,.64,1) forwards;transform-origin:center bottom}
+      .mascot-wrap:focus-visible{outline:2px solid var(--primary);outline-offset:12px;border-radius:50%}
+      .mascot-img{width:260px;height:260px;object-fit:contain;filter:drop-shadow(0 12px 32px rgba(37,99,235,.2));transition:filter .2s ease,transform .2s ease}
+      .mascot-wrap:hover .mascot-img:not(.mascot-happy){filter:drop-shadow(0 18px 42px rgba(37,99,235,.35));transform:scale(1.05)}
+      .mascot-img.mascot-happy{animation:mascot-bounce-scale .5s cubic-bezier(0.16,1,0.3,1) forwards;transform-origin:center bottom}
       .mascot-heart{position:absolute;top:5px;left:50%;font-size:1.6rem;animation:heart-pop .5s ease forwards;pointer-events:none}
       @keyframes mascot-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-13px)}}
-      @keyframes mascot-bounce-scale{0%{transform:scale(1)}35%{transform:scale(1.18)}60%{transform:scale(.93)}82%{transform:scale(1.07)}100%{transform:scale(1)}}
+      @keyframes mascot-bounce-scale{0%{transform:scale(1)}45%{transform:scale(1.1)}100%{transform:scale(1)}}
       @keyframes heart-pop{0%{opacity:0;transform:translateX(-50%) scale(0) translateY(0)}35%{opacity:1;transform:translateX(-50%) scale(1.35) translateY(-8px)}65%{opacity:1;transform:translateX(-50%) scale(1) translateY(-16px)}100%{opacity:0;transform:translateX(-50%) scale(.8) translateY(-28px)}}
       .stage-card-title{font-size:.72rem;font-weight:700;letter-spacing:.07em;color:var(--text-light);text-transform:uppercase}
       .stage-list{display:flex;flex-direction:column;gap:.5rem}
@@ -269,10 +272,8 @@ const Home: React.FC = () => {
       .promise-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1.25rem}
       .promise-card{padding:1.75rem;display:flex;flex-direction:column;gap:.5rem;position:relative;overflow:hidden}
       .promise-bg-num{position:absolute;top:.5rem;right:.875rem;font-size:3rem;font-weight:900;letter-spacing:-.05em;opacity:.05;color:var(--text);pointer-events:none}
-      .promise-kw{font-size:.63rem;font-weight:700;letter-spacing:.12em;color:var(--text-light)}
       .promise-title{font-size:1rem;font-weight:700;color:var(--text);line-height:1.3}
       .promise-desc{font-size:.865rem;color:var(--text-muted);line-height:1.65;flex:1}
-      .eyebrow{font-size:.72rem;font-weight:700;letter-spacing:.1em;color:var(--primary);text-transform:uppercase;margin-bottom:.375rem}
       .data-source-section{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.875rem}
       .data-source-inner{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
       .ds-icon{color:var(--text-light);flex-shrink:0}
@@ -287,19 +288,18 @@ const Home: React.FC = () => {
       .ds-stat-num{font-size:1.1rem;font-weight:800;color:var(--primary);letter-spacing:-.02em}
       .ds-stat-desc{font-size:.7rem;color:var(--text-light);line-height:1.4}
       /* 서비스 그리드 */
-      .service-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.875rem}
-      .service-card{
-        display:flex;align-items:center;gap:.75rem;
-        padding:.875rem 1rem;text-decoration:none;
-        transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+      .service-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
+      @media(max-width:600px){.service-grid{grid-template-columns:repeat(2,1fr)}}
+      .service-item{
+        display:flex;flex-direction:column;gap:.625rem;
+        padding:1.125rem 1rem;border-radius:var(--radius);
+        text-decoration:none;transition:background .15s,transform .18s ease;
       }
-      .service-card:hover{border-color:var(--sc,var(--primary));transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
-      .service-icon-wrap{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-      .service-info{flex:1;display:flex;flex-direction:column;gap:.08rem}
+      .service-item:hover{background:var(--surface-2);transform:translateY(-2px)}
+      .service-icon-wrap{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+      .service-info{display:flex;flex-direction:column;gap:.15rem}
       .service-title{font-size:.875rem;font-weight:700;color:var(--text)}
       .service-desc{font-size:.72rem;color:var(--text-muted)}
-      .service-arrow{color:var(--text-light);flex-shrink:0;transition:transform .15s}
-      .service-card:hover .service-arrow{transform:translateX(2px);color:var(--sc,var(--primary))}
 
       /* 오늘의 행동 티저 */
       .today-section{

@@ -553,7 +553,7 @@ const InterestSelection: React.FC = () => {
           padding: .3rem .75rem; border: 1.5px solid var(--secondary);
           border-radius: var(--radius-full); background: var(--secondary-light);
           color: var(--secondary); font-size: .78rem; font-weight: 700;
-          cursor: pointer; transition: all .18s; white-space: nowrap; margin-left: auto;
+          cursor: pointer; transition: background .18s, color .18s; white-space: nowrap; margin-left: auto;
         }
         .job-toggle-btn:hover { background: var(--secondary); color: #fff; }
 
@@ -618,11 +618,11 @@ const InterestSelection: React.FC = () => {
 
         .domain-chip {
           display: inline-flex; align-items: center; gap: .375rem;
-          padding: .45rem .875rem;
+          padding: .45rem .875rem; min-height: 44px;
           border: 1.5px solid var(--border); background: var(--surface);
           border-radius: var(--radius-full);
           font-size: .83rem; font-weight: 500; color: var(--text-muted);
-          cursor: pointer; transition: all .18s; white-space: nowrap;
+          cursor: pointer; transition: border-color .18s, background .18s, color .18s, box-shadow .18s; white-space: nowrap;
         }
         .domain-chip:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
         .domain-chip-selected {
@@ -662,7 +662,7 @@ const InterestSelection: React.FC = () => {
           padding-top: .5rem; position: sticky; bottom: 0;
           background: var(--bg); padding-bottom: 1rem;
         }
-        .interest-next-btn { padding: .75rem 1.5rem; font-size: .95rem; transition: all .2s; }
+        .interest-next-btn { padding: .75rem 1.5rem; font-size: .95rem; transition: background .2s, opacity .2s, box-shadow .2s; }
         .interest-next-btn:disabled { opacity: .45; cursor: not-allowed; }
       `}</style>
     </div>

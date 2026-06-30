@@ -1,5 +1,5 @@
 // Content Hash: SHA256:TBD
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { clearPipeline, savePipeline } from '../../utils/pipelineState';
@@ -186,7 +186,7 @@ const STAGE_LABELS: Record<string, { label: string; sub: string; color: string }
   '1': { label: '1단계', sub: '고립위험청년',          color: '#10b981' },
   '2': { label: '2단계', sub: '활동형 고립청년',       color: '#0ea5e9' },
   '3': { label: '3단계', sub: '활동 제한형 고립청년',  color: '#f59e0b' },
-  '4': { label: '4단계', sub: '은둔 청년',             color: '#f43f5e' },
+  '4': { label: '4단계', sub: '은둔 청년',             color: '#4f46e5' },
 };
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -384,6 +384,8 @@ const RiskAssessment: React.FC = () => {
       .finally(() => setEvidenceLoading(false));
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const radioGroupRef = useRef<HTMLDivElement>(null);
+
   const q = QUESTIONS[current];
   const progress = ((current + 1) / QUESTIONS.length) * 100;
   const answered = answers[q.id] !== undefined;
@@ -488,6 +490,9 @@ const RiskAssessment: React.FC = () => {
 
     return (
       <div className="survey-wrap">
+        <p aria-live="polite" aria-atomic="true" className="sr-only">
+          {evidenceLoading ? '연구 근거를 검색하고 있습니다.' : '진단 결과가 준비되었습니다.'}
+        </p>
         <div className="page-header">
           <h1 className="page-title">진단 결과</h1>
           <p className="page-desc">12문항 응답 기반으로 산출된 위험군 단계입니다.</p>
@@ -516,12 +521,12 @@ const RiskAssessment: React.FC = () => {
           </div>
 
           <div className="result-bar-bg">
-            <div className="result-bar-fill" style={{ width: `${pct}%`, background: info.color }} />
+            <div className="result-bar-fill" style={{ transform: `scaleX(${pct / 100})`, background: info.color }} />
           </div>
 
           {/* ── 방사형 차트 ── */}
           <div className="result-radar-wrap">
-            <svg viewBox="0 0 260 260" className="result-radar-svg">
+            <svg viewBox="0 0 260 260" className="result-radar-svg" aria-hidden="true">
               {/* 격자 링 25/50/75/100% */}
               {[0.25, 0.5, 0.75, 1].map(frac => (
                 <polygon
@@ -603,7 +608,7 @@ const RiskAssessment: React.FC = () => {
                   <div className="result-cat-bar-bg">
                     <div
                       className="result-cat-bar-fill"
-                      style={{ width: `${catPct}%`, background: CATEGORY_COLORS[cat] ?? '#6366f1' }}
+                      style={{ transform: `scaleX(${catPct / 100})`, background: CATEGORY_COLORS[cat] ?? '#6366f1' }}
                     />
                   </div>
                   <span className="result-cat-pct">{catPct}%</span>
@@ -734,9 +739,9 @@ const RiskAssessment: React.FC = () => {
           </button>
         </div>
 
-        <div style={{ display:'flex', justifyContent:'center', marginTop:'.25rem' }}>
+        <div style={{ display:'flex', justifyContent:'center', marginTop:'.5rem' }}>
           <button
-            style={{ background:'none', border:'none', cursor:'pointer', fontSize:'.8rem', color:'var(--text-muted)' }}
+            className="btn-ghost"
             onClick={() => {
               clearPipeline();
               savePipeline({ stage });
@@ -758,12 +763,12 @@ const RiskAssessment: React.FC = () => {
           .result-stage-name { font-size:1.3rem; font-weight:800; color:var(--text); }
           .result-score-sub { font-size:.85rem; color:var(--text-muted); margin-top:.2rem; }
           .result-bar-bg { height:10px; background:var(--border); border-radius:99px; overflow:hidden; }
-          .result-bar-fill { height:100%; border-radius:99px; transition:width 0.8s ease; }
+          .result-bar-fill { height:100%; width:100%; border-radius:99px; transform-origin:left; transition:transform 0.8s ease; }
           .result-cats { display:flex; flex-direction:column; gap:.625rem; }
           .result-cat-row { display:flex; align-items:center; gap:.75rem; }
           .result-cat-label { font-size:.78rem; font-weight:600; color:var(--text-muted); width:68px; flex-shrink:0; }
           .result-cat-bar-bg { flex:1; height:6px; background:var(--border); border-radius:99px; overflow:hidden; }
-          .result-cat-bar-fill { height:100%; border-radius:99px; transition:width 0.6s ease; }
+          .result-cat-bar-fill { height:100%; width:100%; border-radius:99px; transform-origin:left; transition:transform 0.6s ease; }
           .result-cat-pct { font-size:.75rem; color:var(--text-light); width:32px; text-align:right; flex-shrink:0; }
           .result-radar-wrap {
             display:flex; justify-content:center; padding:.25rem 0;
@@ -771,7 +776,7 @@ const RiskAssessment: React.FC = () => {
           .result-radar-svg {
             width:100%; max-width:240px; height:auto; overflow:visible;
           }
-.result-data-note { padding:1rem 1.25rem; background:var(--surface-2); border-left:3px solid var(--primary); }
+          .result-data-note { padding:1rem 1.25rem; background:var(--primary-light); border:1px solid var(--border); border-radius:var(--radius-sm); }
           .rdn-title { font-size:.8rem; font-weight:700; color:var(--primary); margin-bottom:.4rem; }
           .rdn-body { font-size:.82rem; color:var(--text-muted); line-height:1.7; }
           .result-actions { display:flex; gap:.75rem; flex-wrap:wrap; }
@@ -916,13 +921,13 @@ const RiskAssessment: React.FC = () => {
             display: flex; flex-direction: column; gap: .5rem;
           }
           .policy-crisis-text {
-            font-size: .8rem; color: #be123c; line-height: 1.55; margin: 0;
+            font-size: .8rem; color: var(--danger-dark); line-height: 1.55; margin: 0;
           }
           .policy-crisis-links {
             display: flex; gap: .625rem; flex-wrap: wrap;
           }
           .policy-crisis-link {
-            font-size: .78rem; font-weight: 600; color: #9f1239;
+            font-size: .78rem; font-weight: 600; color: var(--danger-text);
             text-decoration: none;
             padding: .25rem .7rem;
             border: 1px solid rgba(244,63,94,.3);
@@ -931,6 +936,18 @@ const RiskAssessment: React.FC = () => {
             transition: background .15s;
           }
           .policy-crisis-link:hover { background: rgba(255,255,255,.9); }
+
+          /* ── Mobile ── */
+          @media (max-width:640px) {
+            .result-card { padding:1.25rem; }
+            .result-stage-row { flex-wrap:wrap; gap:.625rem; }
+            .result-badge { font-size:.8rem; }
+            .result-stage-name { font-size:1.1rem; }
+            .result-cat-label { width:56px; font-size:.72rem; }
+            .result-actions { flex-direction:column; }
+            .result-actions .btn-primary,
+            .result-actions .btn-ghost { width:100%; justify-content:center; }
+          }
         `}</style>
       </div>
     );
@@ -964,7 +981,7 @@ const RiskAssessment: React.FC = () => {
           </span>
         </div>
         <div className="survey-prog-bar-bg">
-          <div className="survey-prog-bar-fill" style={{ width: `${progress}%` }} />
+          <div className="survey-prog-bar-fill" style={{ transform: `scaleX(${progress / 100})` }} />
         </div>
       </div>
 
@@ -979,17 +996,46 @@ const RiskAssessment: React.FC = () => {
 
         <p className="survey-q-text">{q.text}</p>
 
-        <div className="survey-options">
-          {q.options.map(opt => {
+        <div
+          className="survey-options"
+          role="radiogroup"
+          aria-label={q.text}
+          ref={radioGroupRef}
+          onKeyDown={(e) => {
+            const opts = q.options;
+            const curIdx = opts.findIndex(o => o.score === answers[q.id]);
+            const base = curIdx >= 0 ? curIdx : 0;
+            let nextIdx = -1;
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+              e.preventDefault();
+              nextIdx = (base + 1) % opts.length;
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+              e.preventDefault();
+              nextIdx = (base - 1 + opts.length) % opts.length;
+            }
+            if (nextIdx >= 0) {
+              select(opts[nextIdx].score);
+              requestAnimationFrame(() => {
+                const btns = radioGroupRef.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]');
+                btns?.[nextIdx]?.focus();
+              });
+            }
+          }}
+        >
+          {q.options.map((opt, idx) => {
             const isSel = answers[q.id] === opt.score;
+            const isFirstUnselected = answers[q.id] === undefined && idx === 0;
             return (
               <button
                 key={opt.score}
+                role="radio"
+                aria-checked={isSel}
+                tabIndex={isSel || isFirstUnselected ? 0 : -1}
                 className={`survey-opt ${isSel ? 'selected' : ''}`}
                 onClick={() => select(opt.score)}
                 type="button"
               >
-                <span className="survey-opt-radio">{isSel ? '●' : '○'}</span>
+                <span className="survey-opt-radio" aria-hidden="true">{isSel ? '●' : '○'}</span>
                 {opt.label}
               </button>
             );
@@ -1026,7 +1072,7 @@ const RiskAssessment: React.FC = () => {
         .survey-prog-bar-fill {
           height:100%; border-radius:99px;
           background:var(--gradient-primary);
-          transition:width 0.35s ease;
+          width:100%; transform-origin:left; transition:transform 0.35s ease;
         }
         .survey-card {
           padding:1.75rem; display:flex; flex-direction:column; gap:1.25rem;
@@ -1040,7 +1086,7 @@ const RiskAssessment: React.FC = () => {
           display:flex; align-items:center; gap:.5rem;
           padding:.6rem .875rem; background:var(--warning-light);
           border-radius:var(--radius-xs); font-size:.8rem;
-          color:#92400e; border:1px solid rgba(245,158,11,.25);
+          color:var(--warning-text); border:1px solid rgba(245,158,11,.25);
         }
         .survey-q-text {
           font-size:1.05rem; font-weight:700; color:var(--text);
@@ -1053,7 +1099,7 @@ const RiskAssessment: React.FC = () => {
           border:1.5px solid var(--border); background:var(--surface);
           text-align:left; font-size:.9rem; color:var(--text-muted);
           font-weight:500; transition:var(--transition); cursor:pointer;
-          width:100%;
+          width:100%; min-height:44px;
         }
         .survey-opt:hover { border-color:var(--border-strong); background:var(--surface-2); color:var(--text); }
         .survey-opt.selected {
@@ -1073,8 +1119,8 @@ const RiskAssessment: React.FC = () => {
         }
         .safety-banner-icon { flex-shrink:0; color:var(--danger); padding-top:.1rem; }
         .safety-banner-body { display:flex; flex-direction:column; gap:.3rem; flex:1; }
-        .safety-title { font-weight:700; font-size:.9rem; color:#9f1239; }
-        .safety-sub { font-size:.82rem; color:#be123c; line-height:1.55; }
+        .safety-title { font-weight:700; font-size:.9rem; color:var(--danger-text); }
+        .safety-sub { font-size:.82rem; color:var(--danger-dark); line-height:1.55; }
         .safety-cta {
           display:inline-block; width:fit-content;
           margin-top:.35rem; padding:.45rem .875rem;
@@ -1086,7 +1132,7 @@ const RiskAssessment: React.FC = () => {
           display:flex; align-items:center; justify-content:space-between; gap:.75rem;
           padding:.55rem .875rem; background:#fffbeb;
           border:1px solid #fde68a; border-radius:var(--radius-sm);
-          font-size:.8rem; color:#92400e;
+          font-size:.8rem; color:var(--warning-text);
         }
         .survey-restore-reset-btn {
           font-size:.75rem; font-weight:600; color:#7c3aed;
@@ -1094,6 +1140,16 @@ const RiskAssessment: React.FC = () => {
           padding:.2rem .65rem; cursor:pointer; white-space:nowrap;
         }
         .survey-restore-reset-btn:hover { background:#ddd6fe; }
+
+        /* ── Mobile ── */
+        @media (max-width:640px) {
+          .survey-wrap { padding:0 .25rem; }
+          .survey-card { padding:1.25rem; }
+          .survey-opt { font-size:.875rem; padding:.75rem .875rem; }
+          .survey-nav { flex-direction:column-reverse; }
+          .survey-nav .btn-primary,
+          .survey-nav .btn-ghost { width:100%; justify-content:center; }
+        }
       `}</style>
     </div>
   );

@@ -254,7 +254,7 @@ const IsolationDashboard: React.FC = () => {
 
       {/* ══ 오늘의 행동 ══ */}
       {todayAct && (
-        <div className="iso-action-card" style={{ borderLeftColor: color, background: softBg }}>
+        <div className="iso-action-card" style={{ background: softBg }}>
           <div className="iso-action-top">
             <span className="iso-action-badge" style={{ background: color, color: '#fff' }}>
               {ACTION_TYPE_LABEL[todayAct.action_type] ?? '오늘의 행동'} · {todayAct.effort_minutes}분
@@ -516,7 +516,6 @@ const IsolationDashboard: React.FC = () => {
           padding: 1.25rem 1.5rem;
           border-radius: var(--radius);
           border: 1.5px solid var(--border);
-          border-left: 4px solid;
           display: flex; flex-direction: column; gap: .75rem;
         }
         .iso-action-top {

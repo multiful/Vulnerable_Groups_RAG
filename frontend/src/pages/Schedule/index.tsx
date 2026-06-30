@@ -563,7 +563,7 @@ const Schedule: React.FC = () => {
           padding:.3rem .65rem; font-size:.75rem; font-weight:600;
           background:var(--surface-2); border:1px solid var(--border);
           border-radius:20px; cursor:pointer; color:var(--text-muted);
-          transition:all .15s;
+          transition:border-color .15s, color .15s, background .15s;
         }
         .sch-quick-btn:hover { border-color:var(--primary); color:var(--primary); background:var(--primary-light); }
 
@@ -679,7 +679,7 @@ const Schedule: React.FC = () => {
           display:flex; align-items:center; gap:.5rem;
           padding:.6rem .875rem; border-radius:var(--radius-sm);
           font-size:.82rem; font-weight:600; text-decoration:none;
-          transition:all .15s; border:none; cursor:pointer;
+          transition:background .15s, color .15s, border-color .15s; border:none; cursor:pointer;
         }
         .sch-fallback-primary {
           background:var(--primary); color:#fff;

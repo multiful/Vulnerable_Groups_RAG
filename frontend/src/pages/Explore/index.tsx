@@ -68,7 +68,7 @@ function ScoreMini({ label, score }: { label: string; score: number | null }) {
       <span className="ex-score-label">{label}</span>
       <div className="ex-score-bar-wrap">
         <div className="ex-score-bar-track">
-          <div className="ex-score-bar-fill" style={{ width: `${score}%`, background: color }} />
+          <div className="ex-score-bar-fill" style={{ transform: `scaleX(${score / 100})`, background: color }} />
         </div>
         <span className="ex-score-num" style={{ color }}>{Math.round(score)}</span>
       </div>
@@ -1067,7 +1067,7 @@ const Explore: React.FC = () => {
         .ex-score-label { font-size: .64rem; color: var(--text-muted); font-weight: 600; }
         .ex-score-bar-wrap { display: flex; align-items: center; gap: .35rem; }
         .ex-score-bar-track { flex: 1; height: 5px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
-        .ex-score-bar-fill { height: 100%; border-radius: 99px; transition: width .4s; }
+        .ex-score-bar-fill { height: 100%; width: 100%; border-radius: 99px; transform-origin: left; transition: transform .4s ease; }
         .ex-score-num { font-size: .68rem; font-weight: 700; min-width: 20px; text-align: right; }
         .ex-salary-summary { font-size: .7rem; color: #059669; font-weight: 600; }
         .ex-card-desc { font-size: .78rem; color: var(--text-muted); margin: 0; line-height: 1.5; }
@@ -1202,7 +1202,7 @@ const Explore: React.FC = () => {
           padding: .35rem .85rem; font-size: .82rem; font-weight: 600;
           background: var(--surface-2); border: 1px solid var(--border);
           border-radius: var(--radius-sm); cursor: pointer; color: var(--text-muted);
-          transition: all .15s;
+          transition: border-color .15s, color .15s;
         }
         .ex-page-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
         .ex-page-btn:disabled { opacity: .4; cursor: not-allowed; }
