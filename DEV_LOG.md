@@ -1,7 +1,7 @@
 # DEV_LOG.md
 
 > **파일명**: DEV_LOG.md  
-> **최종 수정일**: 2026-05-27  
+> **최종 수정일**: 2026-06-30  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 날짜별 진행 로그, 변경 요약, 해결 이력  
 > **문서 우선순위**: 14  
@@ -13,6 +13,56 @@
 ## 1. 문서 목적
 
 구현과 문서 정렬 작업의 **타임라인**을 남겨, 이후 기여자가 맥락을 잃지 않게 한다.
+
+---
+
+## 2026-06-30 — RAG 출처 카탈로그, F-18 다차원 분류 설계, 사후관리 sp_0014 수정
+
+### 수행
+
+**sp_0014 수정**
+- `support_program_master.csv`: 생계급여·긴급복지 연계 `service_category` → `사후관리`에서 `별도_지원`으로 수정 (이미지 표 12 "별도 지원" 항목으로 분리)
+- `DATA_SCHEMA.md §4.9`: `별도_지원` enum 값 추가 (사후관리 = 지역기반 관계 형성·자조모임 운영만)
+
+**F-18 군집 분류 로직 개선 (FEATURE_SPEC.md)**
+- 기존 단순 총점 구간 → 다차원 판별 규칙으로 교체
+- 차원: D_관계망(max 12) · D_활동(max 6) · D_노동경제(max 6) · D_자기관리(max 3)
+- 의사결정 트리: ① 은둔청년(D_관계망≥8 AND D_활동≥5) → ② 활동제한형(D_관계망≥6) → ③ 활동형(D_노동경제≥3) → 고립위험
+- 유효성 검증 계획 추가: Cronbach's α · EFA · k-means 실루엣 · Cohen's κ (목표 기준 명시)
+
+**RAG_PIPELINE.md §17 신규 추가**
+- 출처 카탈로그(doc_support_001~007): 한국보건사회연구원·서울시·여성가족부·생명의전화 실무 가이드북 포함
+- chunk 필수 provenance 필드: doc_title, doc_agency, doc_pub_year, doc_page, doc_section
+- 출처 표시 형식: `[출처] {doc_title} ({doc_agency}, {doc_pub_year}), p.{page}`
+- 이미지 표 12 원출처(청년이음센터 2021 가이드북)도 doc_support_006으로 등록
+
+### 근거
+- 사후관리는 지역기반사회적관계형성프로그램참여·자조모임운영및참여만 해당 (이미지 표 12 직접 확인)
+- F-18 분류 이론 근거: 고립은둔 청년 지원사업 모형 개발 연구(한국보건사회연구원 2022), 서울시 실태조사, 생명의전화 가이드북 2021
+
+## 2026-06-30 — 지원 제도(SupportProgram) 스키마 및 마스터 데이터 추가
+
+### 수행
+
+**DATA_SCHEMA.md 확장**
+- §4.8~4.11: `target_group_type`, `service_category`, `lifecycle_phase`, `support_strategy` enum 추가
+- §4.3: relation_type에 `support_program_to_target_group`, `support_program_to_risk_stage` 추가
+- §5.8: `TargetGroup` 엔티티 정의 (대상 유형 5종)
+- §5.9: `SupportProgram` 엔티티 정의 (16개 지원 제도)
+- §6.13~6.14: 두 새 relation 스키마 정의
+
+**신규 master CSV (data/processed/master/)**
+- `target_group_master.csv` — 5행: 고립위험청년·활동형·활동제한형·은둔청년·가족. `mapped_risk_stage_ids` 컬럼으로 risk_stage 직접 참조
+- `support_program_master.csv` — 16행: 이미지 표 12 기준 서비스 항목. `service_category`, `lifecycle_phase` 1차 분류 적용
+
+**신규 relation CSV (data/canonical/relations/)**
+- `support_program_target_mapping.csv` — 40행: 지원 제도 ↔ 대상 유형 다대다 매핑
+- `support_program_risk_stage_mapping.csv` — 62행: 지원 제도 ↔ 위험군 단계 매핑 (target_group의 mapped_risk_stage_ids에서 파생)
+
+**FOLDER.md 갱신**: `data/processed/master/FOLDER.md`, `data/canonical/relations/FOLDER.md`
+
+### 근거
+이미지 표 12 (지원 대상 유형 및 지원목표에 따른 핵심 서비스) 기준. `service_category`(자기이해_및_심리상담/치유적_관계형성/일_경험_및_사회활동/사후관리)가 1차 분류, `target_group_type`이 대상 분류.
 
 ---
 
@@ -444,3 +494,9 @@
 
 - 루트에 `CSV_CANONICALIZATION_TEAM_GUIDE.md` 추가 (영민·유빈: 데이터 수집 슬라이드·Parse 슬라이드 기준 CSV 레인 전담 절차).
 - `README.md` §5 표에 해당 문서 링크 한 줄 추가.
+
+
+
+넌 당신은 Level2-4가 아니고 예를 들어 보기 좋게 3단계 군으로 자격증 난이도 60%  이상 자격증이 추천되며 취업 연관이 높은 자격증이 추천됩니다. 이런 자격증이
+  나온 이유는 ~~~ 입니다. (ex 합격률이 67% 이며, 희망 분야와 연관성이 평균에 비해 27%높으며, [네이버, 카카오뱅크, .... 등 실제 시간에 맞게 채용 중인 공고들
+  분석 후] 채용 공고 에서 많이 요구되는 자격증입니다. 그래서 추천했습니다.) 라고 나오면 좋겠어.

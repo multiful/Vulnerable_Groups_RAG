@@ -13,6 +13,10 @@ langchain-openai>=0.2.0
 langchain-huggingface>=0.1.0
 sentence-transformers>=3.0.0
 
+# 웹 크롤링
+beautifulsoup4>=4.12.0,<5
+lxml>=5.0.0,<6
+
 # PDF 파이프라인
 pymupdf4llm>=0.0.17
 pdfplumber>=0.11.0

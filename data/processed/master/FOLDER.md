@@ -2,7 +2,7 @@
 
 > **파일명**: FOLDER.md  
 > **폴더 경로**: `data/processed/master`  
-> **최종 수정일**: 2026-04-17  
+> **최종 수정일**: 2026-06-30  
 > **문서 해시**: SHA256:TBD  
 > **문서 역할**: 디렉터리 스캐폴드 명시서 — 담는 내용·금지·다음 단계 연계  
 > **문서 우선순위**: reference (충돌 시 루트 기준 문서 우선)  
@@ -31,6 +31,8 @@ raw CSV에서 정제된 **master 중간 산출물**을 둔다.
 | `ncs_master.csv` | 261 | ncs_0001~ | ✅ |
 | `risk_stage_master.csv` | 5 | risk_0001~ | ✅ |
 | `roadmap_stage_master.csv` | 5 | roadmap_stage_0001~ | ✅ |
+| `target_group_master.csv` | 5 | tg_0001~ | ✅ 지원 대상 유형(고립위험청년~은둔청년+가족) |
+| `support_program_master.csv` | 16 | sp_0001~ | ✅ 지원 제도(이미지 표 12 기준) |
 | `MASTER_MERGE_PLAN.md` | — | — | 전체 빌드 진행 현황 체크리스트 |
 
 ---

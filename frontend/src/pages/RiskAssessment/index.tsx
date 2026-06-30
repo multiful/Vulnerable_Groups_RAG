@@ -1,8 +1,10 @@
 // Content Hash: SHA256:TBD
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { clearPipeline, savePipeline } from '../../utils/pipelineState';
+import { fetchStageEvidence } from '../../api/client';
+import type { StageEvidenceItem } from '../../api/client';
 
 const SURVEY_KEY = 'didim_survey_v1';
 
@@ -187,6 +189,164 @@ const STAGE_LABELS: Record<string, { label: string; sub: string; color: string }
   '4': { label: '4단계', sub: '은둔 청년',             color: '#f43f5e' },
 };
 
+/* ─────────────────────────────────────────────────────────────────────
+   표12 근거 데이터: 보건복지부 고립은둔 청년 지원사업 모형 개발 연구
+   김성아 (2022). 정책보고서 2022-35. 요약 표 12.
+   지원 대상 유형 및 지원목표에 따른 핵심 서비스
+   ───────────────────────────────────────────────────────────────────── */
+interface ProgramItem {
+  text: string;
+  url?: string;
+}
+interface SupportProgram {
+  category: string;
+  categoryDesc: string;
+  items: ProgramItem[];
+}
+interface StagePolicy {
+  isolationType: string;
+  strategy: string;
+  characteristic: string;
+  programs: SupportProgram[];
+}
+
+const STAGE_POLICY: Record<string, StagePolicy> = {
+  '1': {
+    isolationType: '고립 위험 청년',
+    strategy: '예방을 위한 연계 및 추적관리',
+    characteristic:
+      '관계 형성과 소통에 어려움이 높지 않고, 취·창업 등 사회이행을 위한 노력을 하고 있는 상태입니다.',
+    programs: [
+      {
+        category: '자기이해 및 심리상담',
+        categoryDesc: '고립된 삶 단계',
+        items: [
+          { text: '예방을 위한 심리·상담 연계 및 추적관리', url: 'https://www.bokjiro.go.kr' },
+        ],
+      },
+      {
+        category: '일 경험 및 사회활동',
+        categoryDesc: '회복 단계',
+        items: [
+          { text: '청년도전지원사업 연계', url: 'https://www.work24.go.kr' },
+          { text: '자기개발 및 진로탐색 프로그램', url: 'https://www.work24.go.kr' },
+          { text: '일 경험 프로그램 참여', url: 'https://www.work24.go.kr' },
+        ],
+      },
+      {
+        category: '사후관리',
+        categoryDesc: '통합된 삶 단계',
+        items: [
+          { text: '지역 기반 사회적 관계 형성 프로그램 참여 (독서모임, 미술모임, 가드닝모임, 요리모임 등)', url: 'https://www.mogef.go.kr' },
+          { text: '자조모임 운영 및 참여' },
+        ],
+      },
+    ],
+  },
+  '2': {
+    isolationType: '활동형 고립 청년',
+    strategy: '맞춤형 사례관리',
+    characteristic:
+      '관계에 어려움이 높지 않으나 문제해결 및 대처능력이 부족하고, 취·창업 등 사회이행 노력을 하고 있지만 사회 안착에서 반복적으로 탈락한 경험이 있는 상태입니다.',
+    programs: [
+      {
+        category: '자기이해 및 심리상담',
+        categoryDesc: '고립된 삶 단계',
+        items: [
+          { text: '자기이해 워크숍 (집단활동 프로그램, 자기 이미지 이해와 관리 등)', url: 'https://www.mogef.go.kr' },
+          { text: '마음건강바우처 등 심리·상담 지원 연계 (1:1 심리상담, 집단상담, 방문상담, 온라인상담 등)', url: 'https://www.bokjiro.go.kr' },
+        ],
+      },
+      {
+        category: '치유적 관계 형성',
+        categoryDesc: '회복 단계',
+        items: [
+          { text: '치유적 관계 형성 프로그램 (3끼 식사, 신체활동, 예술활동, 놀이활동 등)', url: 'https://www.mogef.go.kr' },
+        ],
+      },
+      {
+        category: '일 경험 및 사회활동',
+        categoryDesc: '회복 단계',
+        items: [
+          { text: '고립·은둔청년 활동가 양성 및 활동', url: 'https://www.mogef.go.kr' },
+        ],
+      },
+      {
+        category: '사후관리',
+        categoryDesc: '통합된 삶 단계',
+        items: [
+          { text: '지역 기반 사회적 관계 형성 프로그램 참여 (독서모임, 미술모임, 가드닝모임, 요리모임 등)', url: 'https://www.mogef.go.kr' },
+          { text: '자조모임 운영 및 참여' },
+        ],
+      },
+    ],
+  },
+  '3': {
+    isolationType: '활동 제한형 고립 청년',
+    strategy: '맞춤형 사례관리',
+    characteristic:
+      '대인관계 및 사회생활에 어려움이 있으며, 기본적인 사회활동과 욕구 관련 활동을 선택적으로 하지만 비자발적인 상태입니다.',
+    programs: [
+      {
+        category: '자기이해 및 심리상담',
+        categoryDesc: '고립된 삶 단계',
+        items: [
+          { text: '자기이해 워크숍 (집단활동 프로그램, 자기 이미지 이해와 관리 등)', url: 'https://www.mogef.go.kr' },
+          { text: '마음건강바우처 등 심리·상담 지원 연계 (1:1 심리상담, 집단상담, 방문상담, 온라인상담 등)', url: 'https://www.bokjiro.go.kr' },
+          { text: '정신건강의학과 등 심리치료 연계', url: 'https://www.mentalhealth.go.kr' },
+        ],
+      },
+      {
+        category: '치유적 관계 형성',
+        categoryDesc: '회복 단계',
+        items: [
+          { text: '치유적 관계 형성 프로그램 (3끼 식사, 신체활동, 예술활동, 놀이활동 등)', url: 'https://www.mogef.go.kr' },
+        ],
+      },
+      {
+        category: '경제·생계·주거 지원',
+        categoryDesc: '기반 안정',
+        items: [
+          { text: '긴급복지 및 주거 지원 연계', url: 'https://www.bokjiro.go.kr' },
+        ],
+      },
+    ],
+  },
+  '4': {
+    isolationType: '은둔 청년',
+    strategy: '맞춤형 사례관리',
+    characteristic:
+      '가족 및 타인과의 소통이 어렵고, 외부 접촉을 최소화하며 특정 공간에서만 생활하거나 은둔과 사회활동을 반복하는 상태입니다.',
+    programs: [
+      {
+        category: '자기이해 및 심리상담',
+        categoryDesc: '고립된 삶 단계',
+        items: [
+          { text: '자기이해 워크숍 (집단활동 프로그램, 자기 이미지 이해와 관리 등)', url: 'https://www.mogef.go.kr' },
+          { text: '마음건강바우처 등 심리·상담 지원 연계 (1:1 심리상담, 집단상담, 방문상담, 온라인상담 등)', url: 'https://www.bokjiro.go.kr' },
+          { text: '정신건강의학과 등 심리치료 연계', url: 'https://www.mentalhealth.go.kr' },
+        ],
+      },
+      {
+        category: '치유적 관계 형성',
+        categoryDesc: '회복 단계',
+        items: [
+          { text: '공동생활 참여', url: 'https://www.mogef.go.kr' },
+          { text: '시간 및 일상생활 관리 프로그램 (수면 및 위생 관리, 정리정돈)' },
+          { text: '사회기술 재학습 프로그램' },
+        ],
+      },
+      {
+        category: '경제·생계·주거 지원',
+        categoryDesc: '기반 안정',
+        items: [
+          { text: '생계급여 및 긴급복지 연계 등 생계비 및 주거 지원', url: 'https://www.bokjiro.go.kr' },
+        ],
+      },
+    ],
+  },
+};
+
 const RiskAssessment: React.FC = () => {
   const navigate = useNavigate();
 
@@ -207,6 +367,22 @@ const RiskAssessment: React.FC = () => {
     try { const s = sessionStorage.getItem(SURVEY_KEY); if (s) { const p = JSON.parse(s); return (p.current ?? 0) > 0; } } catch {}
     return false;
   });
+
+  /* ── RAG 분류 근거 ── */
+  const [evidence, setEvidence] = useState<StageEvidenceItem[]>([]);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+
+  useEffect(() => {
+    if (step !== 'result') return;
+    const totalScore = QUESTIONS.reduce((s, q) => s + (answers[q.id] ?? 0), 0);
+    const stageId = scoreToStage(totalScore, safetyFlag);
+    setEvidence([]);
+    setEvidenceLoading(true);
+    fetchStageEvidence(stageId)
+      .then(items => setEvidence(items.slice(0, 2)))
+      .catch(() => setEvidence([]))
+      .finally(() => setEvidenceLoading(false));
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const q = QUESTIONS[current];
   const progress = ((current + 1) / QUESTIONS.length) * 100;
@@ -249,6 +425,49 @@ const RiskAssessment: React.FC = () => {
     }
   }
 
+  /* ── 차원 점수 기반 분류 이유 텍스트 생성 ── */
+  function buildDimensionReason(
+    stage: string,
+    catScores: [string, { score: number; max: number }][],
+    pct: number,
+  ): string {
+    // max=0 방어: 분모가 0이면 0%로 처리
+    const sm: Record<string, number> = {};
+    for (const [cat, { score, max }] of catScores) {
+      sm[cat] = max > 0 ? Math.round((score / max) * 100) : 0;
+    }
+    // 내림차순 정렬된 [카테고리, 점수%] 쌍
+    const sorted = Object.entries(sm).sort(([, a], [, b]) => b - a);
+
+    switch (stage) {
+      case '4': {
+        // 은둔청년(75%+): 실제 가장 높은 두 어려움 영역을 표시
+        const top2 = sorted.slice(0, 2).map(([k, v]) => `${k}(${v}%)`);
+        return `${top2.join('·')} 영역의 높은 어려움에 기반하여`;
+      }
+      case '3': {
+        // 활동제한형(50-75%): ≥45%인 영역 우선, 없으면 상위 2개
+        const elevated = sorted.filter(([, v]) => v >= 45).slice(0, 2);
+        const display = elevated.length > 0 ? elevated : sorted.slice(0, 2);
+        return `${display.map(([k, v]) => `${k}(${v}%)`).join('·')} 영역의 어려움에 기반하여`;
+      }
+      case '2': {
+        // 활동형(25-50%): ≥35%인 영역 우선, 없으면 상위 2개
+        const elevated = sorted.filter(([, v]) => v >= 35).slice(0, 2);
+        const display = elevated.length > 0 ? elevated : sorted.slice(0, 2);
+        return `${display.map(([k, v]) => `${k}(${v}%)`).join('·')} 영역의 응답에 기반하여`;
+      }
+      default: {
+        // 고립위험청년(<25%): 가장 높은 관심 영역을 언급하되 전체 위험도가 낮음을 명시
+        const topCat = sorted[0];
+        if (topCat && topCat[1] >= 20) {
+          return `${topCat[0]}(${topCat[1]}%) 등 일부 주의 영역이 있으나 전반적 위험도(${pct}%)가 낮아`;
+        }
+        return `전반적으로 낮은 위험 수준(위험도 ${pct}%)에 기반하여`;
+      }
+    }
+  }
+
   /* ── Result ── */
   if (step === 'result') {
     const totalScore = QUESTIONS.reduce((s, q) => s + (answers[q.id] ?? 0), 0);
@@ -265,6 +484,7 @@ const RiskAssessment: React.FC = () => {
         return acc;
       }, {})
     );
+    const dimensionReason = buildDimensionReason(stage, categoryScores, pct);
 
     return (
       <div className="survey-wrap">
@@ -393,30 +613,108 @@ const RiskAssessment: React.FC = () => {
           </div>
         </div>
 
-        {/* 활동 제한형·은둔 청년 지원 안내 (3~4단계) */}
-        {(stage === '3' || stage === '4') && (
-          <div className="wellness-card">
-            <div className="wellness-card-top">
-              <span className="wellness-icon">🌱</span>
-              <span className="wellness-title">
-                {stage === '4' ? '함께라면 한 걸음씩 나아갈 수 있어요' : '작은 시작이 큰 변화를 만들어요'}
-              </span>
+        {/* ── 표12 근거 지원 프로그램 섹션 (전 단계) ── */}
+        {(() => {
+          const policy = STAGE_POLICY[stage];
+          if (!policy) return null;
+          return (
+            <div className="policy-card">
+              {/* 출처 헤더 */}
+              <div className="policy-source">
+                <span className="policy-source-badge">연구 근거</span>
+                <span className="policy-source-text">
+                  보건복지부 고립은둔 청년 지원사업 모형 개발 연구 (김성아, 2022) · 정책보고서 2022-35 · 요약 표 12
+                </span>
+              </div>
+
+              {/* 분류 결과 */}
+              <div className="policy-classify">
+                <p className="policy-classify-label">분류 결과</p>
+                <p className="policy-classify-type">
+                  귀하의{' '}
+                  <strong className="policy-dim-reason">{dimensionReason}</strong>{' '}
+                  <strong style={{ color: info.color }}>{policy.isolationType}</strong>으로 분류됐습니다.
+                </p>
+                <p className="policy-classify-char">{policy.characteristic}</p>
+                <div className="policy-strategy-row">
+                  <span className="policy-strategy-label">지원 전략</span>
+                  <span className="policy-strategy-value">{policy.strategy}</span>
+                </div>
+              </div>
+
+              {/* RAG 연구 근거 */}
+              {(evidenceLoading || evidence.length > 0) && (
+                <div className="policy-evidence-section">
+                  <p className="policy-evidence-title">📄 연구 근거</p>
+                  {evidenceLoading ? (
+                    <p className="policy-evidence-loading">근거 문서 검색 중…</p>
+                  ) : (
+                    evidence.map((ev, i) => (
+                      <div key={i} className="policy-evidence-item">
+                        <p className="policy-evidence-snippet">"{ev.snippet.slice(0, 200).trim()}{ev.snippet.length > 200 ? '…' : ''}"</p>
+                        <p className="policy-evidence-source">
+                          [{ev.doc_id.replace(/_/g, ' ')}
+                          {ev.section_path?.length ? ` · ${ev.section_path[0]}` : ''}]
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              <div className="policy-divider" />
+
+              {/* 추천 지원 프로그램 */}
+              <div className="policy-programs">
+                <p className="policy-programs-title">추천 지원 제도</p>
+                {policy.programs.map((prog, pi) => (
+                  <div key={pi} className="policy-prog-group">
+                    <div className="policy-prog-category">
+                      <span className="policy-prog-cat-name">{prog.category}</span>
+                      <span className="policy-prog-cat-desc">{prog.categoryDesc}</span>
+                    </div>
+                    <ul className="policy-prog-items">
+                      {prog.items.map((item, ii) => (
+                        <li key={ii} className="policy-prog-item">
+                          {item.url ? (
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="policy-prog-link"
+                            >
+                              {item.text}
+                              <span className="policy-prog-link-arrow">→</span>
+                            </a>
+                          ) : (
+                            item.text
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+
+              {/* 위기 단계 추가 안내 */}
+              {(stage === '3' || stage === '4') && (
+                <div className="policy-crisis-note">
+                  <p className="policy-crisis-text">
+                    지금 혼자 감당하기 어려우신 상황이라면, 아래 연락처로 연결하실 수 있습니다.
+                  </p>
+                  <div className="policy-crisis-links">
+                    <a href="https://www.suicide.or.kr/m/index.php" target="_blank" rel="noopener noreferrer" className="policy-crisis-link">
+                      1393 자살예방상담전화
+                    </a>
+                    <a href="https://job.seoul.go.kr/main" target="_blank" rel="noopener noreferrer" className="policy-crisis-link">
+                      서울시 청년일자리카페
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
-            <p className="wellness-body">
-              {stage === '4'
-                ? '지금 밖으로 나오기 어려우시다면, 온라인 상담이나 방문 지원 서비스를 이용해 보세요. 서울시 청년 지원 공간에서는 부담 없이 연결을 시작할 수 있습니다.'
-                : '활동에 어려움이 있으시더라도 낮은 부담의 훈련과정이나 청년 공간을 통해 작은 성취를 경험해 보세요. 서울시 청년 일자리카페가 가까이 있습니다.'}
-            </p>
-            <div className="wellness-links">
-              <a href="https://job.seoul.go.kr/main" target="_blank" rel="noopener noreferrer" className="wellness-link">
-                서울시 청년일자리카페 →
-              </a>
-              <a href="https://www.suicide.or.kr/m/index.php" target="_blank" rel="noopener noreferrer" className="wellness-link wellness-link-soft">
-                마음이 힘들다면 1393 상담 →
-              </a>
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         <div className="result-actions">
           <button className="btn-ghost" onClick={() => {
@@ -473,30 +771,166 @@ const RiskAssessment: React.FC = () => {
           .result-radar-svg {
             width:100%; max-width:240px; height:auto; overflow:visible;
           }
-          .wellness-card {
-            padding:1rem 1.25rem;
-            background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
-            border: 1px solid #bbf7d0;
-            border-left: 3px solid #10b981;
-            border-radius: var(--radius-sm);
-            display: flex; flex-direction: column; gap: .625rem;
-          }
-          .wellness-card-top { display: flex; align-items: center; gap: .5rem; }
-          .wellness-icon { font-size: 1.1rem; }
-          .wellness-title { font-size: .9rem; font-weight: 700; color: #065f46; }
-          .wellness-body { font-size: .82rem; color: #047857; line-height: 1.65; margin: 0; }
-          .wellness-links { display: flex; gap: .75rem; flex-wrap: wrap; }
-          .wellness-link {
-            font-size: .78rem; color: #059669; text-decoration: none; font-weight: 600;
-            padding: .25rem .6rem; border: 1px solid #6ee7b7; border-radius: var(--radius-sm);
-            background: rgba(255,255,255,.6); transition: background .15s;
-          }
-          .wellness-link:hover { background: rgba(255,255,255,.9); }
-          .wellness-link-soft { color: #7c3aed; border-color: #c4b5fd; }
-          .result-data-note { padding:1rem 1.25rem; background:var(--surface-2); border-left:3px solid var(--primary); }
+.result-data-note { padding:1rem 1.25rem; background:var(--surface-2); border-left:3px solid var(--primary); }
           .rdn-title { font-size:.8rem; font-weight:700; color:var(--primary); margin-bottom:.4rem; }
           .rdn-body { font-size:.82rem; color:var(--text-muted); line-height:1.7; }
           .result-actions { display:flex; gap:.75rem; flex-wrap:wrap; }
+
+          /* ── 표12 근거 지원 프로그램 카드 ── */
+          .policy-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            display: flex; flex-direction: column; gap: 0;
+            overflow: hidden;
+          }
+
+          .policy-source {
+            display: flex; align-items: center; gap: .625rem; flex-wrap: wrap;
+            padding: .625rem 1.125rem;
+            background: var(--surface-2);
+            border-bottom: 1px solid var(--border);
+          }
+          .policy-source-badge {
+            font-size: .68rem; font-weight: 800; letter-spacing: .05em;
+            color: var(--primary); background: var(--primary-light);
+            padding: .15rem .55rem; border-radius: 99px;
+            white-space: nowrap; flex-shrink: 0;
+          }
+          .policy-source-text {
+            font-size: .72rem; color: var(--text-muted); line-height: 1.5;
+          }
+
+          .policy-classify {
+            padding: 1rem 1.125rem;
+            display: flex; flex-direction: column; gap: .5rem;
+          }
+          .policy-classify-label {
+            font-size: .68rem; font-weight: 800; letter-spacing: .07em;
+            color: var(--text-light); text-transform: uppercase; margin: 0;
+          }
+          .policy-classify-type {
+            font-size: .97rem; font-weight: 700; color: var(--text);
+            line-height: 1.55; margin: 0;
+          }
+          .policy-classify-char {
+            font-size: .82rem; color: var(--text-muted); line-height: 1.65; margin: 0;
+          }
+          .policy-strategy-row {
+            display: inline-flex; align-items: center; gap: .5rem; margin-top: .15rem;
+          }
+          .policy-strategy-label {
+            font-size: .72rem; font-weight: 700; color: var(--text-muted);
+            background: var(--surface-2); padding: .15rem .55rem;
+            border-radius: 4px; border: 1px solid var(--border);
+          }
+          .policy-strategy-value {
+            font-size: .82rem; font-weight: 700; color: var(--text);
+          }
+
+          .policy-divider { height: 1px; background: var(--border); }
+
+          .policy-programs {
+            padding: 1rem 1.125rem;
+            display: flex; flex-direction: column; gap: .875rem;
+          }
+          .policy-programs-title {
+            font-size: .72rem; font-weight: 800; letter-spacing: .07em;
+            color: var(--text-muted); text-transform: uppercase; margin: 0 0 .125rem;
+          }
+
+          .policy-prog-group {
+            display: flex; flex-direction: column; gap: .375rem;
+          }
+          .policy-prog-category {
+            display: flex; align-items: center; gap: .5rem;
+          }
+          .policy-prog-cat-name {
+            font-size: .8rem; font-weight: 800; color: var(--text);
+          }
+          .policy-prog-cat-desc {
+            font-size: .68rem; color: var(--text-light);
+            background: var(--surface-2); padding: .1rem .45rem;
+            border-radius: 4px; border: 1px solid var(--border);
+          }
+
+          .policy-prog-items {
+            list-style: none; padding: 0; margin: 0;
+            display: flex; flex-direction: column; gap: .3rem;
+          }
+          .policy-prog-item {
+            font-size: .83rem; color: var(--text-muted); line-height: 1.6;
+            padding-left: 1rem; position: relative;
+          }
+          .policy-prog-item::before {
+            content: ""; position: absolute; left: 0; top: .58em;
+            width: 4px; height: 4px; border-radius: 50%;
+            background: var(--border-strong);
+          }
+          .policy-prog-link {
+            color: var(--primary); text-decoration: none; font-weight: 600;
+            display: inline-flex; align-items: center; gap: .2rem;
+          }
+          .policy-prog-link:hover { text-decoration: underline; }
+          .policy-prog-link-arrow {
+            font-size: .75rem; opacity: .7;
+          }
+
+          .policy-dim-reason {
+            color: var(--primary); font-weight: 700;
+          }
+
+          /* ── RAG 연구 근거 ── */
+          .policy-evidence-section {
+            padding: .875rem 1.125rem;
+            border-top: 1px solid var(--border);
+            background: var(--surface-2);
+            display: flex; flex-direction: column; gap: .5rem;
+          }
+          .policy-evidence-title {
+            font-size: .72rem; font-weight: 800; letter-spacing: .05em;
+            color: var(--text-muted); margin: 0;
+          }
+          .policy-evidence-loading {
+            font-size: .8rem; color: var(--text-light); margin: 0;
+          }
+          .policy-evidence-item {
+            display: flex; flex-direction: column; gap: .2rem;
+            padding: .5rem .75rem;
+            background: var(--surface); border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+          }
+          .policy-evidence-snippet {
+            font-size: .8rem; color: var(--text); line-height: 1.65; margin: 0;
+            font-style: italic;
+          }
+          .policy-evidence-source {
+            font-size: .68rem; color: var(--text-light); margin: 0;
+          }
+
+          .policy-crisis-note {
+            padding: .75rem 1.125rem;
+            background: var(--danger-light);
+            border-top: 1px solid rgba(244,63,94,.15);
+            display: flex; flex-direction: column; gap: .5rem;
+          }
+          .policy-crisis-text {
+            font-size: .8rem; color: #be123c; line-height: 1.55; margin: 0;
+          }
+          .policy-crisis-links {
+            display: flex; gap: .625rem; flex-wrap: wrap;
+          }
+          .policy-crisis-link {
+            font-size: .78rem; font-weight: 600; color: #9f1239;
+            text-decoration: none;
+            padding: .25rem .7rem;
+            border: 1px solid rgba(244,63,94,.3);
+            border-radius: var(--radius-sm);
+            background: rgba(255,255,255,.6);
+            transition: background .15s;
+          }
+          .policy-crisis-link:hover { background: rgba(255,255,255,.9); }
         `}</style>
       </div>
     );

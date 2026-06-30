@@ -548,6 +548,7 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
     cert_id: str = body.get("cert_id") or ""
     domain_id: str = body.get("domain_id") or ""
     risk_stage_id: str = body.get("risk_stage_id") or ""
+    job_name_override: str = body.get("job_name") or ""
 
     if not cert_id:
         return err_envelope("MISSING_REQUIRED_FIELD", "cert_id가 필요합니다.")
@@ -556,7 +557,7 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
         return err_envelope("NOT_CONFIGURED", "OpenAI API 키가 설정되지 않아 AI 설명을 생성할 수 없습니다.")
 
     # 캐시 히트 → OpenAI 호출 없이 반환
-    _explain_key = f"{cert_id}|{domain_id}|{risk_stage_id}"
+    _explain_key = f"{cert_id}|{domain_id}|{risk_stage_id}|{job_name_override}"
     _explain_entry = _explain_cache.get(_explain_key)
     if _explain_entry and (time.monotonic() - _explain_entry[0]) < _EXPLAIN_TTL:
         return ok_envelope({"cert_id": cert_id, "explanation": _explain_entry[1]})
@@ -571,6 +572,7 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
     domain_name = domain_names.get(domain_id, domain_id) if domain_id else "해당 분야"
     risk_info = risk_stages.get(risk_stage_id, {})
     risk_name = risk_info.get("name", "해당 단계") if risk_stage_id else "해당 단계"
+    job_context = f" / 희망 직무: {job_name_override}" if job_name_override else ""
 
     cert_name = cert.get("cert_name", cert_id)
     cert_grade = cert.get("cert_grade_tier", "")
@@ -578,13 +580,14 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
 
     prompt = (
         f"당신은 청년 취업 진로 상담 전문가입니다.\n"
-        f"사용자 관심 분야: {domain_name} / 위험군: {risk_name}\n\n"
+        f"사용자 관심 분야: {domain_name}{job_context} / 위험군: {risk_name}\n\n"
         f"자격증: {cert_name} ({cert_grade})\n"
         f"아래 실 데이터를 근거로, 이 사용자에게 왜 이 자격증이 지금 적합한지 한국어 3문장 이내로 설명하세요.\n\n"
         f"[실 데이터]\n{enriched_ctx if enriched_ctx else '(통계 데이터 없음 — cert_candidates 기반으로 추론)'}\n\n"
         f"규칙:\n"
         f"- 첫 문장에 자격증 이름 포함\n"
         f"- 합격률 수치·시험 과목·관련 직업·시험 횟수 중 최소 2가지를 구체적 수치로 언급\n"
+        f"- 희망 직무가 지정됐으면 그 직무와 이 자격증의 연관성을 구체적으로 언급\n"
         f"- 사용자 위험군 상황과 연결해 지금 이 자격증을 선택해야 하는 이유를 설명\n"
         f"- '시험 구성' 항목에 없는 시험 방식(필기/실기/면접)은 절대 언급하지 말 것\n"
         f"- '도움이 됩니다', '좋습니다', '강점이 있습니다' 같은 막연한 결론 금지\n"

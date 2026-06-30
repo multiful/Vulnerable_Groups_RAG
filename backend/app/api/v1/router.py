@@ -16,6 +16,7 @@ from backend.app.api.v1.routes import (
     health,
     hrd_extended,
     isolation_policy,
+    job_postings,
     jobs,
     jobs_info,
     map,
@@ -52,3 +53,4 @@ api_router.include_router(support.router, tags=["support"])
 api_router.include_router(isolation_policy.router, tags=["isolation_policy"])
 api_router.include_router(youth_center.router, tags=["youth_center"])
 api_router.include_router(hrd_extended.router, tags=["hrd_extended"])
+api_router.include_router(job_postings.router, tags=["job_postings"])

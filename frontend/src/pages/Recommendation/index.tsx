@@ -1,7 +1,9 @@
 // Content Hash: SHA256:TBD
 import React, { useState, useMemo, useEffect, useCallback, useDeferredValue, memo, useTransition, useRef } from 'react';
 import { CertFlowDiagram } from '../../components/charts/CertFlowDiagram';
-import { getCertCandidates } from '../../api/client';
+import { getCertCandidates, fetchCertJobMatch } from '../../api/client';
+import CertJobCard from '../../components/cards/CertJobCard';
+import type { CertJobCardData } from '../../components/cards/CertJobCard';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { loadPipeline, savePipeline } from '../../utils/pipelineState';
 import {
@@ -113,7 +115,7 @@ const RISK_LABEL: Record<string, string> = {
   '4': '4단계 (은둔 청년)',
 };
 const RISK_IDS: Record<string, string> = {
-  '1': 'risk_0001', '2': 'risk_0002', '3': 'risk_0003', '4': '4단계',
+  '1': 'risk_0001', '2': 'risk_0002', '3': 'risk_0003', '4': 'risk_0004',
 };
 const GRADE_LABEL: Record<string, string> = {
   '5_기능장': '기능장', '4_기술사': '기술사', '3_기사': '기사',
@@ -459,6 +461,10 @@ const Recommendation: React.FC = () => {
   const jobLearnerCacheRef = useRef<Record<string, JobLearnerItem[]>>({});
   const certJobsCacheRef = useRef<Record<string, { jobs: string[]; canonicalRoles: ExecState['canonicalRoles']; relatedMajors: string[] }>>({});
   const processEvalCacheRef = useRef<Record<string, Array<{ [key: string]: unknown }>>>({});
+  const certJobMatchCacheRef = useRef<Record<string, CertJobCardData>>({});
+  const [certJobMatch, setCertJobMatch] = useState<{
+    loading: boolean; data: CertJobCardData | null; certId: string;
+  }>({ loading: false, data: null, certId: '' });
 
   useEffect(() => {
     let cancelled = false;
@@ -587,6 +593,13 @@ const Recommendation: React.FC = () => {
       fetchCertJobs(certId, certName_);
       fetchJobLearner(certId, certName_);
       fetchProcessEval(certId, certName_);
+      fetchCertJobMatch(certName_, domainName, parseInt(stageParam) || 3).then(result => {
+        certJobMatchCacheRef.current[certId] = result as unknown as CertJobCardData;
+        setCertJobMatch({ loading: false, data: result as unknown as CertJobCardData, certId });
+      }).catch(() => {
+        setCertJobMatch(prev => prev.certId === certId ? { ...prev, loading: false } : prev);
+      });
+      setCertJobMatch({ loading: true, data: null, certId });
     }
 
     // Fire AI explanation in parallel only if not cached
@@ -598,6 +611,7 @@ const Recommendation: React.FC = () => {
           cert_id: certId,
           domain_id: domainParam || '',
           risk_stage_id: RISK_IDS[stageParam] || '',
+          job_name: jobName || '',
         }),
       }).then(r => r.json()).then(json => {
         const explanation = json.success ? (json.data?.explanation ?? null) : null;
@@ -1604,6 +1618,16 @@ const Recommendation: React.FC = () => {
                         </a>
                       </div>
                 )}
+              </div>
+
+              {/* ── 대기업 채용공고 매칭 ── */}
+              <div className="exec-section">
+                <p className="exec-section-title">대기업 채용공고 매칭</p>
+                <CertJobCard
+                  isLoading={certJobMatch.certId !== exec.certId || certJobMatch.loading}
+                  data={certJobMatch.certId === exec.certId ? certJobMatch.data ?? undefined : undefined}
+                  onViewRoadmap={certName => navigate(`/roadmap?cert=${exec.certId}&certName=${encodeURIComponent(certName)}&stage=${stageParam}`)}
+                />
               </div>
 
               {/* ── 훈련과정 ── */}

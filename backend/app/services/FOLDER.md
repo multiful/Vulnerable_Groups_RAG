@@ -2,7 +2,7 @@
 
 > **파일명**: FOLDER.md
 > **폴더 경로**: `backend/app/services/`
-> **최종 수정일**: 2026-06-26 (hrd_extended_service 추가 — F-29/F-30/F-31)
+> **최종 수정일**: 2026-06-28 (job_crawling_service, llm_cert_relevance_service 추가)
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 백엔드 비즈니스 로직 서비스 계층 설명
 > **연계 경로**: backend/app/api/v1/routes/
@@ -58,6 +58,8 @@ API 엔드포인트에서 전달된 요청을 처리하고, Supabase / 로컬 CS
 | `llm_isolation_service.py` | 군집별 DIDIM 서비스 활성/비활성 이유를 GPT-4o-mini로 설명 생성 (결정은 matrix 담당) | ✅ 활성 |
 | `youth_center_service.py` | 온통청년 OPEN API — 청년정책(F-26)·청년공간(F-27)·청년콘텐츠(F-28) 조회 + 대분류 카테고리 분류 | ✅ 활성 |
 | `hrd_extended_service.py` | Work24 확장 훈련과정 — 일학습병행(F-29, 313L01)·국가인적자원개발컨소시엄(F-30, 312L01)·구직자취업역량강화(F-31, 키 발급완료/엔드포인트 승인대기) | ✅ 활성 |
+| `job_crawling_service.py` | 국내 대기업 10개 채용공고 직접 크롤링 (Saramin API 승인 대기 중) — 캐시 TTL 2시간, 키워드 기반 자격증 매칭 | ✅ 활성 |
+| `llm_cert_relevance_service.py` | 자격증 × 희망 직무 도메인 연관성 LLM 분석 — GPT-4o-mini JSON mode, 캐시 TTL 7일, fallback 포함 | ✅ 활성 |
 
 ---
 

@@ -2,7 +2,7 @@
 
 > **파일명**: FOLDER.md  
 > **폴더 경로**: `data/canonical/relations`  
-> **최종 수정일**: 2026-04-19 (R4 완료: N2 eval runner + R4-3 is_bottleneck tier-relative + R4-6 job_to_domain 런타임; R5 대상: N1/N4/N5 + P15 tier 필터)  
+> **최종 수정일**: 2026-06-30 (R4 완료: N2 eval runner + R4-3 is_bottleneck tier-relative + R4-6 job_to_domain 런타임; R5 대상: N1/N4/N5 + P15 tier 필터)  
 > **문서 해시**: SHA256:TBD  
 > **문서 역할**: 디렉터리 스캐폴드 명시서 — 담는 내용·금지·다음 단계 연계  
 > **문서 우선순위**: reference (충돌 시 루트 기준 문서 우선)  
@@ -36,6 +36,8 @@
 | `risk_stage_to_roadmap_stage.csv` | 5 | ✅ | `scripts/build_all_relations.py` |
 | `cert_to_cert_relation.csv` | 999 (active 775 / inactive 224) | ✅ A1 recommended_prior 복원 + N6 방향 guard 적용 | `scripts/build_cert_to_cert_relation.py` |
 | ~~`risk_stage_to_domain.csv`~~ | — | ❌ 삭제 — domain은 사용자 관심사로 결정 | — |
+| `support_program_target_mapping.csv` | 40 | ✅ 지원 제도 ↔ 대상 유형 (spt_0001~) | 수동 작성 (이미지 표 12 기준) |
+| `support_program_risk_stage_mapping.csv` | 62 | ✅ 지원 제도 ↔ 위험군 단계 (sprs_0001~) | target_group.mapped_risk_stage_ids에서 파생 |
 
 > 상세 생성 규칙·매핑 테이블은 `MASTER_MERGE_PLAN.md` 참조.
 

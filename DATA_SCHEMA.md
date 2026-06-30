@@ -1,7 +1,7 @@
 # DATA_SCHEMA.md
 
 > **파일명**: DATA_SCHEMA.md  
-> **최종 수정일**: 2026-05-12  
+> **최종 수정일**: 2026-06-30  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 데이터 구조, 엔티티, 관계, 공통 필드, 제약조건 정의 문서  
 > **문서 우선순위**: 5  
@@ -171,8 +171,41 @@
 - `cert_to_hosting_org`
 - `major_to_domain`
 - `cert_to_ncs`
+- `support_program_to_target_group`
+- `support_program_to_risk_stage`
 
 > `risk_stage_to_domain`: ❌ 삭제됨 (2026-04-15) — §6.4 참조
+
+### 4.8 target_group_type
+
+지원 대상 유형 허용값 (이미지 표 12 기준):
+- `고립위험청년`
+- `활동형_고립청년`
+- `활동제한형_고립청년`
+- `은둔청년`
+- `가족`
+
+### 4.9 service_category
+
+지원 서비스 카테고리 허용값 (단계별 지원 목표 기준):
+- `자기이해_및_심리상담`
+- `치유적_관계형성`
+- `일_경험_및_사회활동`
+- `사후관리` — 지역기반 사회적 관계 형성 프로그램·자조모임 운영 및 참여만 해당
+- `별도_지원` — 경제적 곤란 시 생계급여·긴급복지 연계 등 표 12 별도 지원 항목
+
+### 4.10 lifecycle_phase
+
+고립-회복 생애주기 단계 허용값:
+- `고립된_삶`
+- `회복`
+- `통합된_삶`
+
+### 4.11 support_strategy
+
+지원 전략 허용값:
+- `예방_연계_추적관리`
+- `맞춤형_사례관리`
 
 ### 4.7 cert_grade_tier
 자격증 등급 계층 허용값 (낮은 숫자 = 진입 난이도 낮음):
@@ -182,6 +215,12 @@
 - `4_기술사`
 - `5_기능장`
 - `null` — 등급 계층 미분류(비기술사격, 민간자격 등)
+
+### 4.4 entity_type (추가)
+
+`support_program` 및 `target_group` 추가:
+- `support_program`
+- `target_group`
 
 ### 4.4 row_type
 현재 허용값:
@@ -350,6 +389,48 @@
 - `major_id`는 유일해야 한다.
 - `major_name`은 원천 표기를 유지하되, 조인은 `normalized_key` 또는 `major_id`를 우선 사용한다.
 - 도메인 연결은 `major_master.csv` 컬럼이 아니라 `major_domain_mapping.csv`에서 관리한다.
+
+---
+
+## 5.8 TargetGroup
+
+지원 대상 유형 엔티티 (이미지 표 12 기준 4유형 + 가족)
+
+| 필드명 | 타입 | 필수 | nullable | 설명 |
+|---|---|---:|---:|---|
+| `target_group_id` | string | Y | N | 대상 유형 식별자 |
+| `target_group_name` | string | Y | N | 표시용 대상 유형명 |
+| `target_group_type` | enum | Y | N | §4.8 허용값 |
+| `support_strategy` | enum | Y | N | §4.11 허용값 |
+| `description` | string | N | Y | 대상 특성 설명 |
+| `mapped_risk_stage_ids` | array[string] | Y | N | 대응 위험군 단계 ID 목록 |
+| `is_active` | boolean | Y | N | 활성 여부 |
+
+### 제약
+- `target_group_id`는 유일해야 한다.
+- `target_group_type`은 §4.8 허용값만 사용한다.
+- `mapped_risk_stage_ids`의 각 값은 `risk_stage_master.csv`에 존재해야 한다.
+
+---
+
+## 5.9 SupportProgram
+
+지원 제도 엔티티 (이미지 표 12의 셀 단위 서비스 항목)
+
+| 필드명 | 타입 | 필수 | nullable | 설명 |
+|---|---|---:|---:|---|
+| `support_program_id` | string | Y | N | 지원 제도 식별자 |
+| `support_program_name` | string | Y | N | 표시용 지원 제도명 |
+| `service_category` | enum | Y | N | §4.9 허용값 (1차 분류) |
+| `lifecycle_phase` | enum | Y | N | §4.10 허용값 |
+| `description` | string | N | Y | 세부 설명 |
+| `is_active` | boolean | Y | N | 활성 여부 |
+
+### 제약
+- `support_program_id`는 유일해야 한다.
+- `service_category`는 §4.9 허용값만 사용한다.
+- `lifecycle_phase`는 §4.10 허용값만 사용한다.
+- 대상 유형·위험군 매핑은 별도 relation 테이블(`support_program_to_target_group`, `support_program_to_risk_stage`)로 관리한다.
 
 ---
 
@@ -609,6 +690,41 @@
 
 ### Supabase DDL
 `docs/architecture/supabase_cert_video_cache.sql` 참고.
+
+---
+
+## 6.13 support_program_to_target_group
+
+지원 제도와 대상 유형의 관계 (어떤 청년 유형에 어떤 프로그램이 적용되는지)
+
+| 필드명 | 타입 | 필수 | nullable | 설명 |
+|---|---|---:|---:|---|
+| `relation_id` | string | Y | N | 관계 식별자 |
+| `support_program_id` | string | Y | N | 지원 제도 식별자 |
+| `target_group_id` | string | Y | N | 대상 유형 식별자 |
+| `is_active` | boolean | Y | N | 활성 여부 |
+
+### 제약
+- `support_program_id`는 `support_program_master.csv`에 존재해야 한다.
+- `target_group_id`는 `target_group_master.csv`에 존재해야 한다.
+- 하나의 지원 제도는 여러 대상 유형과 연결될 수 있다.
+
+---
+
+## 6.14 support_program_to_risk_stage
+
+지원 제도와 위험군 단계의 관계 (target_group 매핑에서 파생)
+
+| 필드명 | 타입 | 필수 | nullable | 설명 |
+|---|---|---:|---:|---|
+| `relation_id` | string | Y | N | 관계 식별자 |
+| `support_program_id` | string | Y | N | 지원 제도 식별자 |
+| `risk_stage_id` | string | Y | N | 위험군 단계 식별자 |
+| `is_active` | boolean | Y | N | 활성 여부 |
+
+### 제약
+- `support_program_id`는 `support_program_master.csv`에 존재해야 한다.
+- `risk_stage_id`는 `risk_stage_master.csv`에 존재해야 한다.
 
 ---
 
