@@ -427,9 +427,9 @@ const Recommendation: React.FC = () => {
     certId: '', certName: '', cacheHit: false,
   });
   const [certExplain, setCertExplain] = useState<{
-    loading: boolean; text: string | null; certId: string; error: string | null;
-    dataQuality: 'full' | 'limited' | null;
-  }>({ loading: false, text: null, certId: '', error: null, dataQuality: null });
+    loading: boolean; text: string | null; s1: string | null; s2: string | null; s3: string | null;
+    certId: string; error: string | null; dataQuality: 'full' | 'limited' | null;
+  }>({ loading: false, text: null, s1: null, s2: null, s3: null, certId: '', error: null, dataQuality: null });
 
   const [exec, setExec] = useState<ExecState>({
     loading: false, schedule: [], scheduleApiStatus: null, hiringTotal: 0, hiringItems: [],
@@ -451,7 +451,7 @@ const Recommendation: React.FC = () => {
   const execCacheRef = useRef<Record<string, Pick<ExecState, 'schedule' | 'scheduleApiStatus' | 'hiringTotal' | 'hiringItems' | 'trainingTotal' | 'trainingItems'>>>({});
   const certInfoCacheRef = useRef<Record<string, CertInfoData | null>>({});
   const certStatsCacheRef = useRef<Record<string, CertStatsData | null>>({});
-  const certExplainCacheRef = useRef<Record<string, string | null>>({});
+  const certExplainCacheRef = useRef<Record<string, { text: string | null; s1: string | null; s2: string | null; s3: string | null; dataQuality: 'full' | 'limited' | null } | null>>({});
   const jobLearnerCacheRef = useRef<Record<string, JobLearnerItem[]>>({});
   const certJobsCacheRef = useRef<Record<string, { jobs: string[]; canonicalRoles: ExecState['canonicalRoles']; relatedMajors: string[] }>>({});
   const processEvalCacheRef = useRef<Record<string, Array<{ [key: string]: unknown }>>>({});
@@ -558,7 +558,7 @@ const Recommendation: React.FC = () => {
     // Check cache — instant response for repeat clicks
     const cachedEvidence = evidenceCacheRef.current[certId];
     const hasExplainCache = certId in certExplainCacheRef.current;
-    const cachedExplain   = certExplainCacheRef.current[certId];
+    const cachedExplainEntry = certExplainCacheRef.current[certId];
 
     startTransition(() => {
       if (cachedEvidence) {
@@ -568,9 +568,14 @@ const Recommendation: React.FC = () => {
       }
       setShowEvidence(true);
       if (hasExplainCache) {
-        setCertExplain({ loading: false, text: cachedExplain ?? null, certId, error: null, dataQuality: null });
+        const ce = cachedExplainEntry;
+        setCertExplain({
+          loading: false,
+          text: ce?.text ?? null, s1: ce?.s1 ?? null, s2: ce?.s2 ?? null, s3: ce?.s3 ?? null,
+          certId, error: null, dataQuality: ce?.dataQuality ?? null,
+        });
       } else {
-        setCertExplain({ loading: true, text: null, certId, error: null, dataQuality: null });
+        setCertExplain({ loading: true, text: null, s1: null, s2: null, s3: null, certId, error: null, dataQuality: null });
       }
     });
 
@@ -609,12 +614,15 @@ const Recommendation: React.FC = () => {
         }),
       }).then(r => r.json()).then(json => {
         const explanation = json.success ? (json.data?.explanation ?? null) : null;
+        const s1 = json.success ? (json.data?.s1 ?? null) : null;
+        const s2 = json.success ? (json.data?.s2 ?? null) : null;
+        const s3 = json.success ? (json.data?.s3 ?? null) : null;
         const dataQuality = json.success ? (json.data?.data_quality ?? 'full') as 'full' | 'limited' : null;
-        certExplainCacheRef.current[certId] = explanation;
-        setCertExplain({ loading: false, text: explanation, certId, error: null, dataQuality });
+        certExplainCacheRef.current[certId] = { text: explanation, s1, s2, s3, dataQuality };
+        setCertExplain({ loading: false, text: explanation, s1, s2, s3, certId, error: null, dataQuality });
       }).catch(() => {
         certExplainCacheRef.current[certId] = null;
-        setCertExplain({ loading: false, text: null, certId, error: null, dataQuality: null });
+        setCertExplain({ loading: false, text: null, s1: null, s2: null, s3: null, certId, error: null, dataQuality: null });
       });
     }
 
@@ -996,7 +1004,7 @@ const Recommendation: React.FC = () => {
             {certExplain.loading ? `${evidenceCertName} AI 분석 중…` : certExplain.text ? `${evidenceCertName} AI 분석 완료` : ''}
           </p>
 
-          {/* AI 추천 이유 — 패널 최상단의 핵심 결론 */}
+          {/* AI 추천 이유 — 3-섹션 분리 카드 */}
           {certExplain.certId === evidence.certId && (certExplain.loading || certExplain.text) && (
             <div className="ai-reasoning-card">
               <div className="ai-reasoning-header">
@@ -1012,6 +1020,30 @@ const Recommendation: React.FC = () => {
                 <div className="ai-reasoning-loading">
                   <Loader2 size={15} className="ev-spin" />
                   <span>{evidenceCertName}을 분석 중…</span>
+                </div>
+              ) : certExplain.s1 ? (
+                <div className="ai-reasoning-sections">
+                  <div className="ai-reasoning-row">
+                    <span className="ai-reasoning-row-icon">📊</span>
+                    <div className="ai-reasoning-row-body">
+                      <span className="ai-reasoning-row-label">자격증 특성</span>
+                      <p className="ai-reasoning-row-text">{certExplain.s1}</p>
+                    </div>
+                  </div>
+                  <div className="ai-reasoning-row">
+                    <span className="ai-reasoning-row-icon">💼</span>
+                    <div className="ai-reasoning-row-body">
+                      <span className="ai-reasoning-row-label">직무 연결</span>
+                      <p className="ai-reasoning-row-text">{certExplain.s2}</p>
+                    </div>
+                  </div>
+                  <div className="ai-reasoning-row ai-reasoning-row-highlight">
+                    <span className="ai-reasoning-row-icon">🗓️</span>
+                    <div className="ai-reasoning-row-body">
+                      <span className="ai-reasoning-row-label">나의 준비 플랜</span>
+                      <p className="ai-reasoning-row-text">{certExplain.s3}</p>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <p className="ai-reasoning-text">{certExplain.text}</p>
@@ -1622,9 +1654,9 @@ const Recommendation: React.FC = () => {
                 )}
               </div>
 
-              {/* ── 대기업 채용공고 매칭 ── */}
+              {/* ── 채용공고 매칭 ── */}
               <div className="exec-section">
-                <p className="exec-section-title">대기업 채용공고 매칭</p>
+                <p className="exec-section-title">채용공고 매칭</p>
                 <CertJobCard
                   isLoading={certJobMatch.certId !== exec.certId || certJobMatch.loading}
                   data={certJobMatch.certId === exec.certId ? certJobMatch.data ?? undefined : undefined}
@@ -2572,6 +2604,22 @@ const Recommendation: React.FC = () => {
         .ai-reasoning-badge-limited{background:#92400e;cursor:help;}
         .ai-reasoning-loading{display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:var(--primary);padding-top:.2rem}
         .ai-reasoning-text{font-size:.95rem;color:var(--text);line-height:1.75;margin:0;font-weight:500}
+        /* 3-섹션 분리 */
+        .ai-reasoning-sections{display:flex;flex-direction:column;gap:.5rem}
+        .ai-reasoning-row{
+          display:flex;align-items:flex-start;gap:.625rem;
+          padding:.625rem .75rem;
+          border-radius:8px;
+          background:rgba(255,255,255,.55);
+        }
+        .ai-reasoning-row-highlight{background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.18)}
+        .ai-reasoning-row-icon{font-size:1rem;line-height:1;flex-shrink:0;margin-top:.1rem}
+        .ai-reasoning-row-body{display:flex;flex-direction:column;gap:.2rem;flex:1;min-width:0}
+        .ai-reasoning-row-label{
+          font-size:.67rem;font-weight:800;color:var(--primary);
+          text-transform:uppercase;letter-spacing:.06em;
+        }
+        .ai-reasoning-row-text{font-size:.88rem;color:var(--text);line-height:1.65;margin:0;font-weight:500}
 
         /* 보조 근거 헤더 */
         .ev-supporting-header{

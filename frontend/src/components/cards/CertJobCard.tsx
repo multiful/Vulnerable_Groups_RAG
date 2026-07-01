@@ -91,8 +91,10 @@ function CertJobCardContent({ data, onViewRoadmap }: { data: CertJobCardData; on
     '하': '#94a3b8',
   };
   const stageName = (s: number) => {
-    const map: Record<number, string> = { 1: '1단계 군', 2: '2단계 군', 3: '3단계 군', 4: '4단계 군', 5: '5단계 군' };
-    return map[s] ?? `${s}단계 군`;
+    const map: Record<number, string> = {
+      1: '고립위험청년', 2: '활동형 고립청년', 3: '활동제한형 고립청년', 4: '은둔청년',
+    };
+    return map[s] ?? `${s}단계`;
   };
 
   return (

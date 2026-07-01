@@ -69,6 +69,7 @@ export async function fetchCertJobMatch(
   riskStage: number,
   limit = 5,
 ): Promise<CertJobMatchResult> {
+  let result: CertJobMatchResult | null = null;
   try {
     const base = getApiBase();
     const params = new URLSearchParams({
@@ -80,9 +81,13 @@ export async function fetchCertJobMatch(
     const url = `${base}/api/v1/job-postings/match?${params}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`job-postings/match ${res.status}`);
-    return res.json();
+    result = await res.json();
   } catch {
-    const mockPostings = _CERT_JOB_MOCK[certName] ?? [];
+    result = null;
+  }
+
+  const mockPostings = _CERT_JOB_MOCK[certName] ?? [];
+  if (!result) {
     return {
       cert_name: certName,
       job_domain: jobDomain,
@@ -98,6 +103,12 @@ export async function fetchCertJobMatch(
       posting_count: mockPostings.length,
     };
   }
+  // API 성공이더라도 목업 공고가 정의된 자격증은 항상 주입
+  if (mockPostings.length > 0 && result.job_postings.length === 0) {
+    result.job_postings = mockPostings;
+    result.posting_count = mockPostings.length;
+  }
+  return result;
 }
 
 export async function triggerCrawlRefresh(): Promise<void> {

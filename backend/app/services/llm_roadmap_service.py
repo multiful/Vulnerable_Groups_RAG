@@ -683,18 +683,33 @@ def _enrich_cert_context(cert_id: str, cert: dict) -> str:
             lines.append(f"시험 난이도: {diff:.1f}/5 ({diff_label})")
 
     # 2. 연도별 회별 실 합격률 추이 (최근 3년)
+    # written/practical이 동일 데이터인 경우 중복 방지
     sr_env = cert_info_service.get_session_pass_rates(cert_id)
     if sr_env.get("success") and (srd := sr_env.get("data")):
-        for label, key in [("필기", "written"), ("실기", "practical")]:
-            rows = srd.get(key, [])
-            if rows:
-                yr_map: dict[str, list[float]] = {}
-                for r in rows:
-                    yr_map.setdefault(r["year"], []).append(r["pass_rate"])
-                yr_avg = {y: sum(v) / len(v) for y, v in yr_map.items()}
-                sorted_yrs = sorted(yr_avg.keys())[-3:]
-                trend = ", ".join(f"{y}년 {yr_avg[y]:.1f}%" for y in sorted_yrs)
-                lines.append(f"{label} 합격률 추이({sorted_yrs[0]}–{sorted_yrs[-1]}): {trend}")
+        def _yr_trend(rows: list) -> tuple[str, str]:
+            yr_map: dict[str, list[float]] = {}
+            for r in rows:
+                yr_map.setdefault(r["year"], []).append(r["pass_rate"])
+            yr_avg = {y: sum(v) / len(v) for y, v in yr_map.items()}
+            sorted_yrs = sorted(yr_avg.keys())[-3:]
+            trend = ", ".join(f"{y}년 {yr_avg[y]:.1f}%" for y in sorted_yrs)
+            return f"{sorted_yrs[0]}–{sorted_yrs[-1]}", trend
+
+        w_rows = srd.get("written", [])
+        p_rows = srd.get("practical", [])
+        w_ids = [f"{r['year']}{r.get('session','')}{r['pass_rate']}" for r in w_rows]
+        p_ids = [f"{r['year']}{r.get('session','')}{r['pass_rate']}" for r in p_rows]
+        if w_rows and p_rows and w_ids == p_ids:
+            # 동일 데이터: 구분 없이 합격률 추이 1행만 출력
+            span, trend = _yr_trend(w_rows)
+            lines.append(f"합격률 추이({span}): {trend}")
+        else:
+            if w_rows:
+                span, trend = _yr_trend(w_rows)
+                lines.append(f"필기 합격률 추이({span}): {trend}")
+            if p_rows:
+                span, trend = _yr_trend(p_rows)
+                lines.append(f"실기 합격률 추이({span}): {trend}")
 
     # 3. cert_master에서 exam_type_info (필기/실기/면접 구성)
     from backend.app.services import cert_info_service as _ci
@@ -759,10 +774,14 @@ def _enrich_cert_context(cert_id: str, cert: dict) -> str:
                     clean = " ".join(l.strip() for l in usage.splitlines() if l.strip())
                     lines.append(f"자격 활용 현황: {clean[:200]}")
 
-    # 7. NCS 직무 분류 (cert_ncs_mapping × ncs_master)
+    # 7. NCS 직무 분류 (cert_ncs_mapping × ncs_master) — 상위 5개만
     ncs_label = _load_ncs_map().get(cert_id, "")
     if ncs_label:
-        lines.append(f"NCS 직무 분류: {ncs_label[:200]}")
+        ncs_items = [x.strip() for x in ncs_label.split(",") if x.strip()]
+        ncs_short = ", ".join(ncs_items[:5])
+        if len(ncs_items) > 5:
+            ncs_short += f" 외 {len(ncs_items)-5}개"
+        lines.append(f"NCS 직무 분류: {ncs_short}")
 
     # 8. 구조화 직무 목록 (cert_job_mapping × job_master) — regex 추출 대체
     structured_jobs = _load_job_map().get(cert_id, [])
@@ -805,7 +824,8 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
     _explain_key = f"{cert_id}|{domain_id}|{risk_stage_id}|{job_name_override}"
     _explain_entry = _explain_cache.get(_explain_key)
     if _explain_entry and (time.monotonic() - _explain_entry[0]) < _EXPLAIN_TTL:
-        return ok_envelope({"cert_id": cert_id, "explanation": _explain_entry[1]})
+        _ts, _exp, _s1, _s2, _s3, _dq = _explain_entry if len(_explain_entry) == 6 else (*_explain_entry[:2], None, None, None, "full")
+        return ok_envelope({"cert_id": cert_id, "explanation": _exp, "s1": _s1, "s2": _s2, "s3": _s3, "data_quality": _dq})
 
     candidates = _load_candidates()
     cert = next((c for c in candidates if c.get("cert_id") == cert_id), None)
@@ -1001,10 +1021,13 @@ s2 직무 전환 표현: "~로 이동합니다", "~로 전환됩니다", "~에�
             refined = True
 
         explanation = " ".join(filter(None, [s1, s2, s3]))
-        _explain_cache[_explain_key] = (time.monotonic(), explanation)
+        _explain_cache[_explain_key] = (time.monotonic(), explanation, s1, s2, s3, data_quality)
         return ok_envelope({
             "cert_id": cert_id,
             "explanation": explanation,
+            "s1": s1,
+            "s2": s2,
+            "s3": s3,
             "data_quality": data_quality,
             "eval": {
                 "score": eval_result["score"],
