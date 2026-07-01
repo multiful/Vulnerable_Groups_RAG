@@ -428,7 +428,8 @@ const Recommendation: React.FC = () => {
   });
   const [certExplain, setCertExplain] = useState<{
     loading: boolean; text: string | null; certId: string; error: string | null;
-  }>({ loading: false, text: null, certId: '', error: null });
+    dataQuality: 'full' | 'limited' | null;
+  }>({ loading: false, text: null, certId: '', error: null, dataQuality: null });
 
   const [exec, setExec] = useState<ExecState>({
     loading: false, schedule: [], scheduleApiStatus: null, hiringTotal: 0, hiringItems: [],
@@ -567,9 +568,9 @@ const Recommendation: React.FC = () => {
       }
       setShowEvidence(true);
       if (hasExplainCache) {
-        setCertExplain({ loading: false, text: cachedExplain ?? null, certId, error: null });
+        setCertExplain({ loading: false, text: cachedExplain ?? null, certId, error: null, dataQuality: null });
       } else {
-        setCertExplain({ loading: true, text: null, certId, error: null });
+        setCertExplain({ loading: true, text: null, certId, error: null, dataQuality: null });
       }
     });
 
@@ -608,11 +609,12 @@ const Recommendation: React.FC = () => {
         }),
       }).then(r => r.json()).then(json => {
         const explanation = json.success ? (json.data?.explanation ?? null) : null;
+        const dataQuality = json.success ? (json.data?.data_quality ?? 'full') as 'full' | 'limited' : null;
         certExplainCacheRef.current[certId] = explanation;
-        setCertExplain({ loading: false, text: explanation, certId, error: null });
+        setCertExplain({ loading: false, text: explanation, certId, error: null, dataQuality });
       }).catch(() => {
         certExplainCacheRef.current[certId] = null;
-        setCertExplain({ loading: false, text: null, certId, error: null });
+        setCertExplain({ loading: false, text: null, certId, error: null, dataQuality: null });
       });
     }
 
@@ -1000,7 +1002,11 @@ const Recommendation: React.FC = () => {
               <div className="ai-reasoning-header">
                 <Sparkles size={18} className="ai-reasoning-icon" />
                 <span className="ai-reasoning-label">AI가 분석한 추천 이유</span>
-                <span className="ai-reasoning-badge">핵심 분석</span>
+                {certExplain.dataQuality === 'limited' ? (
+                  <span className="ai-reasoning-badge ai-reasoning-badge-limited" title="이 자격증의 합격률 통계가 없어 수치 없이 설명됩니다">데이터 제한</span>
+                ) : (
+                  <span className="ai-reasoning-badge">실데이터 기반</span>
+                )}
               </div>
               {certExplain.loading ? (
                 <div className="ai-reasoning-loading">
@@ -2563,6 +2569,7 @@ const Recommendation: React.FC = () => {
           padding:.15rem .5rem;background:var(--primary);color:#fff;
           border-radius:99px;text-transform:uppercase;
         }
+        .ai-reasoning-badge-limited{background:#92400e;cursor:help;}
         .ai-reasoning-loading{display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:var(--primary);padding-top:.2rem}
         .ai-reasoning-text{font-size:.95rem;color:var(--text);line-height:1.75;margin:0;font-weight:500}
 

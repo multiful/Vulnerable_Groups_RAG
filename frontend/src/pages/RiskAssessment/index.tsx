@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { clearPipeline, savePipeline } from '../../utils/pipelineState';
-import { fetchStageEvidence } from '../../api/client';
+import { fetchHydeEvidence } from '../../api/client';
 import type { StageEvidenceItem } from '../../api/client';
 
 const SURVEY_KEY = 'didim_survey_v1';
@@ -368,19 +368,39 @@ const RiskAssessment: React.FC = () => {
     return false;
   });
 
-  /* ── RAG 분류 근거 ── */
+  /* ── HyDE 분류 근거 ── */
   const [evidence, setEvidence] = useState<StageEvidenceItem[]>([]);
+  const [evidenceSynthesis, setEvidenceSynthesis] = useState<string | null>(null);
   const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const [showEvidenceSources, setShowEvidenceSources] = useState(false);
 
   useEffect(() => {
     if (step !== 'result') return;
     const totalScore = QUESTIONS.reduce((s, q) => s + (answers[q.id] ?? 0), 0);
     const stageId = scoreToStage(totalScore, safetyFlag);
+
+    const catAccum = QUESTIONS.reduce<Record<string, { score: number; max: number }>>((acc, q) => {
+      const mx = Math.max(...q.options.map(o => o.score));
+      if (!acc[q.category]) acc[q.category] = { score: 0, max: 0 };
+      acc[q.category].score += answers[q.id] ?? 0;
+      acc[q.category].max += mx;
+      return acc;
+    }, {});
+    const dimPct: Record<string, number> = {};
+    for (const [cat, { score, max }] of Object.entries(catAccum)) {
+      dimPct[cat] = max > 0 ? Math.round((score / max) * 100) : 0;
+    }
+
     setEvidence([]);
+    setEvidenceSynthesis(null);
+    setShowEvidenceSources(false);
     setEvidenceLoading(true);
-    fetchStageEvidence(stageId)
-      .then(items => setEvidence(items.slice(0, 2)))
-      .catch(() => setEvidence([]))
+    fetchHydeEvidence(stageId, dimPct)
+      .then(result => {
+        setEvidenceSynthesis(result.synthesis);
+        setEvidence(result.evidence.slice(0, 3));
+      })
+      .catch(() => { setEvidence([]); setEvidenceSynthesis(null); })
       .finally(() => setEvidenceLoading(false));
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -647,16 +667,43 @@ const RiskAssessment: React.FC = () => {
                 </div>
               </div>
 
-              {/* RAG 연구 근거 */}
-              {(evidenceLoading || evidence.length > 0) && (
+              {/* HyDE 분류 근거 */}
+              {(evidenceLoading || evidenceSynthesis || evidence.length > 0) && (
                 <div className="policy-evidence-section">
-                  <p className="policy-evidence-title">📄 연구 근거</p>
+                  <p className="policy-evidence-title">📄 분류 근거</p>
                   {evidenceLoading ? (
-                    <p className="policy-evidence-loading">근거 문서 검색 중…</p>
+                    <p className="policy-evidence-loading">연구 문서 분석 중…</p>
+                  ) : evidenceSynthesis ? (
+                    <div className="hyde-synthesis-wrap">
+                      <div className="hyde-synthesis-card">
+                        <span className="hyde-synthesis-badge">AI 분석 근거</span>
+                        <p className="hyde-synthesis-text">{evidenceSynthesis}</p>
+                      </div>
+                      {evidence.length > 0 && (
+                        <div className="hyde-sources">
+                          <button
+                            className="hyde-sources-toggle"
+                            onClick={() => setShowEvidenceSources(v => !v)}
+                            type="button"
+                          >
+                            {showEvidenceSources ? '▲ 원문 출처 접기' : '▼ 원문 출처 보기'}
+                          </button>
+                          {showEvidenceSources && evidence.map((ev, i) => (
+                            <div key={i} className="policy-evidence-item">
+                              <p className="policy-evidence-snippet">"{ev.snippet.slice(0, 180).trim()}{ev.snippet.length > 180 ? '…' : ''}"</p>
+                              <p className="policy-evidence-source">
+                                [{ev.doc_id.replace(/_/g, ' ')}
+                                {ev.section_path?.length ? ` · ${ev.section_path[0]}` : ''}]
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     evidence.map((ev, i) => (
                       <div key={i} className="policy-evidence-item">
-                        <p className="policy-evidence-snippet">"{ev.snippet.slice(0, 200).trim()}{ev.snippet.length > 200 ? '…' : ''}"</p>
+                        <p className="policy-evidence-snippet">"{ev.snippet.slice(0, 180).trim()}{ev.snippet.length > 180 ? '…' : ''}"</p>
                         <p className="policy-evidence-source">
                           [{ev.doc_id.replace(/_/g, ' ')}
                           {ev.section_path?.length ? ` · ${ev.section_path[0]}` : ''}]
@@ -900,6 +947,32 @@ const RiskAssessment: React.FC = () => {
           .policy-evidence-loading {
             font-size: .8rem; color: var(--text-light); margin: 0;
           }
+
+          .hyde-synthesis-wrap { display: flex; flex-direction: column; gap: .5rem; }
+          .hyde-synthesis-card {
+            padding: .75rem .875rem;
+            background: var(--primary-light); border: 1px solid rgba(99,102,241,.2);
+            border-radius: var(--radius-sm);
+            display: flex; flex-direction: column; gap: .375rem;
+          }
+          .hyde-synthesis-badge {
+            display: inline-block; padding: .1rem .45rem;
+            background: var(--primary); color: #fff;
+            border-radius: 3px; font-size: .62rem; font-weight: 700;
+            width: fit-content;
+          }
+          .hyde-synthesis-text {
+            font-size: .83rem; color: var(--text); line-height: 1.7; margin: 0;
+          }
+          .hyde-sources { display: flex; flex-direction: column; gap: .3rem; }
+          .hyde-sources-toggle {
+            background: none; border: none; cursor: pointer;
+            font-size: .72rem; font-weight: 600; color: var(--text-light);
+            padding: 0; text-align: left;
+            transition: color .15s;
+          }
+          .hyde-sources-toggle:hover { color: var(--primary); }
+
           .policy-evidence-item {
             display: flex; flex-direction: column; gap: .2rem;
             padding: .5rem .75rem;
