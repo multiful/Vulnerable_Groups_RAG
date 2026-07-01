@@ -1,7 +1,7 @@
 # File: recommendation.py
-# Last Updated: 2026-05-07
+# Last Updated: 2026-07-01
 # Content Hash: SHA256:TBD
-# Role: POST /api/v1/recommendations, /llm, /evidence, /related
+# Role: POST /api/v1/recommendations, /llm, /evidence, /related, /support-programs
 from __future__ import annotations
 
 from typing import Any
@@ -45,3 +45,11 @@ def post_cert_explain(body: dict[str, Any] | None, settings: SettingsDep) -> dic
 def get_related_certs(cert_id: str = Query(..., description="cert_id")) -> dict:
     """DAG 기반 선행/후행 자격증 조회."""
     return dag_service.get_related_certs(cert_id)
+
+
+@router.get("/recommendations/support-programs")
+def get_support_programs(
+    risk_stage_id: str = Query(..., description="위험군 ID (risk_0001~risk_0005)"),
+) -> dict:
+    """위험군 단계에 맞는 지원 제도 목록 반환 (service_category별 그룹핑 포함)."""
+    return llm_roadmap_service.get_support_programs_for_risk(risk_stage_id)

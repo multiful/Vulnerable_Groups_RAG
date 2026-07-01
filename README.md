@@ -13,7 +13,7 @@
 # 청년 위험군 맞춤형 자격증·로드맵 추천 시스템
 
 청년 위험군 단계와 관심 직무/도메인을 바탕으로 관련 자격증을 추천하고 단계형 로드맵을 제안하는 서비스다.  
-Q-Net 시험일정·WorkNet 채용정보·Work24 훈련과정·YouTube 강의 등 실시간 API를 통합해 자격증 정보를 제공하며, Supabase pgvector RAG로 AI 근거를 생성한다.
+Q-Net 시험일정·WorkNet 채용정보·Work24 훈련과정·YouTube 강의 등 실시간 API를 통합해 자격증 정보를 제공하며, 로컬 chunks.jsonl 키워드 검색 + HyDE 파이프라인(OpenAI)으로 위험군 분류 근거를 생성하고, cert_master 구조 데이터 + OpenAI GPT-4o-mini 자체 평가 엔진으로 자격증 추천 이유를 생성한다.
 
 ---
 
@@ -94,7 +94,9 @@ Q-Net 시험일정·WorkNet 채용정보·Work24 훈련과정·YouTube 강의 �
 - 자격증 DAG (선수·후속 자격증 경로 다이어그램)
 - 파이프라인 상태 sessionStorage 저장 + Roadmap 단계 강제 guard
 - 공인민간자격 정보집(140종) + 국가자격 정보집(138종) 로컬 카탈로그 매핑
-- Supabase pgvector RAG evidence 검색
+- 위험군 분류 근거: 로컬 chunks.jsonl 키워드 검색 + HyDE 파이프라인 (OpenAI GPT-4o-mini 가설 생성 → 합성, 환각 가드레일)
+- 자격증 추천 이유: cert_master + NCS/직무/선행자격증 구조 데이터 + OpenAI GPT-4o-mini (JSON 구조화 출력 + 자체 평가·재생성 엔진)
+- Supabase pgvector: 선택적 보조 벡터 검색 (env 미설정 시 로컬 폴백)
 - 청년지원제도 외부 링크 메가 메뉴
 
 ### Reserved (미구현)
@@ -266,10 +268,11 @@ project-root/
 |------|------|
 | 프론트 | React 19 + Vite 6 (`frontend/`) |
 | API | FastAPI (`backend/`) |
-| RAG 런타임 | Supabase pgvector + 로컬 카탈로그 JSON 직접 매핑 |
-| 벡터 DB | Supabase pgvector (`match_certificates` RPC) |
-| 임베딩 | OpenAI `text-embedding-3-small` |
-| LLM | OpenAI GPT (로드맵 AI 분석, 자격증 추천 이유) |
+| 위험군 근거 | 로컬 `chunks.jsonl` 키워드 검색 + HyDE 파이프라인 (OpenAI GPT-4o-mini) |
+| 자격증 설명 | cert_master + NCS·직무·선행자격증 CSV + OpenAI GPT-4o-mini (JSON mode + 자체 평가 엔진) |
+| 벡터 DB | Supabase pgvector 선택적 보조 — `match_certificates` RPC, 미설정 시 로컬 폴백 |
+| 임베딩 | OpenAI `text-embedding-3-small` (Supabase path 한정) |
+| LLM | OpenAI GPT-4o-mini (로드맵 분석, 자격증 추천 이유, HyDE 합성) |
 | YouTube | YouTube Data API v3 (관련 강의 영상 검색·캐시) |
 | 배포 | 프론트 Vite dev / API Render.com (`https://vulnerable-groups-rag.onrender.com`) |
 

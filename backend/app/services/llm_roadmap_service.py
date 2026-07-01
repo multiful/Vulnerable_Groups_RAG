@@ -1,5 +1,5 @@
 # File: llm_roadmap_service.py
-# Last Updated: 2026-05-07
+# Last Updated: 2026-07-01
 # Content Hash: SHA256:TBD
 # Role: LLM 기반 로드맵 조립 (DB 도메인 필터 → OpenAI 선별/정렬/설명 → RoadmapData 반환)
 #
@@ -74,6 +74,156 @@ def _load_candidates() -> list[dict]:
             if s := line.strip():
                 out.append(json.loads(s))
     return out
+
+
+_NCS_MAP_CSV      = _PROJECT_ROOT / "data/canonical/relations/cert_ncs_mapping.csv"
+_NCS_MASTER_CSV   = _PROJECT_ROOT / "data/processed/master/ncs_master.csv"
+_JOB_MAP_CSV      = _PROJECT_ROOT / "data/canonical/relations/cert_job_mapping.csv"
+_JOB_MASTER_CSV   = _PROJECT_ROOT / "data/processed/master/job_master.csv"
+_PREREQ_CSV       = _PROJECT_ROOT / "data/canonical/relations/cert_prerequisite.csv"
+_CERT_MASTER_CSV  = _PROJECT_ROOT / "data/processed/master/cert_master.csv"
+_SP_MASTER_CSV    = _PROJECT_ROOT / "data/processed/master/support_program_master.csv"
+_SP_RISK_MAP_CSV  = _PROJECT_ROOT / "data/canonical/relations/support_program_risk_stage_mapping.csv"
+
+
+@lru_cache(maxsize=1)
+def _load_ncs_map() -> dict[str, str]:
+    """cert_id → NCS 소직무분류 콤마 목록 (중복 제거)."""
+    ncs_labels: dict[str, str] = {}
+    if _NCS_MASTER_CSV.exists():
+        with _NCS_MASTER_CSV.open(encoding="utf-8-sig") as f:
+            for r in csv.DictReader(f):
+                nid = r.get("ncsID", "")
+                sub = r.get("소직무분류", "")
+                if nid and sub:
+                    ncs_labels[nid] = sub
+
+    result: dict[str, list[str]] = {}
+    if _NCS_MAP_CSV.exists():
+        with _NCS_MAP_CSV.open(encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if r.get("is_active", "").lower() != "true":
+                    continue
+                cid = r.get("cert_id", "")
+                label = ncs_labels.get(r.get("ncs_id", ""), "")
+                if cid and label:
+                    result.setdefault(cid, []).append(label)
+
+    return {cid: ", ".join(dict.fromkeys(v)) for cid, v in result.items()}
+
+
+@lru_cache(maxsize=1)
+def _load_job_map() -> dict[str, list[str]]:
+    """cert_id → job_role_name 목록 (cert_job_mapping × job_master 조인)."""
+    job_names: dict[str, str] = {}
+    if _JOB_MASTER_CSV.exists():
+        with _JOB_MASTER_CSV.open(encoding="utf-8-sig") as f:
+            for r in csv.DictReader(f):
+                jid = r.get("job_role_id", "")
+                jname = r.get("job_role_name", "")
+                if jid and jname:
+                    job_names[jid] = jname
+
+    result: dict[str, list[str]] = {}
+    if _JOB_MAP_CSV.exists():
+        with _JOB_MAP_CSV.open(encoding="utf-8-sig") as f:
+            for r in csv.DictReader(f):
+                if r.get("is_active", "").lower() != "true":
+                    continue
+                cid = r.get("cert_id", "")
+                jname = job_names.get(r.get("job_role_id", ""), "")
+                if cid and jname:
+                    result.setdefault(cid, []).append(jname)
+
+    return result
+
+
+@lru_cache(maxsize=1)
+def _load_prereq_map() -> dict[str, list[str]]:
+    """cert_id → 선행 자격증 이름 목록."""
+    cert_names: dict[str, str] = {}
+    if _CERT_MASTER_CSV.exists():
+        with _CERT_MASTER_CSV.open(encoding="utf-8-sig") as f:
+            for r in csv.DictReader(f):
+                cid = r.get("cert_id", "")
+                cname = r.get("cert_name", "")
+                if cid and cname:
+                    cert_names[cid] = cname
+
+    result: dict[str, list[str]] = {}
+    if _PREREQ_CSV.exists():
+        with _PREREQ_CSV.open(encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if r.get("is_active", "").lower() != "true":
+                    continue
+                cid = r.get("cert_id", "")
+                pid = r.get("prerequisite_cert_id", "")
+                pname = cert_names.get(pid, "")
+                if cid and pname:
+                    result.setdefault(cid, []).append(pname)
+
+    return result
+
+
+@lru_cache(maxsize=1)
+def _load_support_programs() -> dict[str, dict]:
+    """support_program_id → program dict (master)."""
+    out: dict[str, dict] = {}
+    if _SP_MASTER_CSV.exists():
+        with _SP_MASTER_CSV.open(encoding="utf-8-sig") as f:
+            for r in csv.DictReader(f):
+                if r.get("is_active", "").lower() == "true":
+                    out[r["support_program_id"]] = r
+    return out
+
+
+@lru_cache(maxsize=1)
+def _load_sp_risk_map() -> dict[str, list[str]]:
+    """risk_stage_id → [support_program_id, ...] (active only)."""
+    out: dict[str, list[str]] = {}
+    if _SP_RISK_MAP_CSV.exists():
+        with _SP_RISK_MAP_CSV.open(encoding="utf-8-sig") as f:
+            for r in csv.DictReader(f):
+                if r.get("is_active", "").lower() == "true":
+                    out.setdefault(r["risk_stage_id"], []).append(r["support_program_id"])
+    return out
+
+
+def get_support_programs_for_risk(risk_stage_id: str) -> dict:
+    """risk_stage_id 에 매핑된 지원 제도 목록 반환."""
+    programs = _load_support_programs()
+    sp_risk_map = _load_sp_risk_map()
+    sp_ids = sp_risk_map.get(risk_stage_id, [])
+    if not sp_ids:
+        return ok_envelope({"risk_stage_id": risk_stage_id, "support_programs": []})
+
+    result = []
+    for sp_id in sp_ids:
+        p = programs.get(sp_id)
+        if p:
+            result.append({
+                "support_program_id": sp_id,
+                "support_program_name": p.get("support_program_name", ""),
+                "service_category": p.get("service_category", ""),
+                "lifecycle_phase": p.get("lifecycle_phase", ""),
+                "description": p.get("description", ""),
+            })
+
+    # service_category 기준으로 그룹핑
+    grouped: dict[str, list[dict]] = {}
+    for item in result:
+        cat = item["service_category"]
+        grouped.setdefault(cat, []).append(item)
+
+    return ok_envelope({
+        "risk_stage_id": risk_stage_id,
+        "total": len(result),
+        "by_category": [
+            {"category": cat, "programs": items}
+            for cat, items in grouped.items()
+        ],
+        "support_programs": result,
+    })
 
 
 @lru_cache(maxsize=1)
@@ -303,6 +453,7 @@ def _build_roadmap_data(
     risk_id: str,
     starting_stage_id: str,
     llm_generated: bool = True,
+    risk_info: dict | None = None,
 ) -> dict:
     by_stage: list[dict] = []
     sequence: list[dict] = []
@@ -348,8 +499,15 @@ def _build_roadmap_data(
         })
 
     start_info = _STAGE_MAP.get(starting_stage_id)
+    risk_stage_payload = None
+    if risk_info:
+        risk_stage_payload = {
+            "id": risk_info.get("id", risk_id),
+            "name": risk_info.get("name", risk_id),
+            "order": risk_info.get("order"),
+        }
     return {
-        "risk_stage": None,
+        "risk_stage": risk_stage_payload,
         "starting_roadmap_stage": (
             {"id": starting_stage_id, "name": start_info["name"]} if start_info else None
         ),
@@ -429,7 +587,11 @@ def llm_recommendations(body: dict[str, Any], settings: Settings) -> dict:
         except Exception:
             reasons = {}
 
-    result = _build_roadmap_data(buckets, reasons, risk_id, starting_stage_id, llm_generated=llm_generated)
+    result = _build_roadmap_data(
+        buckets, reasons, risk_id, starting_stage_id,
+        llm_generated=llm_generated,
+        risk_info=risk_info if risk_id else None,
+    )
     _roadmap_cache[_roadmap_key] = (time.monotonic(), result)
     return ok_envelope(result)
 
@@ -536,6 +698,28 @@ def _enrich_cert_context(cert_id: str, cert: dict) -> str:
                     clean = " ".join(l.strip() for l in usage.splitlines() if l.strip())
                     lines.append(f"자격 활용 현황: {clean[:200]}")
 
+    # 7. NCS 직무 분류 (cert_ncs_mapping × ncs_master)
+    ncs_label = _load_ncs_map().get(cert_id, "")
+    if ncs_label:
+        lines.append(f"NCS 직무 분류: {ncs_label[:200]}")
+
+    # 8. 구조화 직무 목록 (cert_job_mapping × job_master) — regex 추출 대체
+    structured_jobs = _load_job_map().get(cert_id, [])
+    if structured_jobs:
+        job_str = ", ".join(structured_jobs[:10])
+        # 기존 regex 기반 "관련 직무" 라인이 있으면 교체, 없으면 추가
+        for i, ln in enumerate(lines):
+            if ln.startswith("관련 직무:") or ln.startswith("관련 직업:"):
+                lines[i] = f"관련 직무: {job_str}"
+                break
+        else:
+            lines.append(f"관련 직무: {job_str}")
+
+    # 9. 선행 자격증 (cert_prerequisite)
+    prereqs = _load_prereq_map().get(cert_id, [])
+    if prereqs:
+        lines.append(f"선행 자격증: {', '.join(prereqs[:3])}")
+
     return "\n".join(lines) if lines else ""
 
 
@@ -594,65 +778,103 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
         data_quality = "limited"
         data_section = "[실 데이터]\n없음"
 
+    # ── 자체 평가 엔진 ──────────────────────────────────────────────
+    _FORBIDDEN_RE = [
+        r"에\s*도움이\s*됩니다",
+        r"[을를]\s*제공합니다",          # "기회를", "조건을", "가능성을" 등 모두 포함
+        r"[을를]\s*높일\s*수\s*있습니다",
+        r"강점이\s*있습니다",
+        r"발판이\s*될\s*것",
+        r"현실화될\s*것",
+        r"기회를\s*마련할\s*수\s*있습니다",
+        r"기회를\s*가집니다",
+        r"것으로\s*기대됩니다",
+        r"진로를\s*개척할\s*수\s*있습니다",
+        r"좋습니다\s*[.。]?\s*$",
+    ]
+    _TASK_VERB_RE = re.compile(
+        r"(수행하|담당하|처리하|운용하|검토하|관리하|설계하|개발하|구축하|분석하|점검하|제작하|시험하)"
+    )
+
+    def _detect_forbidden(text: str) -> list[str]:
+        return [p for p in _FORBIDDEN_RE if re.search(p, text)]
+
+    def _self_evaluate(s1: str, s2: str, s3: str) -> dict[str, Any]:
+        issues: list[str] = []
+        # S1: 자격증명 + 합격률 수치
+        if cert_name not in s1:
+            issues.append(f"S1: 자격증명({cert_name}) 누락")
+        if has_pass_rate and not re.search(r"\d+\.?\d*\s*%", s1):
+            issues.append("S1: 합격률 % 수치 미인용 — 실 데이터에 있음에도 누락")
+        for p in _detect_forbidden(s1):
+            issues.append(f"S1 금지표현 감지: '{p}'")
+        # S2: 구체적 업무 동사 2회 이상 또는 "하며"·"하고" 연결
+        if not _TASK_VERB_RE.search(s2) and "하며" not in s2 and "하고" not in s2:
+            issues.append("S2: 구체적 업무 동사(수행하·담당하·검토하 등) 없음")
+        for p in _detect_forbidden(s2):
+            issues.append(f"S2 금지표현 감지: '{p}'")
+        # S3: 준비 기간 + 금지표현
+        if not re.search(r"\d+개월|\d+주|상반기|하반기|연\s*\d+회", s3):
+            issues.append("S3: 구체적 준비 기간/시험 회차 언급 없음")
+        for p in _detect_forbidden(s3):
+            issues.append(f"S3 금지표현 감지: '{p}'")
+
+        score = max(1, 5 - len(issues))
+        return {"score": score, "issues": issues, "pass": score >= 4}
+
+    # ── JSON 구조화 출력 (sentence 별 독립 생성) ──────────────────────
     system_prompt = """\
 당신은 청년 취업 진로 상담 전문가입니다.
-자격증 추천 근거를 정확히 3문장으로 작성합니다. 각 문장의 역할은 고정입니다.
+반드시 아래 JSON 스키마로만 응답하세요. 다른 텍스트 없이 JSON만 출력합니다.
 
-─ 문장별 역할 ─
-• 1문장: [자격증명] + [실 데이터]의 합격률·난이도를 수치로 인용하고 의미 해석
-         합격률 없으면: 자격증이 해당 직무에서 어떤 역할을 하는지 한 문장으로 규정
-• 2문장: 희망 직무에서 이 자격증으로 담당하는 구체적 업무 2가지 서술
-         + 데이터에 있는 관련 직무로 경력 이동 가능성 명시
-• 3문장: 사용자의 위험군·상황과 연결하여 지금 이 자격증이 필요한 이유
-         + [실 데이터]의 시험 횟수를 근거로 구체적 준비 기간·전략 제시
+{
+  "s1": "문장1: [자격증명] 포함 + 합격률 수치 대조·해석 (없으면 직무에서의 역할 규정)",
+  "s2": "문장2: 희망직무에서 담당하는 구체적 업무 2가지(동사 포함) + 관련 직무 전환 명시",
+  "s3": "문장3: [위험군 명칭] 언급 + 연 N회 시험 기준 M개월 준비 계획 + 취득 후 구체적 결과"
+}
 
-─ 절대 금지 (이 표현으로 문장을 끝내면 틀린 답) ─
-❌ "~에 도움이 됩니다"           ❌ "~기회를 제공합니다"
-❌ "~을 높일 수 있습니다"        ❌ "~강점이 있습니다"
-❌ "~발판이 될 것입니다"         ❌ "~현실화될 것입니다"
-❌ "~기회를 마련할 수 있습니다"  ❌ "~것으로 기대됩니다"
-❌ "~이 가능합니다"              ❌ "~좋습니다"
-→ 3문장은 반드시 "[준비 기간]으로 [구체적 행동/결과]" 형태로 마무리
-   예: "6개월 집중 준비로 상반기 시험을 첫 합격 목표로 설정할 수 있습니다."
-   예: "연 2회 시험 중 하반기를 목표로 잡으면 취업 포트폴리오에 즉시 반영됩니다."
+─ 각 필드 제약 ─
+s1: cert_name을 첫 단어로 시작 / 합격률 있으면 "필기 X% … 실기 Y%" 형태로 인용 필수
+s2: "~하며" 또는 "~수행하고" 같은 동사로 업무 2개 나열 / 관련직무로 "전환·이동" 표현
+s3: "[위험군]인 지금" 또는 "[위험군]에서" 로 시작 / 반드시 "N개월" 또는 "상·하반기" 포함
+    → 마지막 어절은 반드시 행동 결과: "~확정됩니다", "~잡힙니다", "~설정됩니다" 등
+
+─ 모든 필드 공통 금지 ─
+• "~도움이 됩니다"  • "~기회를 제공합니다"  • "~을 높일 수 있습니다"
+• "~강점이 있습니다"  • "~발판이 될 것입니다"  • "~현실화될 것입니다"
+• "~기회를 마련할 수 있습니다"  • "~것으로 기대됩니다"
+• "~기회를 가집니다"  ← 특히 s2에서 직무 전환 표현 시 금지
+s2 직무 전환 표현: "~로 이동합니다", "~로 전환됩니다", "~에서도 동일하게 인정됩니다" 만 허용
 
 ─ 데이터 규칙 ─
-• [실 데이터]에 합격률 있음 → 필기·실기 수치를 모두 인용하고 "높다/낮다/의미" 해석 필수
-• [실 데이터]에 없는 수치(합격률 등)는 절대 추측·발명 금지
-• 관련 직무는 [실 데이터] 목록에 있는 명칭만 사용\
+• [실 데이터]에 있는 수치만 인용 / 없는 수치 절대 발명 금지
+• 관련 직무는 [실 데이터] 목록 명칭만 사용\
 """
 
-    # messages 배열에 few-shot 쌍 삽입 (system 텍스트보다 효과적)
     _FS_USER_FULL = (
         "자격증=용접기술사(기술사) / 분야=기계/제조 / 희망직무=기계설계 / 위험군=활동제한형고립청년\n"
-        "[실 데이터]\n"
-        "합격률: 필기 평균 12.2%, 실기 평균 48.8%\n"
-        "연간 시험 횟수: 연 2회\n"
-        "관련 직무: 기계설계, 기계정비, 생산기술, 공정관리"
+        "[실 데이터]\n합격률: 필기 평균 12.2%, 실기 평균 48.8%\n"
+        "연간 시험 횟수: 연 2회\n관련 직무: 기계설계, 기계정비, 생산기술, 공정관리"
     )
     _FS_ASST_FULL = (
-        "용접기술사 자격증은 필기 합격률 12.2%로 진입 장벽이 높지만, "
-        "실기 합격률 48.8%는 실무 역량을 갖추면 통과 가능한 시험임을 보여줍니다. "
-        "기계설계 직무에서 용접부 강도 검토·도면 검증 업무를 직접 담당하며, "
-        "기계정비·공정관리 직무로 이동할 때도 동일한 자격으로 인정받습니다. "
-        "활동에 제약이 있는 지금은 연 2회 시험 주기를 기준으로 "
-        "6개월 집중 준비 루틴을 짜면 사회 복귀의 첫 성과를 자격증 취득으로 확정할 수 있습니다."
+        '{"s1":"용접기술사 자격증은 필기 합격률 12.2%로 진입 장벽이 높지만 실기 합격률 48.8%는 '
+        "실무 역량을 갖추면 통과 가능한 시험 구조임을 보여줍니다.\","
+        '"s2":"기계설계 직무에서 용접부 강도 검토와 도면 검증 업무를 직접 수행하며, '
+        "기계정비·공정관리 직무로 동일 자격을 그대로 인정받아 이동할 수 있습니다.\","
+        '"s3":"활동제한형고립청년인 지금은 연 2회 시험 주기를 기준으로 '
+        "6개월 집중 준비 루틴을 구성하면 사회 복귀의 첫 성과가 구체적으로 확정됩니다.\"}"
     )
     _FS_USER_LIMITED = (
         "자격증=섬유기계기사(기사) / 분야=패션/섬유 / 희망직무=패션 제작 / 위험군=활동형고립청년\n"
-        "[실 데이터]\n"
-        "연간 시험 횟수: 연 2회\n"
-        "시험 난이도: 4.0/5 (어려움)\n"
-        "관련 직무: 패션 제작"
+        "[실 데이터]\n연간 시험 횟수: 연 2회\n시험 난이도: 4.0/5 (어려움)\n관련 직무: 패션 제작"
     )
     _FS_ASST_LIMITED = (
-        "섬유기계기사 자격증은 직물 생산 설비의 설계·운용을 전담하는 기사급 자격증으로, "
-        "패션 제작 공정에서 기계 파트를 책임지는 직무와 직결됩니다. "
-        "패션 제작 직무에서 원단 생산 공정 관리와 설비 트러블슈팅 업무를 수행하며, "
-        "동일 분야 생산기술·품질관리 직무로 경력 축을 넓힐 수 있습니다. "
-        "사회 활동을 늘려가는 단계에서 난이도 4.0/5는 6~8개월 집중 학습으로 대응 가능하고, "
-        "연 2회 시험이므로 상반기·하반기 중 목표 시점을 하나 고정하면 "
-        "준비 구조가 흔들리지 않습니다."
+        '{"s1":"섬유기계기사 자격증은 직물 생산 설비의 설계·운용을 전담하는 기사급 자격증으로 '
+        "패션 제작 공정에서 기계 파트 전체를 책임집니다.\","
+        '"s2":"패션 제작 직무에서 원단 생산 공정 관리와 설비 트러블슈팅 업무를 수행하며, '
+        "난이도 4.0/5 수준이므로 관련 생산기술 직무로의 전환 시에도 동등하게 인정됩니다.\","
+        '"s3":"활동형고립청년인 지금은 6~8개월 집중 학습으로 연 2회 시험 중 '
+        "상반기를 목표로 잡으면 하반기 취업 일정이 구체적으로 잡힙니다.\"}"
     )
 
     few_shot_user = _FS_USER_FULL if has_pass_rate else _FS_USER_LIMITED
@@ -664,26 +886,67 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
         f"{data_section}"
     )
 
-    try:
+    base_messages: list[dict] = [
+        {"role": "system",    "content": system_prompt},
+        {"role": "user",      "content": few_shot_user},
+        {"role": "assistant", "content": few_shot_asst},
+        {"role": "user",      "content": user_prompt},
+    ]
+
+    def _call_llm(messages: list[dict]) -> dict[str, str]:
         from openai import OpenAI
         client = OpenAI(api_key=settings.openai_api_key)
         resp = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system",    "content": system_prompt},
-                {"role": "user",      "content": few_shot_user},
-                {"role": "assistant", "content": few_shot_asst},
-                {"role": "user",      "content": user_prompt},
-            ],
-            max_tokens=380,
-            temperature=0.2,
+            messages=messages,
+            response_format={"type": "json_object"},
+            max_tokens=420,
+            temperature=0.15,
         )
-        explanation = (resp.choices[0].message.content or "").strip()
+        raw = (resp.choices[0].message.content or "{}").strip()
+        return json.loads(raw)
+
+    try:
+        # ── 1차 생성 ──
+        parsed = _call_llm(base_messages)
+        s1 = parsed.get("s1", "").strip()
+        s2 = parsed.get("s2", "").strip()
+        s3 = parsed.get("s3", "").strip()
+
+        # ── 자체 평가 ──
+        eval_result = _self_evaluate(s1, s2, s3)
+        refined = False
+
+        # ── 2차 재생성 (이슈가 하나라도 있으면 refine) ──
+        if eval_result["issues"]:
+            issue_list = "\n".join(f"  - {i}" for i in eval_result["issues"])
+            refine_prompt = (
+                f"위 답변에서 다음 문제가 감지됐습니다:\n{issue_list}\n\n"
+                "각 문제를 수정하여 JSON을 다시 작성하세요. "
+                "수정이 필요 없는 필드도 원래 내용을 유지해 전체 JSON을 반환하세요."
+            )
+            retry_messages = base_messages + [
+                {"role": "assistant", "content": json.dumps(parsed, ensure_ascii=False)},
+                {"role": "user",      "content": refine_prompt},
+            ]
+            parsed2 = _call_llm(retry_messages)
+            s1 = parsed2.get("s1", s1).strip() or s1
+            s2 = parsed2.get("s2", s2).strip() or s2
+            s3 = parsed2.get("s3", s3).strip() or s3
+            eval_result = _self_evaluate(s1, s2, s3)
+            refined = True
+
+        explanation = " ".join(filter(None, [s1, s2, s3]))
         _explain_cache[_explain_key] = (time.monotonic(), explanation)
         return ok_envelope({
             "cert_id": cert_id,
             "explanation": explanation,
             "data_quality": data_quality,
+            "eval": {
+                "score": eval_result["score"],
+                "issues": eval_result["issues"],
+                "refined": refined,
+            },
         })
     except Exception as exc:
         return err_envelope("AI_ERROR", f"AI 설명 생성 실패: {str(exc)[:120]}")
