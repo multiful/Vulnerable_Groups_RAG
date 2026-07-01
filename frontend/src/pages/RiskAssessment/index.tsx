@@ -1402,8 +1402,10 @@ const RiskAssessment: React.FC = () => {
           font-size:.75rem; font-weight:600; color:#7c3aed;
           background:#ede9fe; border:none; border-radius:20px;
           padding:.2rem .65rem; cursor:pointer; white-space:nowrap;
+          display:inline-flex; align-items:center;
         }
         .survey-restore-reset-btn:hover { background:#ddd6fe; }
+        @media(pointer:coarse){.survey-restore-reset-btn{min-height:44px;padding:.5rem .875rem}}
 
         /* ── Mobile ── */
         @media (max-width:640px) {

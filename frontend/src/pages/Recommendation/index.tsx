@@ -328,11 +328,11 @@ const CertCard = memo(({
   })();
   const pct = passRate !== null ? Math.min(Math.round(passRate), 100) : null;
   // 합격률 구간별 색상: ≤25% 어려움(빨강), 26~50% 보통(주황), 51~70% 양호(파랑), >70% 쉬움(초록)
-  const rateColor = pct === null ? '#94a3b8'
-    : pct <= 25  ? '#ef4444'
-    : pct <= 50  ? '#f59e0b'
-    : pct <= 70  ? '#3b82f6'
-    : '#10b981';
+  const rateColor = pct === null ? 'var(--text-muted)'
+    : pct <= 25  ? 'var(--danger)'
+    : pct <= 50  ? 'var(--warning)'
+    : pct <= 70  ? 'var(--primary)'
+    : 'var(--success)';
   const rateLabel = pct === null ? null
     : pct <= 25  ? '높은 난이도'
     : pct <= 50  ? '보통 난이도'
@@ -446,6 +446,8 @@ const Recommendation: React.FC = () => {
 
   // ── In-memory caches: avoid redundant API calls when re-clicking same cert ──
   const [, startTransition] = useTransition();
+  const evModalRef = useRef<HTMLDivElement>(null);
+  const evTriggerRef = useRef<HTMLElement | null>(null);
   const evidenceCacheRef = useRef<Record<string, EvidenceRow[]>>({});
   const dagCacheRef = useRef<Record<string, { predecessors: RelatedCert[]; successors: RelatedCert[] }>>({});
   const execCacheRef = useRef<Record<string, Pick<ExecState, 'schedule' | 'scheduleApiStatus' | 'hiringTotal' | 'hiringItems' | 'trainingTotal' | 'trainingItems'>>>({});
@@ -468,16 +470,37 @@ const Recommendation: React.FC = () => {
     return () => { cancelled = true; };
   }, []);
 
-  // 모달 열림 동안 body 스크롤 잠금 + ESC 키로 닫기
+  // 모달 열림 동안 body 스크롤 잠금 + 포커스 트랩 + ESC 키로 닫기
   useEffect(() => {
     if (!showEvidence) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowEvidence(false); };
+    const modal = evModalRef.current;
+    const getFocusable = () => modal
+      ? Array.from(modal.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ))
+      : [];
+    // auto-focus first focusable element on open
+    requestAnimationFrame(() => { getFocusable()[0]?.focus(); });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setShowEvidence(false); return; }
+      if (e.key !== 'Tab') return;
+      const focusable = getFocusable();
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last  = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last)  { e.preventDefault(); first.focus(); }
+      }
+    };
     document.addEventListener('keydown', onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
+      evTriggerRef.current?.focus();
     };
   }, [showEvidence]);
 
@@ -555,6 +578,8 @@ const Recommendation: React.FC = () => {
   );
 
   const fetchEvidence = useCallback(async (certId: string) => {
+    // capture trigger element for focus restoration on modal close
+    evTriggerRef.current = document.activeElement as HTMLElement;
     // Check cache — instant response for repeat clicks
     const cachedEvidence = evidenceCacheRef.current[certId];
     const hasExplainCache = certId in certExplainCacheRef.current;
@@ -991,7 +1016,7 @@ const Recommendation: React.FC = () => {
 
       {showEvidence && (
         <div className="modal-backdrop" onClick={() => setShowEvidence(false)} role="presentation">
-        <div className="evidence-modal modal-card card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="ev-dialog-title">
+        <div className="evidence-modal modal-card card" ref={evModalRef} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="ev-dialog-title">
           <div className="ev-header">
             <div className="ev-header-left">
               <BookOpen size={15} style={{ color: 'var(--primary)', flexShrink: 0 }} />
@@ -1889,7 +1914,7 @@ const Recommendation: React.FC = () => {
                             }));
 
                             // SVG mini line chart
-                            const SvgChart = ({ data, color, key2 }: { data: ChartPoint[]; color: string; key2: 'written' | 'practical' }) => {
+                            const SvgChart = ({ data, color, key2, label }: { data: ChartPoint[]; color: string; key2: 'written' | 'practical'; label: string }) => {
                               const pts = data.filter(d => d[key2] != null);
                               if (pts.length < 2) return null;
                               const W = 260, H = 72, PAD = 28;
@@ -1900,8 +1925,9 @@ const Recommendation: React.FC = () => {
                               const toX = (i: number) => PAD + (i / (pts.length - 1)) * (W - PAD * 2);
                               const toY = (v: number) => H - 14 - ((v - minV) / range) * (H - 28);
                               const polyline = pts.map((p, i) => `${toX(i)},${toY(p[key2] as number)}`).join(' ');
+                              const chartA11yLabel = `${label} 회차별 합격률 추이 (${pts[0].year}~${pts[pts.length - 1].year})`;
                               return (
-                                <svg width={W} height={H} style={{ overflow: 'visible', display: 'block' }}>
+                                <svg width={W} height={H} role="img" aria-label={chartA11yLabel} style={{ overflow: 'visible', display: 'block' }}>
                                   <polyline points={polyline} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" />
                                   {pts.map((p, i) => (
                                     <g key={i}>
@@ -1909,7 +1935,7 @@ const Recommendation: React.FC = () => {
                                       <text x={toX(i)} y={toY(p[key2] as number) - 7} textAnchor="middle" fontSize="10" fill={color} fontWeight="600">
                                         {(p[key2] as number).toFixed(1)}%
                                       </text>
-                                      <text x={toX(i)} y={H - 2} textAnchor="middle" fontSize="9" fill="#94a3b8">{p.year}</text>
+                                      <text x={toX(i)} y={H - 2} textAnchor="middle" fontSize="9" fill="var(--text-light)">{p.year}</text>
                                     </g>
                                   ))}
                                 </svg>
@@ -1925,7 +1951,7 @@ const Recommendation: React.FC = () => {
                                 <div className="sr-table-wrap">
                                   <div className="sr-table-head" style={{ color }}>{label}</div>
                                   <div className="sr-chart-row">
-                                    <SvgChart data={chartData} color={color} key2={label === '필기' ? 'written' : 'practical'} />
+                                    <SvgChart data={chartData} color={color} key2={label === '필기' ? 'written' : 'practical'} label={label} />
                                   </div>
                                   <div style={{ overflowX: 'auto' }}>
                                     <table className="ev-stats-table">
@@ -2014,9 +2040,9 @@ const Recommendation: React.FC = () => {
                                 {/* Session-rate tables with charts */}
                                 {hasSession && (
                                   <div className="sr-tables">
-                                    <SessionTable rows={sr!.written} label="필기" color="#3b82f6" />
-                                    <SessionTable rows={sr!.practical} label="실기" color="#10b981" />
-                                    {sr!.other.length > 0 && <SessionTable rows={sr!.other} label="기타" color="#f59e0b" />}
+                                    <SessionTable rows={sr!.written} label="필기" color="var(--primary)" />
+                                    <SessionTable rows={sr!.practical} label="실기" color="var(--success)" />
+                                    {sr!.other.length > 0 && <SessionTable rows={sr!.other} label="기타" color="var(--warning)" />}
                                   </div>
                                 )}
                                 <p className="certinfo-src">한국산업인력공단 국가기술자격 취득현황</p>
@@ -2088,7 +2114,7 @@ const Recommendation: React.FC = () => {
                                         { label: '고용평등', val: exec.jobDetailData.equity_score },
                                       ].filter(s => s.val != null).map(({ label, val }) => {
                                         const v = val!;
-                                        const c = v >= 67 ? '#16a34a' : v >= 34 ? '#d97706' : '#dc2626';
+                                        const c = v >= 67 ? 'var(--success-dark)' : v >= 34 ? 'var(--warning)' : 'var(--danger)';
                                         return (
                                           <div key={label} className="jd-score-item">
                                             <span className="jd-score-label">{label}</span>
@@ -2134,7 +2160,7 @@ const Recommendation: React.FC = () => {
                                     const raw = exec.jobDetailData.outlook;
                                     // "증가(23%) 현상유지(42%) 감소(34%)"
                                     const parts = [...raw.matchAll(/([가-힣·]+)\((\d+)%\)/g)].map(m => ({ label: m[1], pct: parseInt(m[2], 10) }));
-                                    const colors: Record<string, string> = { '증가': '#16a34a', '현상유지': '#d97706', '감소': '#dc2626' };
+                                    const colors: Record<string, string> = { '증가': 'var(--success-dark)', '현상유지': 'var(--warning)', '감소': 'var(--danger)' };
                                     return (
                                       <div className="job-outlook-viz">
                                         <span className="job-detail-key">일자리 전망</span>
@@ -2145,7 +2171,7 @@ const Recommendation: React.FC = () => {
                                                 <div
                                                   key={label}
                                                   className="outlook-stack-seg"
-                                                  style={{ width: `${pct}%`, background: colors[label] ?? '#94a3b8' }}
+                                                  style={{ width: `${pct}%`, background: colors[label] ?? 'var(--text-muted)' }}
                                                   title={`${label} ${pct}%`}
                                                 />
                                               ))}
@@ -2153,7 +2179,7 @@ const Recommendation: React.FC = () => {
                                             <div className="outlook-legend">
                                               {parts.map(({ label, pct }) => (
                                                 <span key={label} className="outlook-legend-item">
-                                                  <span className="outlook-dot" style={{ background: colors[label] ?? '#94a3b8' }} />
+                                                  <span className="outlook-dot" style={{ background: colors[label] ?? 'var(--text-muted)' }} />
                                                   {label} {pct}%
                                                 </span>
                                               ))}
@@ -2236,7 +2262,7 @@ const Recommendation: React.FC = () => {
                 )}
 
                 {!videos.loading && videos.warning && videos.videos.length > 0 && (
-                  <div className="ev-empty" style={{ color: '#b45309', background: '#fef3c7', padding: '.5rem .75rem', borderRadius: '6px' }}>
+                  <div className="ev-empty" style={{ color: 'var(--warning-text)', background: 'var(--warning-light)', padding: '.5rem .75rem', borderRadius: '6px' }}>
                     <AlertCircle size={14} style={{ flexShrink: 0 }} />
                     <span>
                       {videos.warning === 'quota_exceeded_using_stale_cache'
@@ -2339,7 +2365,7 @@ const Recommendation: React.FC = () => {
             <div className="result-count-row">
               <p className="result-count">추천 자격증 <span className="count-num">{filtered.length}</span>건</p>
               {domainParam && jobParam && (
-                <span className="result-cap-hint" style={{ background: '#f0fdf4', borderColor: 'rgba(16,185,129,.25)', color: '#065f46' }}>
+                <span className="result-cap-hint" style={{ background: 'var(--success-light)', borderColor: 'rgba(16,185,129,.25)', color: 'var(--success-dark)' }}>
                   분야 OR 직무 합산 결과
                 </span>
               )}
@@ -2467,7 +2493,7 @@ const Recommendation: React.FC = () => {
         .modal-videos-title{font-size:.85rem;font-weight:700;color:var(--text)}
         .ev-header-left{display:flex;align-items:center;gap:.5rem;flex:1;min-width:0}
         .ev-title{font-size:.875rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .ev-close{background:none;border:none;cursor:pointer;color:var(--text-light);padding:.2rem;flex-shrink:0;transition:color .15s}
+        .ev-close{background:none;border:none;cursor:pointer;color:var(--text-light);padding:.2rem;flex-shrink:0;transition:color .15s;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
         .ev-close:hover{color:var(--danger)}
         .ev-loading{display:flex;align-items:center;gap:.5rem;font-size:.875rem;color:var(--text-muted)}
         .ev-spin{animation:spin 1s linear infinite;color:var(--primary)}
@@ -2486,7 +2512,7 @@ const Recommendation: React.FC = () => {
         .ev-src-local{background:var(--surface-2);color:var(--text-muted)}
         .ev-src-catalog{background:var(--warning-light);color:var(--warning-text)}
         .ev-src-national{background:var(--primary-light);color:var(--primary)}
-        .ev-row-catalog{border-color:rgba(245,158,11,.3);background:#fffbeb}
+        .ev-row-catalog{border-color:rgba(245,158,11,.3);background:var(--warning-light)}
         .ev-catalog-list{margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:.3rem}
         .ev-catalog-list li{font-size:.84rem;color:var(--text-muted);line-height:1.65}
         .ev-score-wrap{display:flex;align-items:center;gap:.3rem;margin-left:auto}
@@ -2498,9 +2524,9 @@ const Recommendation: React.FC = () => {
         .ev-link{display:inline-flex;align-items:center;gap:.25rem;font-size:.75rem;color:var(--secondary);text-decoration:none;margin-left:auto}
         .ev-link:hover{text-decoration:underline}
         .ev-snippet{font-size:.855rem;color:var(--text-muted);line-height:1.7;background:var(--surface-2);padding:.5rem .75rem;border-radius:var(--radius-xs)}
-        .cert-match-tag{margin-left:auto;padding:.1rem .45rem;background:#f0fdf4;border:1px solid rgba(16,185,129,.3);border-radius:var(--radius-xs);font-size:.62rem;font-weight:700;color:#065f46;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px}
-        .cert-match-tag[data-cross="true"]{background:#eff6ff;border-color:rgba(37,99,235,.25);color:var(--primary)}
-        .search-clear{position:absolute;right:.5rem;background:none;border:none;cursor:pointer;color:var(--text-light);display:flex;align-items:center;padding:.25rem;transition:color .15s;border-radius:var(--radius-xs)}
+        .cert-match-tag{margin-left:auto;padding:.1rem .45rem;background:var(--success-light);border:1px solid rgba(16,185,129,.3);border-radius:var(--radius-xs);font-size:.62rem;font-weight:700;color:var(--success-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px}
+        .cert-match-tag[data-cross="true"]{background:var(--primary-light);border-color:rgba(37,99,235,.25);color:var(--primary)}
+        .search-clear{position:absolute;right:.5rem;background:none;border:none;cursor:pointer;color:var(--text-light);display:flex;align-items:center;justify-content:center;padding:.25rem;transition:color .15s;border-radius:var(--radius-xs);min-width:44px;min-height:44px}
         .search-clear:hover{color:var(--danger)}
         .filter-card{padding:1.25rem;display:flex;flex-direction:column;gap:.875rem}
         .filter-row{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end}
@@ -2510,7 +2536,7 @@ const Recommendation: React.FC = () => {
         .select-arrow{position:absolute;right:.75rem;color:var(--text-light);pointer-events:none}
         .active-filters{display:flex;gap:.375rem;flex-wrap:wrap;align-items:center;margin-left:auto}
         .filter-chip{padding:.25rem .75rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-full);font-size:.75rem;color:var(--text-muted)}
-        .filter-chip-job{background:#f0fdf4;border-color:rgba(16,185,129,.25);color:#065f46}
+        .filter-chip-job{background:var(--success-light);border-color:rgba(16,185,129,.25);color:var(--success-dark)}
         .rec-loading{display:flex;flex-direction:column;align-items:center;gap:.75rem;padding:3rem 1rem;color:var(--text-muted);font-size:.9rem}
         .rec-spin{animation:spin 1s linear infinite;color:var(--primary)}
         .rec-error{display:flex;align-items:center;gap:.75rem;padding:1.25rem;color:var(--danger);flex-wrap:wrap}
@@ -2793,19 +2819,21 @@ const Recommendation: React.FC = () => {
         .certinfo-stat-val{font-size:.9rem;font-weight:800}
         .certinfo-stat-written{background:#eef2ff;color:#4f46e5}
         .certinfo-stat-practical{background:#ecfeff;color:#0891b2}
-        .certinfo-stat-avg{background:#f0fdf4;color:#16a34a}
-        .certinfo-stat-freq{background:#fef9c3;color:#92400e}
+        .certinfo-stat-avg{background:var(--success-light);color:var(--success-dark)}
+        .certinfo-stat-freq{background:var(--warning-light);color:var(--warning-text)}
         .certinfo-stat-diff{background:#fdf4ff;color:#7c3aed}
-        .certinfo-stat-type{background:#f0fdf4;color:#15803d}
+        .certinfo-stat-type{background:var(--success-light);color:var(--success-dark)}
         .certinfo-job-tags{display:flex;flex-wrap:wrap;gap:.35rem}
-        .certinfo-job-tag{padding:.2rem .6rem;background:#f0f9ff;border:1px solid #bae6fd;border-radius:99px;font-size:.75rem;color:#0369a1;font-weight:500}
-        .certinfo-job-btn{cursor:pointer;transition:background .15s, color .15s, border-color .15s;border:1px solid #bae6fd}
-        .certinfo-job-btn:hover{background:#0369a1;color:#fff;border-color:#0369a1}
-        .certinfo-job-selected{background:#0369a1!important;color:#fff!important;border-color:#0369a1!important}
-        .certinfo-job-more{background:#f8fafc;border-color:#e2e8f0;color:#64748b}
-        .certinfo-job-more-btn{padding:.2rem .75rem;background:#f8fafc;border:1.5px dashed #94a3b8;border-radius:99px;font-size:.75rem;color:#64748b;cursor:pointer;transition:background .15s, border-color .15s, color .15s;font-weight:600}
+        .certinfo-job-tag{padding:.2rem .6rem;background:var(--primary-light);border:1px solid rgba(37,99,235,.2);border-radius:99px;font-size:.75rem;color:var(--primary);font-weight:500}
+        .certinfo-job-btn{cursor:pointer;transition:background .15s, color .15s, border-color .15s;border:1px solid rgba(37,99,235,.2);display:inline-flex;align-items:center}
+        .certinfo-job-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+        @media(pointer:coarse){.certinfo-job-btn{min-height:44px;padding:.5rem .75rem}}
+        .certinfo-job-selected{background:var(--primary)!important;color:#fff!important;border-color:var(--primary)!important}
+        .certinfo-job-more{background:var(--surface-2);border-color:var(--border);color:var(--text-muted)}
+        .certinfo-job-more-btn{padding:.2rem .75rem;background:var(--surface-2);border:1.5px dashed var(--border);border-radius:99px;font-size:.75rem;color:var(--text-muted);cursor:pointer;transition:background .15s, border-color .15s, color .15s;font-weight:600;display:inline-flex;align-items:center}
         .certinfo-job-more-btn:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary)}
-        .certinfo-job-hint{font-size:.62rem;font-weight:500;color:#94a3b8;text-transform:none;letter-spacing:0}
+        @media(pointer:coarse){.certinfo-job-more-btn{min-height:44px;padding:.5rem 1rem}}
+        .certinfo-job-hint{font-size:.62rem;font-weight:500;color:var(--text-light);text-transform:none;letter-spacing:0}
         .jd-scores{display:flex;flex-direction:column;gap:.25rem;background:var(--primary-light);border-radius:6px;padding:.5rem .625rem;margin-bottom:.25rem}
         .jd-score-item{display:grid;grid-template-columns:60px 1fr 24px;align-items:center;gap:.35rem}
         .jd-score-label{font-size:.65rem;font-weight:600;color:var(--primary)}
@@ -2823,21 +2851,21 @@ const Recommendation: React.FC = () => {
         /* 임금 시각화 */
         .job-salary-viz{display:flex;flex-direction:column;gap:.35rem}
         .salary-range-wrap{padding:.6rem 0 1.2rem;position:relative}
-        .salary-range-bar{position:relative;height:6px;background:#bae6fd;border-radius:99px;margin:0 8px}
-        .salary-range-fill{position:absolute;inset:0;background:linear-gradient(90deg,#7dd3fc,#0ea5e9);border-radius:99px}
+        .salary-range-bar{position:relative;height:6px;background:rgba(37,99,235,.18);border-radius:99px;margin:0 8px}
+        .salary-range-fill{position:absolute;inset:0;background:linear-gradient(90deg,rgba(37,99,235,.35),var(--primary));border-radius:99px}
         .salary-dot-wrap{position:absolute;top:-3px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px}
-        .salary-dot{width:12px;height:12px;border-radius:50%;background:#0ea5e9;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2)}
-        .salary-dot-val{font-size:.68rem;font-weight:800;color:#0c4a6e;white-space:nowrap;margin-top:6px}
-        .salary-dot-label{font-size:.6rem;color:#64748b;white-space:nowrap}
+        .salary-dot{width:12px;height:12px;border-radius:50%;background:var(--primary);border:2px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+        .salary-dot-val{font-size:.68rem;font-weight:800;color:var(--text);white-space:nowrap;margin-top:6px}
+        .salary-dot-label{font-size:.6rem;color:var(--text-muted);white-space:nowrap}
         /* 일자리 전망 시각화 */
         .job-outlook-viz{display:flex;flex-direction:column;gap:.35rem}
         .outlook-stack-wrap{display:flex;flex-direction:column;gap:.35rem}
         .outlook-stack-bar{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px}
         .outlook-stack-seg{flex-shrink:0;border-radius:3px;transition:width .3s}
         .outlook-legend{display:flex;gap:.6rem;flex-wrap:wrap}
-        .outlook-legend-item{display:flex;align-items:center;gap:.25rem;font-size:.7rem;color:#0c4a6e;font-weight:600}
+        .outlook-legend-item{display:flex;align-items:center;gap:.25rem;font-size:.7rem;color:var(--text);font-weight:600}
         .outlook-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-        .exec-section-label{font-size:.68rem;font-weight:800;letter-spacing:.06em;color:#6366f1;text-transform:uppercase;margin:.375rem 0 .25rem;display:block}
+        .exec-section-label{font-size:.68rem;font-weight:800;letter-spacing:.06em;color:var(--primary);text-transform:uppercase;margin:.375rem 0 .25rem;display:block}
 
         /* session-rates table+chart */
         .sr-tables{display:flex;flex-direction:column;gap:.875rem;margin-top:.5rem}
@@ -2849,14 +2877,14 @@ const Recommendation: React.FC = () => {
         .survey-required-banner{
           display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
           padding:1.125rem 1.375rem;
-          background:#fff7ed;
-          border:1.5px solid #fed7aa;
+          background:var(--warning-light);
+          border:1.5px solid rgba(245,158,11,.3);
           border-radius:var(--radius-sm);
         }
-        .survey-required-icon{color:#f97316;flex-shrink:0}
+        .survey-required-icon{color:var(--warning);flex-shrink:0}
         .survey-required-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:.2rem}
-        .survey-required-title{font-size:.95rem;font-weight:800;color:#9a3412;margin:0}
-        .survey-required-sub{font-size:.82rem;color:#c2410c;margin:0;line-height:1.55}
+        .survey-required-title{font-size:.95rem;font-weight:800;color:var(--warning-text);margin:0}
+        .survey-required-sub{font-size:.82rem;color:var(--warning-text);margin:0;line-height:1.55}
         .survey-required-btn{white-space:nowrap;flex-shrink:0}
       `}</style>
     </div>

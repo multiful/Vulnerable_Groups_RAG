@@ -125,21 +125,43 @@ const KakaoMap: React.FC<Props> = ({ points, height = '360px', center = SEOUL })
       overlay.setMap(mapRef.current);
 
       // 클릭 → InfoWindow
+      // Build InfoWindow content using DOM APIs (avoids XSS from interpolated strings)
       const content = document.createElement('div');
-      content.innerHTML = `
-        <div style="padding:8px 10px;max-width:240px;font-family:inherit">
-          <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
-            <span style="
-              padding:1px 6px;border-radius:99px;font-size:10px;font-weight:700;
-              background:${cfg.markerBg};color:${cfg.color};border:1px solid ${cfg.color}40
-            ">${cfg.label}</span>
-          </div>
-          <div style="font-weight:700;font-size:12px;color:#1e293b;line-height:1.4">${p.name}</div>
-          <div style="font-size:11px;color:#64748b;margin-top:2px;line-height:1.4">${p.address}</div>
-          ${p.phone ? `<div style="font-size:11px;color:#64748b;margin-top:2px">📞 ${p.phone}</div>` : ''}
-          ${p.course_name ? `<div style="font-size:11px;color:#64748b;margin-top:2px;font-style:italic">📖 ${p.course_name}</div>` : ''}
-        </div>
-      `;
+      Object.assign(content.style, { padding: '8px 10px', maxWidth: '240px', fontFamily: 'inherit' });
+
+      const headerRow = document.createElement('div');
+      Object.assign(headerRow.style, { display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' });
+      const badge = document.createElement('span');
+      Object.assign(badge.style, {
+        padding: '1px 6px', borderRadius: '99px', fontSize: '10px', fontWeight: '700',
+        background: cfg.markerBg, color: cfg.color, border: `1px solid ${cfg.color}40`,
+      });
+      badge.textContent = cfg.label;
+      headerRow.appendChild(badge);
+      content.appendChild(headerRow);
+
+      const nameEl = document.createElement('div');
+      Object.assign(nameEl.style, { fontWeight: '700', fontSize: '12px', color: 'var(--text)', lineHeight: '1.4' });
+      nameEl.textContent = p.name;
+      content.appendChild(nameEl);
+
+      const addrEl = document.createElement('div');
+      Object.assign(addrEl.style, { fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: '1.4' });
+      addrEl.textContent = p.address;
+      content.appendChild(addrEl);
+
+      if (p.phone) {
+        const phoneEl = document.createElement('div');
+        Object.assign(phoneEl.style, { fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' });
+        phoneEl.textContent = `📞 ${p.phone}`;
+        content.appendChild(phoneEl);
+      }
+      if (p.course_name) {
+        const courseEl = document.createElement('div');
+        Object.assign(courseEl.style, { fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', fontStyle: 'italic' });
+        courseEl.textContent = `📖 ${p.course_name}`;
+        content.appendChild(courseEl);
+      }
 
       window.kakao.maps.event.addListener(overlay, 'click', () => {
         infoWindowRef.current.setContent(content);
@@ -209,20 +231,20 @@ const KakaoMap: React.FC<Props> = ({ points, height = '360px', center = SEOUL })
         .kmap-legend-btn {
           display: inline-flex; align-items: center; gap: .3rem;
           padding: .2rem .65rem; border-radius: 99px;
-          border: 1.5px solid var(--lc, #94a3b8);
+          border: 1.5px solid var(--lc, var(--border));
           background: none; cursor: pointer; font-size: .72rem; font-weight: 600;
-          color: #64748b; opacity: .45; transition: opacity .15s, background .15s, color .15s;
+          color: var(--text-muted); opacity: .55; transition: opacity .15s, background .15s, color .15s;
         }
-        .kmap-legend-btn.active { opacity: 1; color: var(--lc); background: color-mix(in srgb, var(--lc) 10%, white); }
+        .kmap-legend-btn.active { opacity: 1; color: var(--lc); background: color-mix(in srgb, var(--lc) 10%, transparent); }
         .kmap-legend-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lc); flex-shrink: 0; }
         .kmap-legend-cnt { font-weight: 800; font-size: .7rem; }
         .kmap-loading {
           position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-          background: rgba(248,250,252,.85); font-size: .8rem; color: #94a3b8;
+          background: color-mix(in srgb, var(--surface) 85%, transparent); font-size: .8rem; color: var(--text-light);
         }
         .kmap-error {
-          padding: 1rem; background: #fef2f2; border: 1px solid #fecaca;
-          border-radius: 8px; font-size: .82rem; color: #ef4444; text-align: center;
+          padding: 1rem; background: var(--danger-light); border: 1px solid rgba(244,63,94,.3);
+          border-radius: 8px; font-size: .82rem; color: var(--danger); text-align: center;
           line-height: 1.6;
         }
       `}</style>

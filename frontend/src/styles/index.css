@@ -66,8 +66,8 @@
   --radius-full: 9999px;
 
   /* Motion */
-  --transition: all 0.2s ease;
-  --transition-slow: all 0.35s ease;
+  --transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
+  --transition-slow: background 0.35s ease, color 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease, opacity 0.35s ease;
 
   /* Layout */
   --header-h:    60px;

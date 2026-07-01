@@ -86,9 +86,9 @@ function CertJobCardSkeleton() {
 ────────────────────────────────────────────────────────── */
 function CertJobCardContent({ data, onViewRoadmap }: { data: CertJobCardData; onViewRoadmap?: (c: string) => void }) {
   const demandColor: Record<string, string> = {
-    '상': '#10b981',
-    '중': '#f59e0b',
-    '하': '#94a3b8',
+    '상': 'var(--success)',
+    '중': 'var(--warning)',
+    '하': 'var(--text-muted)',
   };
   const stageName = (s: number) => {
     const map: Record<number, string> = {
@@ -116,7 +116,7 @@ function CertJobCardContent({ data, onViewRoadmap }: { data: CertJobCardData; on
           )}
           <span
             className="cjc-badge"
-            style={{ background: (demandColor[data.job_demand_level] ?? '#94a3b8') + '18', color: demandColor[data.job_demand_level] ?? '#94a3b8', border: `1px solid ${(demandColor[data.job_demand_level] ?? '#94a3b8')}40` }}
+            style={{ background: `color-mix(in srgb, ${demandColor[data.job_demand_level] ?? 'var(--text-muted)'} 10%, transparent)`, color: demandColor[data.job_demand_level] ?? 'var(--text-muted)', border: `1px solid color-mix(in srgb, ${demandColor[data.job_demand_level] ?? 'var(--text-muted)'} 25%, transparent)` }}
           >
             수요 {data.job_demand_level}
           </span>

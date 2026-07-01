@@ -1,6 +1,6 @@
 // Content Hash: SHA256:TBD
 import React, { useState } from 'react';
-import { Mail, ExternalLink, MessageSquare, Send, CheckCircle2, Code2 } from 'lucide-react';
+import { Mail, ExternalLink, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
 
 const FAQ = [
   {
