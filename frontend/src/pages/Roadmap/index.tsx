@@ -748,39 +748,47 @@ const Roadmap: React.FC = () => {
         )}
       </div>
 
-      {/* 오늘의 한 행동 */}
-      {(todayActionLoading || todayAction) && (
-        <div className="rm-today-wrap">
-          {todayActionLoading ? (
-            <div className="rm-today-skeleton">
-              <Loader2 size={14} className="rm-spin" />
-              <span>오늘의 행동을 추천하는 중…</span>
+      {/* 오늘의 한 행동 — API 실패 시 폴백 포함 */}
+      <div className="rm-today-wrap">
+        {todayActionLoading ? (
+          <div className="rm-today-skeleton">
+            <Loader2 size={14} className="rm-spin" />
+            <span>오늘의 행동을 추천하는 중…</span>
+          </div>
+        ) : todayAction ? (
+          <div className="rm-today-card">
+            <div className="rm-today-header">
+              <span className="rm-today-label">오늘의 한 가지 행동</span>
+              <span className="rm-today-effort">{todayAction.action.effort_minutes}분</span>
             </div>
-          ) : todayAction && (
-            <div className="rm-today-card">
-              <div className="rm-today-header">
-                <span className="rm-today-label">오늘의 한 가지 행동</span>
-                <span className="rm-today-effort">{todayAction.action.effort_minutes}분</span>
-              </div>
-              <p className="rm-today-title">
-                {ACTION_TYPE_EMOJI[todayAction.action.action_type] ?? '⚡'} {todayAction.action.title}
-              </p>
-              <p className="rm-today-desc">{todayAction.action.description}</p>
-              <p className="rm-today-motivation">{todayAction.motivation}</p>
-              <div className="rm-today-footer">
-                <button
-                  className="rm-today-cta"
-                  onClick={() => fetchTodayAction((data?.roadmap_sequence ?? []).slice(0, 3).map(c => c.cert_id))}
-                  type="button"
-                  title="다른 행동 추천받기"
-                >
-                  다른 행동 보기
-                </button>
-              </div>
+            <p className="rm-today-title">
+              {ACTION_TYPE_EMOJI[todayAction.action.action_type] ?? '⚡'} {todayAction.action.title}
+            </p>
+            <p className="rm-today-desc">{todayAction.action.description}</p>
+            <p className="rm-today-motivation">{todayAction.motivation}</p>
+            <div className="rm-today-footer">
+              <button
+                className="rm-today-cta"
+                onClick={() => fetchTodayAction((data?.roadmap_sequence ?? []).slice(0, 3).map(c => c.cert_id))}
+                type="button"
+                title="다른 행동 추천받기"
+              >
+                다른 행동 보기
+              </button>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        ) : (
+          <div className="rm-today-card">
+            <div className="rm-today-header">
+              <span className="rm-today-label">오늘의 한 가지 행동</span>
+              <span className="rm-today-effort">5분</span>
+            </div>
+            <p className="rm-today-title">📋 관심 자격증 시험 일정 확인하기</p>
+            <p className="rm-today-desc">아래 로드맵에서 1단계 자격증을 하나 골라 Q-Net에서 다음 시험 접수일을 확인해보세요.</p>
+            <p className="rm-today-motivation">작은 한 발자국이 로드맵의 시작입니다.</p>
+          </div>
+        )}
+      </div>
 
       {/* 탭 */}
       {(domainParam && data) && (

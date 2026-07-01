@@ -418,6 +418,7 @@ const RiskAssessment: React.FC = () => {
   const [current, setCurrent] = useState(() => (_loadSurvey()?.current ?? 0));
   const [answers, setAnswers] = useState<Record<string, number>>(() => (_loadSurvey()?.answers ?? {}));
   const [safetyFlag, setSafetyFlag] = useState<boolean>(() => (_loadSurvey()?.safetyFlag ?? false));
+  const [safetyGatePassed, setSafetyGatePassed] = useState(() => ((_loadSurvey()?.current ?? 0) > 10));
   const [wasRestored, setWasRestored] = useState(() => {
     const s = _loadSurvey();
     return (s?.current ?? 0) > 0;
@@ -518,44 +519,48 @@ const RiskAssessment: React.FC = () => {
   }
 
   /* ── 차원 점수 기반 분류 이유 텍스트 생성 ── */
+  // 연구 카테고리명 → 사용자 언어 변환
+  const CAT_LABEL: Record<string, string> = {
+    '관계망': '주변 사람과의 연결',
+    '정신건강': '마음 상태',
+    '노동·경제': '일과 경제 상황',
+    '자기관리': '일상 관리',
+    '활동': '외부 활동',
+  };
+
   function buildDimensionReason(
     stage: string,
     catScores: [string, { score: number; max: number }][],
-    pct: number,
+    _pct: number,
   ): string {
-    // max=0 방어: 분모가 0이면 0%로 처리
     const sm: Record<string, number> = {};
     for (const [cat, { score, max }] of catScores) {
       sm[cat] = max > 0 ? Math.round((score / max) * 100) : 0;
     }
-    // 내림차순 정렬된 [카테고리, 점수%] 쌍
     const sorted = Object.entries(sm).sort(([, a], [, b]) => b - a);
+    const toLabel = (k: string) => CAT_LABEL[k] ?? k;
 
     switch (stage) {
       case '4': {
-        // 은둔청년(75%+): 실제 가장 높은 두 어려움 영역을 표시
-        const top2 = sorted.slice(0, 2).map(([k, v]) => `${k}(${v}%)`);
-        return `${top2.join('·')} 영역의 높은 어려움에 기반하여`;
+        const top2 = sorted.slice(0, 2).map(([k]) => toLabel(k));
+        return `${top2.join(', ')} 부분에서 많이 힘드신 것 같아`;
       }
       case '3': {
-        // 활동제한형(50-75%): ≥45%인 영역 우선, 없으면 상위 2개
         const elevated = sorted.filter(([, v]) => v >= 45).slice(0, 2);
-        const display = elevated.length > 0 ? elevated : sorted.slice(0, 2);
-        return `${display.map(([k, v]) => `${k}(${v}%)`).join('·')} 영역의 어려움에 기반하여`;
+        const display = (elevated.length > 0 ? elevated : sorted.slice(0, 2)).map(([k]) => toLabel(k));
+        return `${display.join(', ')} 부분에서 어려움이 있어`;
       }
       case '2': {
-        // 활동형(25-50%): ≥35%인 영역 우선, 없으면 상위 2개
         const elevated = sorted.filter(([, v]) => v >= 35).slice(0, 2);
-        const display = elevated.length > 0 ? elevated : sorted.slice(0, 2);
-        return `${display.map(([k, v]) => `${k}(${v}%)`).join('·')} 영역의 응답에 기반하여`;
+        const display = (elevated.length > 0 ? elevated : sorted.slice(0, 2)).map(([k]) => toLabel(k));
+        return `${display.join(', ')} 부분에서 일부 어려움이 있어`;
       }
       default: {
-        // 고립위험청년(<25%): 가장 높은 관심 영역을 언급하되 전체 위험도가 낮음을 명시
         const topCat = sorted[0];
         if (topCat && topCat[1] >= 20) {
-          return `${topCat[0]}(${topCat[1]}%) 등 일부 주의 영역이 있으나 전반적 위험도(${pct}%)가 낮아`;
+          return `${toLabel(topCat[0])} 부분에서 살짝 부담이 있지만 전반적으로 안정적이어서`;
         }
-        return `전반적으로 낮은 위험 수준(위험도 ${pct}%)에 기반하여`;
+        return `전반적으로 안정적인 상황이어서`;
       }
     }
   }
@@ -602,11 +607,11 @@ const RiskAssessment: React.FC = () => {
         <div className="card result-card">
           <div className="result-stage-row">
             <div className="result-badge" style={{ background: info.color + '18', color: info.color, borderColor: info.color + '40' }}>
-              {info.label}
+              유형 {info.label}
             </div>
             <div>
-              <p className="result-stage-name">{info.sub}</p>
-              <p className="result-score-sub">위험도 점수 {pct}점 / 100점</p>
+              <p className="result-stage-name">지금 내 상황에 가장 가까운 유형을 찾았어요</p>
+              <p className="result-score-sub">12문항 응답 기준 · 참고용 결과입니다</p>
             </div>
           </div>
 
@@ -724,11 +729,10 @@ const RiskAssessment: React.FC = () => {
 
               {/* 분류 결과 */}
               <div className="policy-classify">
-                <p className="policy-classify-label">분류 결과</p>
+                <p className="policy-classify-label">지금 내 상황</p>
                 <p className="policy-classify-type">
-                  귀하의{' '}
                   <strong className="policy-dim-reason">{dimensionReason}</strong>{' '}
-                  <strong style={{ color: info.color }}>{policy.isolationType}</strong>으로 분류됐습니다.
+                  아래 설명이 지금 상황과 가깝습니다.
                 </p>
                 <p className="policy-classify-char">{policy.characteristic}</p>
                 <div className="policy-strategy-row">
@@ -1099,8 +1103,8 @@ const RiskAssessment: React.FC = () => {
     return (
       <div className="survey-wrap">
         <div className="page-header">
-          <h1 className="page-title">추가 확인 질문</h1>
-          <p className="page-desc">더 정확한 분류를 위해 3가지 질문에만 더 답해주세요. 1분 미만 소요됩니다.</p>
+          <h1 className="page-title">거의 다 됐어요!</h1>
+          <p className="page-desc">비슷한 상황이 여럿 있어서, 딱 맞는 추천을 드리려면 3가지만 더 확인할게요. 1분도 안 걸립니다.</p>
         </div>
 
         <div className="precision-note">
@@ -1189,8 +1193,35 @@ const RiskAssessment: React.FC = () => {
         </div>
       )}
 
+      {/* 안전 인터스티셜 — B12_9(index 10) 직전 1회 */}
+      {current === 10 && !safetyGatePassed && (
+        <div className="safety-gate-card">
+          <div className="safety-gate-icon">🤝</div>
+          <p className="safety-gate-title">마지막 두 문항 전에 잠깐요</p>
+          <p className="safety-gate-desc">
+            다음 문항에서 심리적으로 힘들었던 경험을 여쭤볼 수 있어요.
+            편하지 않으시면 <strong>건너뛰어도</strong> 자격증 추천에 전혀 지장이 없습니다.
+          </p>
+          <div className="safety-gate-actions">
+            <button className="btn-primary" onClick={() => setSafetyGatePassed(true)}>
+              괜찮아요, 계속할게요
+            </button>
+            <button className="btn-ghost" onClick={() => {
+              // B12_9 건너뜀 — 점수 0 처리 후 다음 문항으로
+              const newAnswers = { ...answers, B12_9: 0 };
+              setAnswers(newAnswers);
+              setSafetyGatePassed(true);
+              _saveProgress(11, newAnswers, safetyFlag);
+              setCurrent(11);
+            }}>
+              이 문항은 건너뛸게요
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Progress */}
-      <div className="survey-progress-wrap">
+      <div className="survey-progress-wrap" style={current === 10 && !safetyGatePassed ? { display: 'none' } : {}}>
         <div className="survey-progress-info">
           <span className="survey-q-num">{current + 1} / {QUESTIONS.length}</span>
           <span className="survey-cat-badge" style={{ background: (CATEGORY_COLORS[q.category] ?? '#6366f1') + '18', color: CATEGORY_COLORS[q.category] ?? '#6366f1' }}>
@@ -1202,79 +1233,83 @@ const RiskAssessment: React.FC = () => {
         </div>
       </div>
 
-      {/* Question card */}
-      <div className="card survey-card" key={current}>
-        {q.safetyKey && (
-          <div className="safety-notice">
-            <AlertTriangle size={14} />
-            <span>이 질문은 정서적 위기와 관련된 항목입니다. 편하게 솔직하게 답해주세요.</span>
+      {/* Question card — 인터스티셜 중엔 숨김 */}
+      {(current !== 10 || safetyGatePassed) && (
+        <div className="card survey-card" key={current}>
+          {q.safetyKey && (
+            <div className="safety-notice">
+              <AlertTriangle size={14} />
+              <span>이 질문은 정서적 위기와 관련된 항목입니다. 편하게 솔직하게 답해주세요.</span>
+            </div>
+          )}
+
+          <p className="survey-q-text">{q.text}</p>
+
+          <div
+            className="survey-options"
+            role="radiogroup"
+            aria-label={q.text}
+            ref={radioGroupRef}
+            onKeyDown={(e) => {
+              const opts = q.options;
+              const curIdx = opts.findIndex(o => o.score === answers[q.id]);
+              const base = curIdx >= 0 ? curIdx : 0;
+              let nextIdx = -1;
+              if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                nextIdx = (base + 1) % opts.length;
+              } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+                nextIdx = (base - 1 + opts.length) % opts.length;
+              }
+              if (nextIdx >= 0) {
+                select(opts[nextIdx].score);
+                requestAnimationFrame(() => {
+                  const btns = radioGroupRef.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]');
+                  btns?.[nextIdx]?.focus();
+                });
+              }
+            }}
+          >
+            {q.options.map((opt, idx) => {
+              const isSel = answers[q.id] === opt.score;
+              const isFirstUnselected = answers[q.id] === undefined && idx === 0;
+              return (
+                <button
+                  key={opt.score}
+                  role="radio"
+                  aria-checked={isSel}
+                  tabIndex={isSel || isFirstUnselected ? 0 : -1}
+                  className={`survey-opt ${isSel ? 'selected' : ''}`}
+                  onClick={() => select(opt.score)}
+                  type="button"
+                >
+                  <span className="survey-opt-radio" aria-hidden="true">{isSel ? '●' : '○'}</span>
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
-        )}
-
-        <p className="survey-q-text">{q.text}</p>
-
-        <div
-          className="survey-options"
-          role="radiogroup"
-          aria-label={q.text}
-          ref={radioGroupRef}
-          onKeyDown={(e) => {
-            const opts = q.options;
-            const curIdx = opts.findIndex(o => o.score === answers[q.id]);
-            const base = curIdx >= 0 ? curIdx : 0;
-            let nextIdx = -1;
-            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-              e.preventDefault();
-              nextIdx = (base + 1) % opts.length;
-            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-              e.preventDefault();
-              nextIdx = (base - 1 + opts.length) % opts.length;
-            }
-            if (nextIdx >= 0) {
-              select(opts[nextIdx].score);
-              requestAnimationFrame(() => {
-                const btns = radioGroupRef.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]');
-                btns?.[nextIdx]?.focus();
-              });
-            }
-          }}
-        >
-          {q.options.map((opt, idx) => {
-            const isSel = answers[q.id] === opt.score;
-            const isFirstUnselected = answers[q.id] === undefined && idx === 0;
-            return (
-              <button
-                key={opt.score}
-                role="radio"
-                aria-checked={isSel}
-                tabIndex={isSel || isFirstUnselected ? 0 : -1}
-                className={`survey-opt ${isSel ? 'selected' : ''}`}
-                onClick={() => select(opt.score)}
-                type="button"
-              >
-                <span className="survey-opt-radio" aria-hidden="true">{isSel ? '●' : '○'}</span>
-                {opt.label}
-              </button>
-            );
-          })}
         </div>
-      </div>
+      )}
 
-      {/* Navigation */}
-      <div className="survey-nav">
-        <button className="btn-ghost" onClick={goPrev} disabled={current === 0}>
-          <ArrowLeft size={15} /> 이전
-        </button>
-        {current === QUESTIONS.length - 1 ? (
-          <button className="btn-primary" disabled={!answered} onClick={finish}>
-            결과 보기 <ArrowRight size={15} />
+      {/* Navigation — 인터스티셜 중엔 숨김 */}
+      {(current !== 10 || safetyGatePassed) && (
+        <div className="survey-nav">
+          <button className="btn-ghost" onClick={goPrev} disabled={current === 0}>
+            <ArrowLeft size={15} /> 이전
           </button>
-        ) : (
-          <button className="btn-primary" disabled={!answered} onClick={goNext}>
-            다음 <ArrowRight size={15} />
-          </button>
-        )}
-      </div>
+          {current === QUESTIONS.length - 1 ? (
+            <button className="btn-primary" disabled={!answered} onClick={finish}>
+              결과 보기 <ArrowRight size={15} />
+            </button>
+          ) : (
+            <button className="btn-primary" disabled={!answered} onClick={goNext}>
+              다음 <ArrowRight size={15} />
+            </button>
+          )}
+        </div>
+      )}
 
       <style>{`
         .survey-wrap { max-width:640px; display:flex; flex-direction:column; gap:1.5rem; margin:0 auto; }
@@ -1345,6 +1380,18 @@ const RiskAssessment: React.FC = () => {
           border-radius:var(--radius-sm); font-size:.82rem; font-weight:700;
           text-decoration:none;
         }
+        .safety-gate-card {
+          display:flex; flex-direction:column; align-items:center; gap:1rem;
+          background:#f0fdf4; border:1px solid #86efac;
+          border-radius:var(--radius); padding:2rem 1.5rem;
+          text-align:center;
+        }
+        .safety-gate-icon { font-size:2rem; }
+        .safety-gate-title { font-size:1.1rem; font-weight:700; color:var(--text); }
+        .safety-gate-desc { font-size:.9rem; color:var(--text-muted); line-height:1.65; max-width:380px; }
+        .safety-gate-actions { display:flex; flex-direction:column; gap:.625rem; width:100%; max-width:300px; }
+        .safety-gate-actions .btn-primary { width:100%; justify-content:center; }
+        .safety-gate-actions .btn-ghost { width:100%; justify-content:center; font-size:.85rem; color:var(--text-muted); }
         .survey-restore-bar {
           display:flex; align-items:center; justify-content:space-between; gap:.75rem;
           padding:.55rem .875rem; background:#fffbeb;
