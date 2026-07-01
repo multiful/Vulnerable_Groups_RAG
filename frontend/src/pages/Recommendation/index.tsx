@@ -2417,7 +2417,7 @@ const Recommendation: React.FC = () => {
         }
         @keyframes modal-fade-in{from{opacity:0}to{opacity:1}}
         .modal-card{
-          width:100%;max-width:720px;
+          width:100%;max-width:960px;
           animation:modal-pop .22s ease-out;
         }
         @keyframes modal-pop{

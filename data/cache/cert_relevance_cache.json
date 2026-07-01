@@ -1,5 +1,5 @@
 {
-  "saved_at": 1782892904.0948212,
+  "saved_at": 1782895488.979431,
   "entries": {
     "프로그래밍기능사::소프트웨어개발": {
       "relevance_delta_pct": 30,
@@ -10,6 +10,12 @@
     "정보처리기사::소프트웨어개발": {
       "relevance_delta_pct": 30,
       "relevance_summary": "정보처리기사는 소프트웨어 개발에 필요한 기초 지식과 기술을 갖추었다는 증명으로, 실제 개발 과정에서 요구되는 알고리즘 및 데이터 구조 이해에 큰 도움이 됩니다.",
+      "difficulty_score": 70,
+      "job_demand_level": "상"
+    },
+    "정보보안산업기사::IT인프라/보안": {
+      "relevance_delta_pct": 75,
+      "relevance_summary": "정보보안산업기사는 IT 인프라 및 보안 분야에서 필수적인 보안 지식을 갖추고 있음을 증명합니다. 실제로 기업에서는 네트워크 보안, 시스템 보안 등을 담당할 인력을 채용할 때 이 자격증을 요구하는 경우가 많습니다.",
       "difficulty_score": 70,
       "job_demand_level": "상"
     }
