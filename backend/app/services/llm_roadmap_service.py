@@ -46,9 +46,9 @@ _STAGE_MAP = {s["id"]: s for s in _LOCAL_STAGES}
 _STARTING_STAGE: dict[str, str] = {
     "risk_0001": "roadmap_stage_0003",
     "risk_0002": "roadmap_stage_0002",
-    "risk_0003": "roadmap_stage_0002",
-    "risk_0004": "roadmap_stage_0002",
-    "risk_0005": "roadmap_stage_0002",
+    "risk_0003": "roadmap_stage_0001",
+    "risk_0004": "roadmap_stage_0001",
+    "risk_0005": "roadmap_stage_0001",
 }
 
 _TIER_ORDER: dict[str, int] = {

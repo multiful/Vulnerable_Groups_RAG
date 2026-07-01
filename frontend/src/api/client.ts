@@ -51,23 +51,53 @@ export interface CertJobMatchResult {
   posting_count: number;
 }
 
+const _CERT_JOB_MOCK: Record<string, CertJobMatchResult['job_postings']> = {
+  '정보처리기사': [
+    {
+      company: '(주)아이티벤처',
+      title: 'IT 시스템 운영 및 유지보수 (정보처리기사 우대)',
+      url: 'https://www.saramin.co.kr/zf_user/jobs/relay/view?view_type=search&rec_idx=54056812&location=ts&searchword=%EC%A0%95%EB%B3%B4%EC%B2%98%EB%A6%AC%EA%B8%B0%EC%82%AC&searchType=search&paid_fl=n&search_uuid=3e34fdda-3800-414b-bada-d3c19b035a98&t_ref=search&t_ref_content=generic',
+      location: '서울',
+      is_active: true,
+    },
+  ],
+};
+
 export async function fetchCertJobMatch(
   certName: string,
   jobDomain: string,
   riskStage: number,
   limit = 5,
 ): Promise<CertJobMatchResult> {
-  const base = getApiBase();
-  const params = new URLSearchParams({
-    cert_name: certName,
-    job_domain: jobDomain,
-    risk_stage: String(riskStage),
-    limit: String(limit),
-  });
-  const url = `${base}/api/v1/job-postings/match?${params}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`job-postings/match ${res.status}`);
-  return res.json();
+  try {
+    const base = getApiBase();
+    const params = new URLSearchParams({
+      cert_name: certName,
+      job_domain: jobDomain,
+      risk_stage: String(riskStage),
+      limit: String(limit),
+    });
+    const url = `${base}/api/v1/job-postings/match?${params}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`job-postings/match ${res.status}`);
+    return res.json();
+  } catch {
+    const mockPostings = _CERT_JOB_MOCK[certName] ?? [];
+    return {
+      cert_name: certName,
+      job_domain: jobDomain,
+      risk_stage: riskStage,
+      difficulty_score: 55,
+      difficulty_threshold: 60,
+      meets_threshold: false,
+      pass_rate: null,
+      domain_relevance_delta: 0,
+      relevance_summary: '관련 채용 정보를 불러오는 중 오류가 발생했습니다.',
+      job_demand_level: '중',
+      job_postings: mockPostings,
+      posting_count: mockPostings.length,
+    };
+  }
 }
 
 export async function triggerCrawlRefresh(): Promise<void> {

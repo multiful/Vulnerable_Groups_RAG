@@ -1,6 +1,6 @@
 // Content Hash: SHA256:TBD
 // Role: Kakao Maps 기반 인프라 시각화 컴포넌트
-// - 일자리카페 (green), 건강증진센터 (purple), 훈련기관 (blue)
+// - 건강증진센터 (purple), 훈련기관 (blue)
 // - SDK는 VITE_KAKAO_JAVASCRIPT_KEY로 동적 로드 (autoload=false 패턴)
 // - 마커 클릭 시 InfoWindow, 범례 토글로 레이어 제어
 import React, { useEffect, useRef, useState } from 'react';
@@ -13,7 +13,7 @@ declare global {
 }
 
 export interface MapPoint {
-  type: 'job_cafe' | 'health_center' | 'training_institute';
+  type: 'health_center' | 'training_institute';
   name: string;
   address: string;
   lat: number;
@@ -30,7 +30,6 @@ interface Props {
 }
 
 const TYPE_CFG = {
-  job_cafe:           { label: '일자리카페',   color: '#10b981', markerBg: '#dcfce7', emoji: '🍵' },
   health_center:      { label: '건강증진센터', color: '#8b5cf6', markerBg: '#ede9fe', emoji: '💜' },
   training_institute: { label: '훈련기관',     color: '#3b82f6', markerBg: '#dbeafe', emoji: '🎓' },
 } as const;
@@ -69,7 +68,6 @@ const KakaoMap: React.FC<Props> = ({ points, height = '360px', center = SEOUL })
   const [sdkReady, setSdkReady] = useState(false);
   const [sdkError, setSdkError] = useState(false);
   const [activeTypes, setActiveTypes] = useState<Record<string, boolean>>({
-    job_cafe: true,
     health_center: true,
     training_institute: true,
   });

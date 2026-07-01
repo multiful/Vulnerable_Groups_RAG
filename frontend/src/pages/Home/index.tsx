@@ -32,7 +32,7 @@ const SERVICES = [
   {
     icon: Map,
     title: '주변 인프라',
-    desc: '일자리카페·훈련기관',
+    desc: '훈련기관·건강증진센터',
     path: '/recommendation',
     color: '#f59e0b',
     bg: '#fef3c7',

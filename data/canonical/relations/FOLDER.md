@@ -2,7 +2,7 @@
 
 > **파일명**: FOLDER.md  
 > **폴더 경로**: `data/canonical/relations`  
-> **최종 수정일**: 2026-06-30 (R4 완료: N2 eval runner + R4-3 is_bottleneck tier-relative + R4-6 job_to_domain 런타임; R5 대상: N1/N4/N5 + P15 tier 필터)  
+> **최종 수정일**: 2026-07-01 (risk_0005 비활성화: support_program_risk_stage_mapping 14행 + risk_stage_to_roadmap_stage rtr_00005 is_active=False)  
 > **문서 해시**: SHA256:TBD  
 > **문서 역할**: 디렉터리 스캐폴드 명시서 — 담는 내용·금지·다음 단계 연계  
 > **문서 우선순위**: reference (충돌 시 루트 기준 문서 우선)  

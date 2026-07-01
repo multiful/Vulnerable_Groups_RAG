@@ -174,15 +174,13 @@ interface SupportItem {
   // training
   course_name?: string; institution_name?: string; train_start?: string; train_end?: string;
   cost?: string; employment_rate?: string; course_url?: string;
-  // job_cafe
-  name?: string; address?: string; gu?: string; phone?: string; open_hours?: string; services?: string; homepage?: string;
   // process_eval
   label?: string; link_label?: string;
   [key: string]: string | undefined;
 }
 
 interface SupportBundleEntry {
-  resource_type: 'hiring' | 'training' | 'job_cafe' | 'process_eval';
+  resource_type: 'hiring' | 'training' | 'process_eval';
   label: string;
   color_theme: string;
   count: number;
@@ -206,7 +204,6 @@ const SUPPORT_LEVEL_LABEL: Record<string, string> = {
 const SUPPORT_RESOURCE_ICON: Record<string, string> = {
   hiring:       '💼',
   training:     '🎓',
-  job_cafe:     '📍',
   process_eval: '✅',
 };
 
@@ -217,7 +214,7 @@ const RISK_LABELS: Record<string, string> = {
   '4': '4단계 (은둔 청년)',
 };
 const RISK_IDS: Record<string, string> = {
-  '1': 'risk_0001', '2': 'risk_0002', '3': 'risk_0003', '4': '4단계',
+  '1': 'risk_0001', '2': 'risk_0002', '3': 'risk_0003', '4': 'risk_0004',
 };
 
 const ACTION_TYPE_EMOJI: Record<string, string> = {
@@ -1366,18 +1363,6 @@ const Roadmap: React.FC = () => {
                                 )}
                               </div>
                             </a>
-                          );
-                          if (bundle.resource_type === 'job_cafe') return (
-                            <div key={i} className="rm-support-item">
-                              <div className="rm-support-item-main">
-                                <span className="rm-support-item-title">{item.name || '일자리카페'}</span>
-                                {item.address && <span className="rm-support-item-sub">{item.address}</span>}
-                              </div>
-                              <div className="rm-support-item-meta">
-                                {item.gu && <span className="rm-support-tag">{item.gu}</span>}
-                                {item.phone && <span className="rm-support-tag">{item.phone}</span>}
-                              </div>
-                            </div>
                           );
                           if (bundle.resource_type === 'process_eval') return (
                             <a key={i} className="rm-support-item rm-support-item-link"

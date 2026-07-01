@@ -16,6 +16,32 @@
 
 ---
 
+## 2026-07-01 (2) — 5단계→4단계 통합, 로드맵 시작점 코드 정합, cert_explain 단계명 교정
+
+### 수행
+
+**🔴 risk_stage_master.csv 단계명 교체 (SCRIPT.md 보사연 2022 기준)**
+- 관심군→고립위험청년 / 고립 위험군→활동형 고립청년 / 고립군→활동제한형 고립청년 / 은둔 위험군→은둔청년
+- risk_0005(은둔군) is_active=False — 프론트 미사용, cert_candidates는 모두 risk_0004와 중첩이므로 데이터 손실 없음
+- cert_explain `risk_name` 자동 교정: "은둔 위험군인 지금" → "은둔청년인 지금"
+
+**🔴 `_STARTING_STAGE` 코드 불일치 수정 (llm_roadmap_service.py)**
+- risk_0003/0004 → roadmap_stage_0001 (CSV와 동기화)
+- 이전: risk_0003/0004/0005 모두 roadmap_stage_0002를 반환 → 3·4단계 사용자가 `상태 인식` 단계 건너뛰는 버그
+
+**🟡 risk_0005 비활성화 (연관 CSV 정리)**
+- support_program_risk_stage_mapping.csv: 14개 risk_0005 행 is_active=False
+- risk_stage_to_roadmap_stage.csv: rtr_00005 is_active=False
+- target_group_master.csv: tg_0004/tg_0005 mapped_risk_stage_ids에서 risk_0005 제거
+
+**🟢 CLAUDE.md §6 도메인 규칙 교체**
+- 5단계 취업 안정권 체계 → SCRIPT.md 기반 4단계 고립·은둔 체계로 교체
+
+**미구현 (reserved)**
+- 실시간 WorkNet 채용 시장 데이터 cert_explain 통합 — 현재 cert_job_mapping 구조적 직무로 대체됨. 별도 설계 후 진행 예정.
+
+---
+
 ## 2026-07-01 — 파이프라인 품질 강화 (환각 가드, grade 배치, HyDE 수치 인용, UX 용어 정제)
 
 ### 수행

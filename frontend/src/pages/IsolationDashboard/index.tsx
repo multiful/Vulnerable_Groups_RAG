@@ -96,7 +96,7 @@ const SERVICE_ROUTE: Record<string, string | null> = {
   training_courses:      '/training',
   job_listings:          '/jobs',
   govt_job_programs:     null,  // 정책 섹션
-  job_cafes:             null,
+  job_cafes:             null,  // API 중단 — 제거 대상
   health_centers:        null,
   welfare_central:       null,
   welfare_local:         null,
@@ -200,9 +200,14 @@ const IsolationDashboard: React.FC = () => {
     <div className="iso-wrap">
       <div className="iso-error-card">
         <p>{error}</p>
-        <button className="btn-primary" onClick={() => navigate('/risk-assessment')}>
-          진단 다시 하기
-        </button>
+        <div style={{ display:'flex', gap:'.75rem', flexWrap:'wrap', justifyContent:'center', marginTop:'.25rem' }}>
+          <button className="btn-ghost" onClick={() => navigate('/risk-assessment')}>
+            진단 다시 하기
+          </button>
+          <button className="btn-primary" onClick={() => navigate(`/interests?stage=${clusterId}`)}>
+            자격증 추천 바로 보기
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -289,7 +294,7 @@ const IsolationDashboard: React.FC = () => {
               <span className="iso-cat-name">{cat}</span>
             </div>
             <div className="iso-service-grid">
-              {categoryGroups[cat].map(svc => {
+              {categoryGroups[cat].filter(svc => svc.id !== 'job_cafes').map(svc => {
                 const route = SERVICE_ROUTE[svc.id];
                 const isInternal = !!route;
                 return (

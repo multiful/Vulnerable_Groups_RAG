@@ -828,9 +828,6 @@ const RiskAssessment: React.FC = () => {
                     <a href="https://www.suicide.or.kr/m/index.php" target="_blank" rel="noopener noreferrer" className="policy-crisis-link">
                       1393 자살예방상담전화
                     </a>
-                    <a href="https://job.seoul.go.kr/main" target="_blank" rel="noopener noreferrer" className="policy-crisis-link">
-                      서울시 청년일자리카페
-                    </a>
                   </div>
                 </div>
               )}

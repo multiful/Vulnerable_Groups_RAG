@@ -62,7 +62,7 @@ const Privacy: React.FC = () => {
               <tr><td>한국산업인력공단 Q-Net API</td><td>시험일정·자격정보 조회</td><td>한국산업인력공단</td></tr>
               <tr><td>워크넷 채용정보 API</td><td>채용공고 조회</td><td>한국고용정보원</td></tr>
               <tr><td>Work24 훈련과정 API</td><td>훈련과정 조회</td><td>한국고용정보원</td></tr>
-              <tr><td>서울시 공공데이터 API</td><td>일자리카페·건강증진센터 조회</td><td>서울특별시</td></tr>
+              <tr><td>서울시 공공데이터 API</td><td>건강증진센터 조회</td><td>서울특별시</td></tr>
             </tbody>
           </table>
         </section>
