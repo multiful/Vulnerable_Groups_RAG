@@ -42,7 +42,7 @@ const SERVICES = [
 const PROMISES = [
   {
     num:'01', keyword:'PERSONALIZED', title:'내 단계에 맞는 추천',
-    desc:'위험군 단계에 따라 지금 도전 가능한 자격증부터 추천합니다. 단계가 높을수록 더 작은 첫 걸음을 제안합니다.',
+    desc:'지금 내 상황에서 도전 가능한 자격증부터 추천합니다. 상황에 따라 더 작은 첫 걸음부터 제안합니다.',
     color:'promise-primary',
   },
   {
@@ -58,7 +58,7 @@ const PROMISES = [
 ];
 
 const FLOW = [
-  { num:'1', label:'위험군 진단',  sub:'12문항 설문',      path:'/risk-assessment', color:'#2563eb' },
+  { num:'1', label:'상황 확인',    sub:'12문항 설문',      path:'/risk-assessment', color:'#2563eb' },
   { num:'2', label:'관심 선택',    sub:'도메인 직접 선택',  path:'/interests',       color:'#2563eb' },
   { num:'3', label:'로드맵 확인',  sub:'단계별 경로 안내',  path:'/roadmap',         color:'#2563eb' },
   { num:'4', label:'자격증 확인',  sub:'상세 정보·근거',    path:'/recommendation',  color:'#2563eb' },
@@ -86,11 +86,11 @@ const Home: React.FC = () => {
     <section className="hero">
       <div className="hero-inner">
         <div className="hero-text">
-          <div className="hero-badge">청년 위험군 맞춤 자격증 추천</div>
+          <div className="hero-badge">나에게 맞는 자격증 찾기</div>
           <h1 className="hero-title">내 상황에 맞는<br/><span style={{color:'var(--primary)'}}>자격증과 성장 경로</span></h1>
-          <p className="hero-sub">위험군 진단 후 관심 도메인을 선택하면 맞춤 로드맵과 자격증을 추천합니다.</p>
+          <p className="hero-sub">12문항으로 내 상황을 파악하고 관심 분야를 선택하면, 지금 도전 가능한 자격증과 로드맵을 추천합니다.</p>
           <div className="hero-actions">
-            <Link to="/risk-assessment" className="btn-primary hero-main-btn">진단 시작하기 <ArrowRight size={17}/></Link>
+            <Link to="/risk-assessment" className="btn-primary hero-main-btn">시작하기 <ArrowRight size={17}/></Link>
             <Link to="/certs" className="btn-ghost">자격증 둘러보기</Link>
           </div>
         </div>
@@ -169,11 +169,11 @@ const Home: React.FC = () => {
       <div className="data-stats-row data-stats-row--3">
         <div className="ds-stat">
           <span className="ds-stat-num">9.4%</span>
-          <span className="ds-stat-desc">고립·은둔 경험 청년 비율</span>
+          <span className="ds-stat-desc">사회적 고립 경험 청년 비율</span>
         </div>
         <div className="ds-stat">
           <span className="ds-stat-num">12문항</span>
-          <span className="ds-stat-desc">선별된 진단 문항</span>
+          <span className="ds-stat-desc">상황 파악 문항</span>
         </div>
         <div className="ds-stat">
           <span className="ds-stat-num">RAG</span>
@@ -187,18 +187,18 @@ const Home: React.FC = () => {
       <div className="today-inner">
         <div className="today-left">
           <div className="today-badge">맞춤 자격증 추천</div>
-          <h3 className="today-title">내 위험군과 관심 분야에 맞는<br/>자격증 로드맵을 찾아드립니다</h3>
+          <h3 className="today-title">내 상황과 관심 분야에 맞는<br/>자격증 로드맵을 찾아드립니다</h3>
           <p className="today-desc">
-            12문항 진단으로 위험군 단계를 확인하고, 관심 도메인을 선택하면<br/>
+            12문항으로 지금 내 상황을 파악하고, 관심 분야를 선택하면<br/>
             지금 도전할 수 있는 자격증과 단계별 로드맵을 추천합니다.
           </p>
-          <Link to="/risk-assessment" className="btn-primary today-btn">지금 진단 시작하기 <ArrowRight size={16}/></Link>
+          <Link to="/risk-assessment" className="btn-primary today-btn">지금 시작하기 <ArrowRight size={16}/></Link>
         </div>
         <div className="today-right">
           <div className="today-example-card">
             <span className="today-ex-label">추천 결과 예시</span>
             <div className="today-ex-stage-row">
-              <span className="today-ex-stage">위험군 3단계</span>
+              <span className="today-ex-stage">활동 제한형</span>
               <span className="today-ex-sep">·</span>
               <span className="today-ex-domain">기계/제조</span>
             </div>
@@ -221,7 +221,7 @@ const Home: React.FC = () => {
     {showSticky && (
       <div className="sticky-cta-wrap">
         <Link to="/risk-assessment" className="btn-primary sticky-cta-btn">
-          진단 시작하기 <ArrowRight size={15}/>
+          시작하기 <ArrowRight size={15}/>
         </Link>
       </div>
     )}

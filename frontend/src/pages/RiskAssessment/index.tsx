@@ -584,8 +584,8 @@ const RiskAssessment: React.FC = () => {
           {evidenceLoading ? '연구 근거를 검색하고 있습니다.' : '진단 결과가 준비되었습니다.'}
         </p>
         <div className="page-header">
-          <h1 className="page-title">진단 결과</h1>
-          <p className="page-desc">12문항 응답 기반으로 산출된 위험군 단계입니다.</p>
+          <h1 className="page-title">추천 준비 완료</h1>
+          <p className="page-desc">12문항 응답을 바탕으로 지금 내 상황에 맞는 유형을 확인했습니다.</p>
         </div>
 
         {safetyFlag && (
@@ -1174,8 +1174,8 @@ const RiskAssessment: React.FC = () => {
   return (
     <div className="survey-wrap">
       <div className="page-header">
-        <h1 className="page-title">위험군 진단</h1>
-        <p className="page-desc">12개 질문에 솔직하게 답해주세요. 결과를 바탕으로 맞춤 자격증을 추천해드립니다. 약 3~5분 소요됩니다.</p>
+        <h1 className="page-title">나에게 맞는 자격증 찾기</h1>
+        <p className="page-desc">12개 질문에 솔직하게 답해주세요. 지금 내 상황에 맞는 자격증 로드맵을 추천해드립니다. 약 3~5분 소요됩니다.</p>
       </div>
 
       {/* Restore notice */}

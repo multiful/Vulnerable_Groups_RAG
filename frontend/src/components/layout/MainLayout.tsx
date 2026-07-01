@@ -60,7 +60,7 @@ const EXPLORE_LINKS = [
 ];
 
 const FLOW_STEPS = [
-  { path: '/risk-assessment', label: '위험군 진단', step: 1 },
+  { path: '/risk-assessment', label: '상황 확인', step: 1 },
   { path: '/interests',       label: '관심 선택',   step: 2 },
   { path: '/roadmap',         label: '성장 로드맵', step: 3 },
   { path: '/recommendation',  label: '자격증 확인', step: 4 },
@@ -242,7 +242,7 @@ const MainLayout: React.FC = () => {
           </nav>
 
           <Link to="/risk-assessment" className="btn-primary header-cta">
-            진단 시작
+            자격증 찾기
           </Link>
         </div>
       </header>
@@ -286,13 +286,13 @@ const MainLayout: React.FC = () => {
                 <img src="/logo.png?v=8" alt="디딤 로고" className="footer-logo-img" />
                 <span className="footer-logo-text">디딤</span>
               </Link>
-              <p className="footer-tagline">청년 위험군 단계 맞춤<br />자격증·로드맵 추천 시스템</p>
+              <p className="footer-tagline">내 상황에 맞는<br />자격증·로드맵 추천 시스템</p>
             </div>
 
             <div className="footer-links-group">
               <div className="footer-col">
                 <p className="footer-col-title">서비스</p>
-                <Link to="/risk-assessment" className="footer-link">위험군 진단</Link>
+                <Link to="/risk-assessment" className="footer-link">자격증 찾기</Link>
                 <Link to="/certs" className="footer-link">전체 자격증</Link>
                 <Link to="/schedule" className="footer-link">시험 일정</Link>
                 <Link to="/explore" className="footer-link">직업 탐색</Link>

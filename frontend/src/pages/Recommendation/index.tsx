@@ -953,10 +953,10 @@ const Recommendation: React.FC = () => {
           <AlertCircle size={20} className="survey-required-icon" />
           <div className="survey-required-body">
             <p className="survey-required-title">AI 추천을 받을 수 없습니다</p>
-            <p className="survey-required-sub">위험군 진단과 관심 분야를 먼저 설정해야 맞춤 자격증 추천을 받을 수 있습니다.</p>
+            <p className="survey-required-sub">관심 분야를 먼저 설정해야 맞춤 자격증 추천을 받을 수 있습니다.</p>
           </div>
           <button className="btn-primary survey-required-btn" onClick={() => navigate('/risk-assessment')}>
-            진단 시작하기
+            시작하기
           </button>
         </div>
       )}
