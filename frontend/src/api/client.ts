@@ -95,6 +95,38 @@ export interface StageEvidenceItem {
   source_type: string;
 }
 
+export interface HydeEvidenceResult {
+  synthesis: string | null;
+  evidence: StageEvidenceItem[];
+  hyde_used: boolean;
+}
+
+/** HyDE 기반 분류 근거 검색 (POST). dimension_scores를 함께 전송해 LLM 합성 포함 결과를 받음. */
+export async function fetchHydeEvidence(
+  clusterId: string,
+  dimScores: Record<string, number>,
+): Promise<HydeEvidenceResult> {
+  const base = getApiBase();
+  const url = `${base}/api/v1/risk/stage-evidence`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cluster_id: clusterId, dimension_scores: dimScores }),
+    });
+    if (!res.ok) return { synthesis: null, evidence: [], hyde_used: false };
+    const json = await res.json();
+    return {
+      synthesis: (json?.data?.synthesis as string | null) ?? null,
+      evidence: (json?.data?.evidence ?? []) as StageEvidenceItem[],
+      hyde_used: !!(json?.data?.hyde_used),
+    };
+  } catch {
+    return { synthesis: null, evidence: [], hyde_used: false };
+  }
+}
+
+/** 레거시 GET (dimension_scores 없이 cluster_id만 전달). */
 export async function fetchStageEvidence(clusterId: string): Promise<StageEvidenceItem[]> {
   const base = getApiBase();
   const url = `${base}/api/v1/risk/stage-evidence?cluster_id=${encodeURIComponent(clusterId)}`;

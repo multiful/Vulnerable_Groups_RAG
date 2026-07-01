@@ -577,21 +577,46 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
     cert_name = cert.get("cert_name", cert_id)
     cert_grade = cert.get("cert_grade_tier", "")
     enriched_ctx = _enrich_cert_context(cert_id, cert)
+    has_pass_rate = "합격률" in enriched_ctx
+    has_any_data = bool(enriched_ctx.strip())
+
+    if has_pass_rate:
+        data_quality = "full"
+        data_section = f"[실 데이터]\n{enriched_ctx}"
+        data_rules = (
+            "- 위 [실 데이터]에서 합격률 수치를 반드시 1개 이상 직접 인용하여 설명 근거로 사용할 것\n"
+            "- 시험 과목·관련 직업·시험 횟수도 [실 데이터]에 있는 항목만 인용 (없는 수치 발명 금지)\n"
+            "- 인용 수치는 반드시 위 [실 데이터]에서 그대로 가져올 것\n"
+        )
+    elif has_any_data:
+        data_quality = "limited"
+        data_section = f"[실 데이터]\n{enriched_ctx}"
+        data_rules = (
+            "- 위 [실 데이터]에 있는 항목(시험 횟수·난이도·관련 직무)을 설명 근거로 사용할 것\n"
+            "- 합격률 등 데이터에 없는 수치를 절대 발명하지 말 것\n"
+        )
+    else:
+        data_quality = "limited"
+        data_section = "[실 데이터]\n(이 자격증의 통계 데이터가 현재 시스템에 없습니다)"
+        data_rules = (
+            "- 수치(합격률·시험 횟수 등)를 추측하거나 발명하지 말 것\n"
+            "- 자격증 성격·적합 이유·직무 연관성만 설명할 것\n"
+        )
 
     prompt = (
         f"당신은 청년 취업 진로 상담 전문가입니다.\n"
         f"사용자 관심 분야: {domain_name}{job_context} / 위험군: {risk_name}\n\n"
         f"자격증: {cert_name} ({cert_grade})\n"
-        f"아래 실 데이터를 근거로, 이 사용자에게 왜 이 자격증이 지금 적합한지 한국어 3문장 이내로 설명하세요.\n\n"
-        f"[실 데이터]\n{enriched_ctx if enriched_ctx else '(통계 데이터 없음 — cert_candidates 기반으로 추론)'}\n\n"
-        f"규칙:\n"
+        f"이 사용자에게 왜 이 자격증이 지금 적합한지 한국어 3문장 이내로 설명하세요.\n\n"
+        f"{data_section}\n\n"
+        f"규칙 (모두 필수):\n"
         f"- 첫 문장에 자격증 이름 포함\n"
-        f"- 합격률 수치·시험 과목·관련 직업·시험 횟수 중 최소 2가지를 구체적 수치로 언급\n"
+        f"{data_rules}"
         f"- 희망 직무가 지정됐으면 그 직무와 이 자격증의 연관성을 구체적으로 언급\n"
-        f"- 사용자 위험군 상황과 연결해 지금 이 자격증을 선택해야 하는 이유를 설명\n"
-        f"- '시험 구성' 항목에 없는 시험 방식(필기/실기/면접)은 절대 언급하지 말 것\n"
-        f"- '도움이 됩니다', '좋습니다', '강점이 있습니다' 같은 막연한 결론 금지\n"
-        f"- 격려하되 근거 기반 어조 유지"
+        f"- 사용자 위험군·상황을 언급하며 지금 이 자격증이 필요한 이유를 구체적으로 설명\n"
+        f"- '시험 구성' 항목에 없는 시험 방식은 절대 언급하지 말 것\n"
+        f"- '도움이 됩니다', '좋습니다', '강점이 있습니다', '기회를 제공합니다' 같은 막연한 결론 금지\n"
+        f"- 격려하되 모든 문장에 구체적 근거가 있어야 함"
     )
 
     try:
@@ -601,10 +626,14 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=350,
-            temperature=0.4,
+            temperature=0.3,
         )
         explanation = (resp.choices[0].message.content or "").strip()
         _explain_cache[_explain_key] = (time.monotonic(), explanation)
-        return ok_envelope({"cert_id": cert_id, "explanation": explanation})
+        return ok_envelope({
+            "cert_id": cert_id,
+            "explanation": explanation,
+            "data_quality": data_quality,
+        })
     except Exception as exc:
         return err_envelope("AI_ERROR", f"AI 설명 생성 실패: {str(exc)[:120]}")

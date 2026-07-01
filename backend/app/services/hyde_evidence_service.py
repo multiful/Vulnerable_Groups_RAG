@@ -80,7 +80,7 @@ def _generate_hyde_query(
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=300,
+        max_tokens=150,
         temperature=0.25,
     )
     return (resp.choices[0].message.content or "").strip()
