@@ -1,5 +1,5 @@
 # File: llm_roadmap_service.py
-# Last Updated: 2026-07-01
+# Last Updated: 2026-07-01 (hallucination guard, grade배치개선, UX용어정제)
 # Content Hash: SHA256:TBD
 # Role: LLM 기반 로드맵 조립 (DB 도메인 필터 → OpenAI 선별/정렬/설명 → RoadmapData 반환)
 #
@@ -189,31 +189,49 @@ def _load_sp_risk_map() -> dict[str, list[str]]:
     return out
 
 
+_SP_CATEGORY_DISPLAY: dict[str, str] = {
+    "자기이해_및_심리상담":  "자기이해 및 심리상담",
+    "치유적_관계형성":      "치유적 관계 형성",
+    "일_경험_및_사회활동":  "일 경험 및 사회활동",
+    "사후관리":             "사후 지원",
+    "별도_지원":            "별도 생계·주거 지원",
+}
+_SP_PHASE_DISPLAY: dict[str, str] = {
+    "고립된_삶":   "고립 단계",
+    "회복":        "회복 단계",
+    "통합된_삶":   "사회 통합 단계",
+}
+
+
 def get_support_programs_for_risk(risk_stage_id: str) -> dict:
     """risk_stage_id 에 매핑된 지원 제도 목록 반환."""
     programs = _load_support_programs()
     sp_risk_map = _load_sp_risk_map()
     sp_ids = sp_risk_map.get(risk_stage_id, [])
     if not sp_ids:
-        return ok_envelope({"risk_stage_id": risk_stage_id, "support_programs": []})
+        return ok_envelope({"risk_stage_id": risk_stage_id, "support_programs": [], "total": 0, "by_category": []})
 
     result = []
     for sp_id in sp_ids:
         p = programs.get(sp_id)
         if p:
+            raw_cat   = p.get("service_category", "")
+            raw_phase = p.get("lifecycle_phase", "")
             result.append({
                 "support_program_id": sp_id,
                 "support_program_name": p.get("support_program_name", ""),
-                "service_category": p.get("service_category", ""),
-                "lifecycle_phase": p.get("lifecycle_phase", ""),
+                "service_category": raw_cat,
+                "category_display": _SP_CATEGORY_DISPLAY.get(raw_cat, raw_cat.replace("_", " ")),
+                "lifecycle_phase": raw_phase,
+                "phase_display": _SP_PHASE_DISPLAY.get(raw_phase, raw_phase.replace("_", " ")),
                 "description": p.get("description", ""),
             })
 
-    # service_category 기준으로 그룹핑
+    # category_display 기준으로 그룹핑
     grouped: dict[str, list[dict]] = {}
     for item in result:
-        cat = item["service_category"]
-        grouped.setdefault(cat, []).append(item)
+        cat_key = item["category_display"]
+        grouped.setdefault(cat_key, []).append(item)
 
     return ok_envelope({
         "risk_stage_id": risk_stage_id,
@@ -356,6 +374,28 @@ def _parse_difficulty(dense: str) -> float | None:
     return None
 
 
+def _parse_avg_pass_rate(dense: str) -> float | None:
+    """text_for_dense에서 3년 평균 합격률(%)을 파싱한다."""
+    m = re.search(r"3년 평균 합격률:\s*([\d.]+)%", dense)
+    if m:
+        try:
+            return float(m.group(1))
+        except ValueError:
+            pass
+    return None
+
+
+def _passrate_to_difficulty(rate: float) -> float:
+    """합격률(%)을 가상 난이도(1~5)로 역환산. 합격률 낮을수록 어려움."""
+    if rate >= 70:
+        return 1.5
+    if rate >= 50:
+        return 2.5
+    if rate >= 30:
+        return 3.5
+    return 4.5
+
+
 def _difficulty_to_stage(difficulty: float, risk_order: int) -> str:
     """난이도 수치를 roadmap_stage_id로 변환한다. 위험군이 높을수록 같은 난이도라도 더 이른 단계에 배치."""
     if risk_order >= 3:
@@ -381,7 +421,7 @@ def _assign_stages(
     max_per_stage: int = 4,
 ) -> dict[str, list[dict]]:
     """grade_tier 기반으로 자격증을 단계에 구조적으로 배치한다. LLM 의존 없음.
-    비기술/빈 티어는 text_for_dense의 시험 난이도 수치로 단계를 결정한다."""
+    빈 tier: ① 명시 난이도 → ② 합격률 역산 난이도 → ③ 기본값 순으로 배치."""
     stage_map = _TIER_TO_STAGE_HIGH if risk_order >= 3 else _TIER_TO_STAGE_LOW
     stage_order = [s["id"] for s in _LOCAL_STAGES]
     start_idx = stage_order.index(starting_stage_id) if starting_stage_id in stage_order else 1
@@ -389,15 +429,23 @@ def _assign_stages(
     buckets: dict[str, list[dict]] = {sid: [] for sid in stage_order}
     for c in selected:
         tier = c.get("cert_grade_tier") or ""
+        dense = c.get("text_for_dense", "")
         if tier in stage_map and tier != "":
             target = stage_map[tier]
         else:
-            # 비기술/빈 티어: 난이도 점수로 배치, 없으면 기본값
-            difficulty = _parse_difficulty(c.get("text_for_dense", ""))
+            # ① 명시 난이도
+            difficulty = _parse_difficulty(dense)
             if difficulty is not None:
                 target = _difficulty_to_stage(difficulty, risk_order)
             else:
-                target = stage_map.get("", starting_stage_id)
+                # ② 합격률 역산
+                rate = _parse_avg_pass_rate(dense)
+                if rate is not None:
+                    target = _difficulty_to_stage(_passrate_to_difficulty(rate), risk_order)
+                else:
+                    # ③ 기본값 (탐색 시작 또는 시작 단계)
+                    target = stage_map.get("", starting_stage_id)
+
         # 시작 단계 이전이면 시작 단계로 당김
         if stage_order.index(target) < start_idx:
             target = starting_stage_id
@@ -447,6 +495,16 @@ def _call_openai_for_reasons(
         return {}
 
 
+_GRADE_DISPLAY: dict[str, str] = {
+    "1_기능사": "기능사", "2_산업기사": "산업기사", "3_기사": "기사",
+    "4_기술사": "기술사", "5_기능장": "기능장",
+}
+_ACHIEVABILITY_DISPLAY: dict[str, str] = {
+    "immediate": "지금 바로 도전",
+    "near_term": "단계 준비 후 도전",
+}
+
+
 def _build_roadmap_data(
     buckets: dict[str, list[dict]],
     reasons: dict[str, str],
@@ -476,16 +534,19 @@ def _build_roadmap_data(
                     pass_rate = float(_m.group(1))
                 except ValueError:
                     pass
+            raw_tier = cand.get("cert_grade_tier") or ""
             certs_here.append({
                 "step": step,
                 "cert_id": cert_id,
                 "cert_name": cand.get("cert_name", cert_id),
-                "cert_grade_tier": cand.get("cert_grade_tier") or "",
+                "cert_grade_tier": raw_tier,
+                "grade_display": _GRADE_DISPLAY.get(raw_tier, "전문자격"),
                 "avg_pass_rate": pass_rate,
                 "is_bottleneck": False,
                 "bottleneck_note": None,
                 "is_redundant": False,
                 "achievability": achievability,
+                "achievability_display": _ACHIEVABILITY_DISPLAY.get(achievability, achievability),
                 "related_jobs": (cand.get("related_jobs") or [])[:5],
                 "llm_reason": reasons.get(cert_id, ""),
             })
@@ -806,6 +867,8 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
             issues.append(f"S1: 자격증명({cert_name}) 누락")
         if has_pass_rate and not re.search(r"\d+\.?\d*\s*%", s1):
             issues.append("S1: 합격률 % 수치 미인용 — 실 데이터에 있음에도 누락")
+        if not has_pass_rate and re.search(r"\d+\.?\d*\s*%", s1):
+            issues.append("S1: 실 데이터에 없는 합격률 수치 발명 — limited 케이스에서 % 사용 금지")
         for p in _detect_forbidden(s1):
             issues.append(f"S1 금지표현 감지: '{p}'")
         # S2: 구체적 업무 동사 2회 이상 또는 "하며"·"하고" 연결
@@ -835,6 +898,7 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
 
 ─ 각 필드 제약 ─
 s1: cert_name을 첫 단어로 시작 / 합격률 있으면 "필기 X% … 실기 Y%" 형태로 인용 필수
+    ※ [실 데이터]에 합격률이 없으면 % 수치를 절대 사용하지 말 것 — 자격증 역할·과목 설명으로만 대체
 s2: "~하며" 또는 "~수행하고" 같은 동사로 업무 2개 나열 / 관련직무로 "전환·이동" 표현
 s3: "[위험군]인 지금" 또는 "[위험군]에서" 로 시작 / 반드시 "N개월" 또는 "상·하반기" 포함
     → 마지막 어절은 반드시 행동 결과: "~확정됩니다", "~잡힙니다", "~설정됩니다" 등

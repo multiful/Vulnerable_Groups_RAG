@@ -1,7 +1,7 @@
 # DEV_LOG.md
 
 > **파일명**: DEV_LOG.md  
-> **최종 수정일**: 2026-06-30  
+> **최종 수정일**: 2026-07-01  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 날짜별 진행 로그, 변경 요약, 해결 이력  
 > **문서 우선순위**: 14  
@@ -13,6 +13,33 @@
 ## 1. 문서 목적
 
 구현과 문서 정렬 작업의 **타임라인**을 남겨, 이후 기여자가 맥락을 잃지 않게 한다.
+
+---
+
+## 2026-07-01 — 파이프라인 품질 강화 (환각 가드, grade 배치, HyDE 수치 인용, UX 용어 정제)
+
+### 수행
+
+**🔴 합격률 환각 감지 (llm_roadmap_service.py)**
+- `_self_evaluate` S1 역방향 체크 추가: `has_pass_rate=False` 인데 `%` 수치 포함 시 issue 발생 → self-refine 트리거
+- 시스템 프롬프트 S1 제약 강화: "합격률 없으면 % 수치 절대 사용 금지" 명시
+- limited 케이스(cert_0130 섬유기계기사) 검증: % 미출력 + score 5/5 확인
+
+**🟡 HyDE dim_score % 수치 인용 강제 (hyde_evidence_service.py)**
+- `_synthesize_with_guardrail` 시스템 프롬프트 규칙 6 추가: "첫 문장에 주요 차원명과 수치 반드시 인용"
+- user_prompt에 `{dim_summary}` 인용 강제 문구 추가
+- 결과: "관계망(92%) / 활동(87%) / 심리(73%)에서의 높은 어려움으로..." 형태로 안정 출력
+
+**🟢 cert_grade_tier 공백 배치 개선 (llm_roadmap_service.py)**
+- `_parse_avg_pass_rate()` / `_passrate_to_difficulty()` 추가: 합격률 → 가상 난이도(1~5) 역산
+- `_assign_stages` 빈 tier 처리 순서: ① 명시 난이도 → ② 합격률 역산 → ③ 기본값
+- 549개 빈 tier 중 363개(66%)가 합격률로 적절한 단계에 분산 배치됨
+
+**UX 전문 용어 정제 (API 응답)**
+- `grade_display` 필드 추가: `"1_기능사"` → `"기능사"`, 등급 없음 → `"전문자격"`
+- `achievability_display` 추가: `"immediate"` → `"지금 바로 도전"`, `"near_term"` → `"단계 준비 후 도전"`
+- 지원제도 `category_display`: `"자기이해_및_심리상담"` → `"자기이해 및 심리상담"` 등
+- 지원제도 `phase_display`: `"고립된_삶"` → `"고립 단계"` 등
 
 ---
 
