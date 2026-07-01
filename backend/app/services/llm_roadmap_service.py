@@ -574,8 +574,12 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
     risk_name = risk_info.get("name", "해당 단계") if risk_stage_id else "해당 단계"
     job_context = f" / 희망 직무: {job_name_override}" if job_name_override else ""
 
+    _GRADE_LABEL = {
+        "5_기능장": "기능장", "4_기술사": "기술사", "3_기사": "기사",
+        "2_산업기사": "산업기사", "1_기능사": "기능사",
+    }
     cert_name = cert.get("cert_name", cert_id)
-    cert_grade = cert.get("cert_grade_tier", "")
+    cert_grade = _GRADE_LABEL.get(cert.get("cert_grade_tier", ""), cert.get("cert_grade_tier", ""))
     enriched_ctx = _enrich_cert_context(cert_id, cert)
     has_pass_rate = "합격률" in enriched_ctx
     has_any_data = bool(enriched_ctx.strip())
@@ -583,40 +587,81 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
     if has_pass_rate:
         data_quality = "full"
         data_section = f"[실 데이터]\n{enriched_ctx}"
-        data_rules = (
-            "- 위 [실 데이터]에서 합격률 수치를 반드시 1개 이상 직접 인용하여 설명 근거로 사용할 것\n"
-            "- 시험 과목·관련 직업·시험 횟수도 [실 데이터]에 있는 항목만 인용 (없는 수치 발명 금지)\n"
-            "- 인용 수치는 반드시 위 [실 데이터]에서 그대로 가져올 것\n"
-        )
     elif has_any_data:
         data_quality = "limited"
         data_section = f"[실 데이터]\n{enriched_ctx}"
-        data_rules = (
-            "- 위 [실 데이터]에 있는 항목(시험 횟수·난이도·관련 직무)을 설명 근거로 사용할 것\n"
-            "- 합격률 등 데이터에 없는 수치를 절대 발명하지 말 것\n"
-        )
     else:
         data_quality = "limited"
-        data_section = "[실 데이터]\n(이 자격증의 통계 데이터가 현재 시스템에 없습니다)"
-        data_rules = (
-            "- 수치(합격률·시험 횟수 등)를 추측하거나 발명하지 말 것\n"
-            "- 자격증 성격·적합 이유·직무 연관성만 설명할 것\n"
-        )
+        data_section = "[실 데이터]\n없음"
 
-    prompt = (
-        f"당신은 청년 취업 진로 상담 전문가입니다.\n"
-        f"사용자 관심 분야: {domain_name}{job_context} / 위험군: {risk_name}\n\n"
-        f"자격증: {cert_name} ({cert_grade})\n"
-        f"이 사용자에게 왜 이 자격증이 지금 적합한지 한국어 3문장 이내로 설명하세요.\n\n"
-        f"{data_section}\n\n"
-        f"규칙 (모두 필수):\n"
-        f"- 첫 문장에 자격증 이름 포함\n"
-        f"{data_rules}"
-        f"- 희망 직무가 지정됐으면 그 직무와 이 자격증의 연관성을 구체적으로 언급\n"
-        f"- 사용자 위험군·상황을 언급하며 지금 이 자격증이 필요한 이유를 구체적으로 설명\n"
-        f"- '시험 구성' 항목에 없는 시험 방식은 절대 언급하지 말 것\n"
-        f"- '도움이 됩니다', '좋습니다', '강점이 있습니다', '기회를 제공합니다' 같은 막연한 결론 금지\n"
-        f"- 격려하되 모든 문장에 구체적 근거가 있어야 함"
+    system_prompt = """\
+당신은 청년 취업 진로 상담 전문가입니다.
+자격증 추천 근거를 정확히 3문장으로 작성합니다. 각 문장의 역할은 고정입니다.
+
+─ 문장별 역할 ─
+• 1문장: [자격증명] + [실 데이터]의 합격률·난이도를 수치로 인용하고 의미 해석
+         합격률 없으면: 자격증이 해당 직무에서 어떤 역할을 하는지 한 문장으로 규정
+• 2문장: 희망 직무에서 이 자격증으로 담당하는 구체적 업무 2가지 서술
+         + 데이터에 있는 관련 직무로 경력 이동 가능성 명시
+• 3문장: 사용자의 위험군·상황과 연결하여 지금 이 자격증이 필요한 이유
+         + [실 데이터]의 시험 횟수를 근거로 구체적 준비 기간·전략 제시
+
+─ 절대 금지 (이 표현으로 문장을 끝내면 틀린 답) ─
+❌ "~에 도움이 됩니다"           ❌ "~기회를 제공합니다"
+❌ "~을 높일 수 있습니다"        ❌ "~강점이 있습니다"
+❌ "~발판이 될 것입니다"         ❌ "~현실화될 것입니다"
+❌ "~기회를 마련할 수 있습니다"  ❌ "~것으로 기대됩니다"
+❌ "~이 가능합니다"              ❌ "~좋습니다"
+→ 3문장은 반드시 "[준비 기간]으로 [구체적 행동/결과]" 형태로 마무리
+   예: "6개월 집중 준비로 상반기 시험을 첫 합격 목표로 설정할 수 있습니다."
+   예: "연 2회 시험 중 하반기를 목표로 잡으면 취업 포트폴리오에 즉시 반영됩니다."
+
+─ 데이터 규칙 ─
+• [실 데이터]에 합격률 있음 → 필기·실기 수치를 모두 인용하고 "높다/낮다/의미" 해석 필수
+• [실 데이터]에 없는 수치(합격률 등)는 절대 추측·발명 금지
+• 관련 직무는 [실 데이터] 목록에 있는 명칭만 사용\
+"""
+
+    # messages 배열에 few-shot 쌍 삽입 (system 텍스트보다 효과적)
+    _FS_USER_FULL = (
+        "자격증=용접기술사(기술사) / 분야=기계/제조 / 희망직무=기계설계 / 위험군=활동제한형고립청년\n"
+        "[실 데이터]\n"
+        "합격률: 필기 평균 12.2%, 실기 평균 48.8%\n"
+        "연간 시험 횟수: 연 2회\n"
+        "관련 직무: 기계설계, 기계정비, 생산기술, 공정관리"
+    )
+    _FS_ASST_FULL = (
+        "용접기술사 자격증은 필기 합격률 12.2%로 진입 장벽이 높지만, "
+        "실기 합격률 48.8%는 실무 역량을 갖추면 통과 가능한 시험임을 보여줍니다. "
+        "기계설계 직무에서 용접부 강도 검토·도면 검증 업무를 직접 담당하며, "
+        "기계정비·공정관리 직무로 이동할 때도 동일한 자격으로 인정받습니다. "
+        "활동에 제약이 있는 지금은 연 2회 시험 주기를 기준으로 "
+        "6개월 집중 준비 루틴을 짜면 사회 복귀의 첫 성과를 자격증 취득으로 확정할 수 있습니다."
+    )
+    _FS_USER_LIMITED = (
+        "자격증=섬유기계기사(기사) / 분야=패션/섬유 / 희망직무=패션 제작 / 위험군=활동형고립청년\n"
+        "[실 데이터]\n"
+        "연간 시험 횟수: 연 2회\n"
+        "시험 난이도: 4.0/5 (어려움)\n"
+        "관련 직무: 패션 제작"
+    )
+    _FS_ASST_LIMITED = (
+        "섬유기계기사 자격증은 직물 생산 설비의 설계·운용을 전담하는 기사급 자격증으로, "
+        "패션 제작 공정에서 기계 파트를 책임지는 직무와 직결됩니다. "
+        "패션 제작 직무에서 원단 생산 공정 관리와 설비 트러블슈팅 업무를 수행하며, "
+        "동일 분야 생산기술·품질관리 직무로 경력 축을 넓힐 수 있습니다. "
+        "사회 활동을 늘려가는 단계에서 난이도 4.0/5는 6~8개월 집중 학습으로 대응 가능하고, "
+        "연 2회 시험이므로 상반기·하반기 중 목표 시점을 하나 고정하면 "
+        "준비 구조가 흔들리지 않습니다."
+    )
+
+    few_shot_user = _FS_USER_FULL if has_pass_rate else _FS_USER_LIMITED
+    few_shot_asst = _FS_ASST_FULL if has_pass_rate else _FS_ASST_LIMITED
+
+    user_prompt = (
+        f"자격증={cert_name}({cert_grade}) / 분야={domain_name} / "
+        f"희망직무={job_name_override or '미지정'} / 위험군={risk_name}\n"
+        f"{data_section}"
     )
 
     try:
@@ -624,9 +669,14 @@ def explain_cert(body: dict[str, Any], settings: Settings) -> dict:
         client = OpenAI(api_key=settings.openai_api_key)
         resp = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=350,
-            temperature=0.3,
+            messages=[
+                {"role": "system",    "content": system_prompt},
+                {"role": "user",      "content": few_shot_user},
+                {"role": "assistant", "content": few_shot_asst},
+                {"role": "user",      "content": user_prompt},
+            ],
+            max_tokens=380,
+            temperature=0.2,
         )
         explanation = (resp.choices[0].message.content or "").strip()
         _explain_cache[_explain_key] = (time.monotonic(), explanation)
