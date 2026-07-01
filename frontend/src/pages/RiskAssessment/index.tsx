@@ -7,6 +7,23 @@ import { fetchHydeEvidence } from '../../api/client';
 import type { StageEvidenceItem } from '../../api/client';
 
 const SURVEY_KEY = 'didim_survey_v1';
+const SURVEY_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+function _loadSurvey() {
+  try {
+    const raw = localStorage.getItem(SURVEY_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (Date.now() - (data.savedAt ?? 0) > SURVEY_TTL_MS) {
+      localStorage.removeItem(SURVEY_KEY);
+      return null;
+    }
+    return data;
+  } catch { return null; }
+}
+function _clearSurvey() {
+  try { localStorage.removeItem(SURVEY_KEY); } catch {}
+}
 
 /* ─────────────────────────────────────────────
    기획서 F-01 기반 12문항
@@ -162,6 +179,50 @@ const QUESTIONS: Question[] = [
 
 const TOTAL_MAX = QUESTIONS.reduce((s, q) => s + Math.max(...q.options.map(o => o.score)), 0);
 
+/* ─────────────────────────────────────────────────────────────────────
+   2차 정밀 판별 3문항 (SCRIPT.md §4 — 3단계↔4단계 구분)
+   AUC 0.74~0.78. 총점 ≥ 50% 케이스에서만 진입.
+   근거 실측 h: Q1↔A7(0.617) / Q2↔A13_3(1.026) / Q3↔B12_3(0.615)
+───────────────────────────────────────────────────────────────────── */
+interface PrecisionQ {
+  id: string;
+  text: string;
+  options: { label: string; value: number }[];
+}
+const PRECISION_QUESTIONS: PrecisionQ[] = [
+  {
+    id: 'P_Q1',
+    text: '마지막으로 집 밖을 나간 것이 언제입니까?',
+    options: [
+      { label: '오늘', value: 1 },
+      { label: '2~3일 전', value: 2 },
+      { label: '1주일 전', value: 3 },
+      { label: '2주~1달 전', value: 4 },
+      { label: '1달 이상 전', value: 5 },
+    ],
+  },
+  {
+    id: 'P_Q2',
+    text: '가족 이외에 누군가와 마지막으로 만난 것이 언제입니까?',
+    options: [
+      { label: '1달 이상 전', value: 1 },
+      { label: '2주~1달 전', value: 2 },
+      { label: '1주일 전', value: 3 },
+      { label: '최근 며칠', value: 4 },
+    ],
+  },
+  {
+    id: 'P_Q3',
+    text: '최근 잠들기 어렵거나 너무 많이 자는 날이 얼마나 됩니까?',
+    options: [
+      { label: '없음', value: 1 },
+      { label: '1~2일', value: 2 },
+      { label: '3~5일', value: 3 },
+      { label: '거의 매일 (6~7일)', value: 4 },
+    ],
+  },
+];
+
 const CATEGORY_COLORS: Record<string, string> = {
   '관계망':    '#6366f1',
   '활동':      '#0ea5e9',
@@ -170,16 +231,19 @@ const CATEGORY_COLORS: Record<string, string> = {
   '자기관리':  '#10b981',
 };
 
-function scoreToStage(score: number, safetyTriggered: boolean): string {
+// SCRIPT.md §5 판별 규칙
+// 1·2단계: 총점 비율로 결정
+// 3↔4단계: 2차 3문항 precision answers 기반
+//   4단계 = P_Q1=④⑤ AND (P_Q2=① OR P_Q3=③④)
+function scoreToStage(score: number, pa: Record<string, number>): string {
   const pct = score / TOTAL_MAX;
-  if (safetyTriggered && pct < 0.75) {
-    /* Safety override: 위기 응답 시 최소 3단계 이상 */
-    return pct < 0.5 ? '3' : '4';
-  }
   if (pct < 0.25) return '1';
   if (pct < 0.5)  return '2';
-  if (pct < 0.75) return '3';
-  return '4';
+  const q1Hi = (pa['P_Q1'] ?? 0) >= 4;
+  const q2Hi = (pa['P_Q2'] ?? 0) === 1;
+  const q3Hi = (pa['P_Q3'] ?? 0) >= 3;
+  if (q1Hi && (q2Hi || q3Hi)) return '4';
+  return '3';
 }
 
 const STAGE_LABELS: Record<string, { label: string; sub: string; color: string }> = {
@@ -350,23 +414,15 @@ const STAGE_POLICY: Record<string, StagePolicy> = {
 const RiskAssessment: React.FC = () => {
   const navigate = useNavigate();
 
-  const [step, setStep]       = useState<'survey' | 'result'>('survey');
-  const [current, setCurrent] = useState(() => {
-    try { const s = sessionStorage.getItem(SURVEY_KEY); if (s) return JSON.parse(s).current ?? 0; } catch {}
-    return 0;
-  });
-  const [answers, setAnswers] = useState<Record<string, number>>(() => {
-    try { const s = sessionStorage.getItem(SURVEY_KEY); if (s) return JSON.parse(s).answers ?? {}; } catch {}
-    return {};
-  });
-  const [safetyFlag, setSafetyFlag] = useState<boolean>(() => {
-    try { const s = sessionStorage.getItem(SURVEY_KEY); if (s) return JSON.parse(s).safetyFlag ?? false; } catch {}
-    return false;
-  });
+  const [step, setStep]       = useState<'survey' | 'precision' | 'result'>('survey');
+  const [current, setCurrent] = useState(() => (_loadSurvey()?.current ?? 0));
+  const [answers, setAnswers] = useState<Record<string, number>>(() => (_loadSurvey()?.answers ?? {}));
+  const [safetyFlag, setSafetyFlag] = useState<boolean>(() => (_loadSurvey()?.safetyFlag ?? false));
   const [wasRestored, setWasRestored] = useState(() => {
-    try { const s = sessionStorage.getItem(SURVEY_KEY); if (s) { const p = JSON.parse(s); return (p.current ?? 0) > 0; } } catch {}
-    return false;
+    const s = _loadSurvey();
+    return (s?.current ?? 0) > 0;
   });
+  const [precisionAnswers, setPrecisionAnswers] = useState<Record<string, number>>({});
 
   /* ── HyDE 분류 근거 ── */
   const [evidence, setEvidence] = useState<StageEvidenceItem[]>([]);
@@ -377,7 +433,7 @@ const RiskAssessment: React.FC = () => {
   useEffect(() => {
     if (step !== 'result') return;
     const totalScore = QUESTIONS.reduce((s, q) => s + (answers[q.id] ?? 0), 0);
-    const stageId = scoreToStage(totalScore, safetyFlag);
+    const stageId = scoreToStage(totalScore, precisionAnswers);
 
     const catAccum = QUESTIONS.reduce<Record<string, { score: number; max: number }>>((acc, q) => {
       const mx = Math.max(...q.options.map(o => o.score));
@@ -411,7 +467,11 @@ const RiskAssessment: React.FC = () => {
   const answered = answers[q.id] !== undefined;
 
   function _saveProgress(cur: number, ans: Record<string, number>, sf: boolean) {
-    try { sessionStorage.setItem(SURVEY_KEY, JSON.stringify({ current: cur, answers: ans, safetyFlag: sf })); } catch {}
+    try {
+      localStorage.setItem(SURVEY_KEY, JSON.stringify({
+        current: cur, answers: ans, safetyFlag: sf, savedAt: Date.now(),
+      }));
+    } catch {}
   }
 
   function select(score: number) {
@@ -427,7 +487,17 @@ const RiskAssessment: React.FC = () => {
   }
 
   function finish() {
-    try { sessionStorage.removeItem(SURVEY_KEY); } catch {}
+    _clearSurvey();
+    const totalScore = QUESTIONS.reduce((s, q) => s + (answers[q.id] ?? 0), 0);
+    const pct = totalScore / TOTAL_MAX;
+    if (pct >= 0.5) {
+      setStep('precision');
+    } else {
+      setStep('result');
+    }
+  }
+
+  function finishPrecision() {
     setStep('result');
   }
 
@@ -493,7 +563,7 @@ const RiskAssessment: React.FC = () => {
   /* ── Result ── */
   if (step === 'result') {
     const totalScore = QUESTIONS.reduce((s, q) => s + (answers[q.id] ?? 0), 0);
-    const stage = scoreToStage(totalScore, safetyFlag);
+    const stage = scoreToStage(totalScore, precisionAnswers);
     const pct = Math.round((totalScore / TOTAL_MAX) * 100);
     const info = STAGE_LABELS[stage];
 
@@ -677,7 +747,7 @@ const RiskAssessment: React.FC = () => {
                     <div className="hyde-synthesis-wrap">
                       <div className="hyde-synthesis-card">
                         <span className="hyde-synthesis-badge">AI 분석 근거</span>
-                        <p className="hyde-synthesis-text">{evidenceSynthesis}</p>
+                        <p className="hyde-synthesis-text">{evidenceSynthesis.replace(/\[문서\s*\d+\]/g, '').trim()}</p>
                       </div>
                       {evidence.length > 0 && (
                         <div className="hyde-sources">
@@ -770,8 +840,8 @@ const RiskAssessment: React.FC = () => {
 
         <div className="result-actions">
           <button className="btn-ghost" onClick={() => {
-              try { sessionStorage.removeItem(SURVEY_KEY); } catch {}
-              setStep('survey'); setCurrent(0); setAnswers({}); setSafetyFlag(false);
+              _clearSurvey();
+              setStep('survey'); setCurrent(0); setAnswers({}); setSafetyFlag(false); setPrecisionAnswers({});
             }}>
             <ArrowLeft size={15} /> 다시 진단
           </button>
@@ -779,7 +849,7 @@ const RiskAssessment: React.FC = () => {
             className="btn-primary"
             style={{ background: info.color, border: 'none' }}
             onClick={() => {
-              try { sessionStorage.removeItem(SURVEY_KEY); } catch {}
+              _clearSurvey();
               navigate(`/isolation/dashboard?cluster_id=${stage}`);
             }}>
             나에게 맞는 지원 보기 <ArrowRight size={15} />
@@ -792,7 +862,7 @@ const RiskAssessment: React.FC = () => {
             onClick={() => {
               clearPipeline();
               savePipeline({ stage });
-              try { sessionStorage.removeItem(SURVEY_KEY); } catch {}
+              _clearSurvey();
               navigate(`/interests?stage=${stage}`);
             }}>
             자격증 추천 받기 →
@@ -1026,12 +1096,89 @@ const RiskAssessment: React.FC = () => {
     );
   }
 
+  /* ── Precision (2차 3문항) ── */
+  if (step === 'precision') {
+    const allAnswered = PRECISION_QUESTIONS.every(pq => precisionAnswers[pq.id] !== undefined);
+    return (
+      <div className="survey-wrap">
+        <div className="page-header">
+          <h1 className="page-title">추가 확인 질문</h1>
+          <p className="page-desc">더 정확한 분류를 위해 3가지 질문에만 더 답해주세요. 1분 미만 소요됩니다.</p>
+        </div>
+
+        <div className="precision-note">
+          <span className="precision-note-badge">연구 근거</span>
+          <span className="precision-note-text">서울시 고립은둔청년 실태조사(2023, N=5,513) 실측값 기반 · SCRIPT.md §4</span>
+        </div>
+
+        {PRECISION_QUESTIONS.map((pq, idx) => (
+          <div key={pq.id} className="card precision-q-card">
+            <p className="precision-q-num">추가 {idx + 1}/3</p>
+            <p className="survey-q-text">{pq.text}</p>
+            <div className="survey-options" role="radiogroup" aria-label={pq.text}>
+              {pq.options.map(opt => {
+                const isSel = precisionAnswers[pq.id] === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    role="radio"
+                    aria-checked={isSel}
+                    tabIndex={isSel ? 0 : -1}
+                    className={`survey-opt ${isSel ? 'selected' : ''}`}
+                    onClick={() => setPrecisionAnswers(prev => ({ ...prev, [pq.id]: opt.value }))}
+                    type="button"
+                  >
+                    <span className="survey-opt-radio" aria-hidden="true">{isSel ? '●' : '○'}</span>
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        <div className="survey-nav">
+          <button className="btn-ghost" onClick={() => {
+            setPrecisionAnswers({});
+            setStep('survey');
+            setCurrent(QUESTIONS.length - 1);
+            _saveProgress(QUESTIONS.length - 1, answers, safetyFlag);
+          }}>
+            <ArrowLeft size={15} /> 이전 문항으로
+          </button>
+          <button className="btn-primary" disabled={!allAnswered} onClick={finishPrecision}>
+            결과 보기 <ArrowRight size={15} />
+          </button>
+        </div>
+
+        <style>{`
+          .precision-note {
+            display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+            padding: .5rem .875rem;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: .73rem; color: var(--text-muted);
+          }
+          .precision-note-badge {
+            font-size: .65rem; font-weight: 800; letter-spacing: .04em;
+            text-transform: uppercase; color: var(--primary);
+            background: var(--primary-light); padding: .15rem .5rem;
+            border-radius: var(--radius-full);
+          }
+          .precision-q-card { padding: 1.25rem; display: flex; flex-direction: column; gap: .875rem; }
+          .precision-q-num { font-size: .75rem; font-weight: 700; color: var(--text-muted); margin: 0; }
+        `}</style>
+      </div>
+    );
+  }
+
   /* ── Survey ── */
   return (
     <div className="survey-wrap">
       <div className="page-header">
         <h1 className="page-title">위험군 진단</h1>
-        <p className="page-desc">12개 질문에 솔직하게 답해주세요. 결과를 바탕으로 맞춤 자격증을 추천해드립니다.</p>
+        <p className="page-desc">12개 질문에 솔직하게 답해주세요. 결과를 바탕으로 맞춤 자격증을 추천해드립니다. 약 3~5분 소요됩니다.</p>
       </div>
 
       {/* Restore notice */}
@@ -1039,7 +1186,7 @@ const RiskAssessment: React.FC = () => {
         <div className="survey-restore-bar">
           <span>💾 이전 진행 상태가 복원되었습니다 ({current + 1}번 문항부터)</span>
           <button type="button" className="survey-restore-reset-btn" onClick={() => {
-            try { sessionStorage.removeItem(SURVEY_KEY); } catch {}
+            _clearSurvey();
             setCurrent(0); setAnswers({}); setSafetyFlag(false); setWasRestored(false);
           }}>처음부터</button>
         </div>
