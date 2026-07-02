@@ -475,7 +475,7 @@ const RiskAssessment: React.FC = () => {
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [showEvidenceSources, setShowEvidenceSources] = useState(false);
   const [showDetail, setShowDetail] = useState(true);
-  const [showPrograms, setShowPrograms] = useState(false);
+  const [showPrograms, setShowPrograms] = useState(true);
   const [showEvidenceDetail, setShowEvidenceDetail] = useState(false);
 
   useEffect(() => {
@@ -971,6 +971,7 @@ const RiskAssessment: React.FC = () => {
 
 
         <style>{`
+          .survey-wrap { max-width:640px; width:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:stretch; gap:1.5rem; margin:0 auto; }
           .result-card { padding:1.75rem; display:flex; flex-direction:column; gap:1.25rem; }
           .result-stage-row { display:flex; align-items:center; gap:1rem; }
           .result-stage-name { font-size:1.05rem; font-weight:600; color:var(--text); line-height:1.6; }
@@ -1030,6 +1031,7 @@ const RiskAssessment: React.FC = () => {
             box-shadow: var(--shadow-sm);
             display: flex; flex-direction: column; gap: 0;
             overflow: hidden;
+            width: 100%; box-sizing: border-box; align-self: stretch;
           }
 
           .policy-source {
@@ -1293,7 +1295,23 @@ const RiskAssessment: React.FC = () => {
           .precision-q-card { padding: 1.25rem; display: flex; flex-direction: column; gap: .875rem; margin-bottom: 1.5rem; }
           .precision-q-card:last-of-type { margin-bottom: 0; }
           .precision-q-num { font-size: .75rem; font-weight: 700; color: var(--text-muted); margin: 0; }
+          .survey-options { display:flex; flex-direction:column; gap:.5rem; }
           .precision-q-card .survey-options { gap: 12px; }
+          .survey-opt {
+            display:flex; align-items:center; gap:.75rem;
+            padding:.875rem 1rem; border-radius:var(--radius-sm);
+            border:1.5px solid var(--border); background:var(--surface);
+            text-align:left; font-size:.9rem; color:var(--text-muted);
+            font-weight:500; transition:var(--transition); cursor:pointer;
+            width:100%; min-height:44px;
+          }
+          .survey-opt:hover { border-color:var(--border-strong); background:var(--surface-2); color:var(--text); }
+          .survey-opt.selected {
+            border-color:var(--primary); background:var(--primary-light);
+            color:var(--primary); font-weight:700;
+            box-shadow:0 2px 12px var(--primary-glow);
+          }
+          .survey-opt-radio { font-size:.9rem; flex-shrink:0; }
           .survey-nav { gap: .75rem; }
         `}</style>
       </div>

@@ -2,7 +2,7 @@
 
 > **파일명**: DEV_LOG.md  
 > **최종 수정일**: 2026-07-02  
-> **문서 해시**: SHA256:fe2f1d81835ac809d5274f913e33e92e6a105694889596fba5dcc68f6bdc9666
+> **문서 해시**: SHA256:86dc367a6eae7c6e8d820b1e53f47c5790488aeefd3dabb77b51ec7b2f7bf64b
 > **문서 역할**: 날짜별 진행 로그, 변경 요약, 해결 이력  
 > **문서 우선순위**: 14  
 > **연관 문서**: CHANGE_CONTROL.md, PRD.md, DIRECTORY_SPEC.md, ERROR_ANALYSIS.md  
@@ -13,6 +13,62 @@
 ## 1. 문서 목적
 
 구현과 문서 정렬 작업의 **타임라인**을 남겨, 이후 기여자가 맥락을 잃지 않게 한다.
+
+---
+
+## 2026-07-02 (13) — (12) 가로 폭 흔들림 미해결 재확인 — 진짜 원인(.survey-wrap 누락) 수정
+
+### 배경
+사용자가 (12)의 `policy-card` width:100% 수정 이후에도 "연구근거 보기" 클릭 전/후 박스 가로 폭이 여전히 바뀐다고 스크린샷으로 재확인. `policy-card` 자체가 아니라 그 부모가 흔들리는 것으로 재조사 필요.
+
+### 원인 (진짜 원인)
+`RiskAssessment/index.tsx`는 `step`별로 조기 반환(early return)하며 각 분기가 자기만의 `<style>` 블록을 갖는 구조(이미 (11)에서 한 번 확인된 패턴)인데, `.survey-wrap`(`max-width:640px; display:flex; flex-direction:column; margin:0 auto`)을 정의하는 규칙이 파일 전체에서 메인 12문항 설문 분기의 `<style>` 블록에만 존재했음. `step === 'result'` 분기의 `<style>` 블록(`.result-card` 등이 정의된 곳)에는 `.survey-wrap` 규칙이 아예 없어서, 결과 화면에서는 `.survey-wrap`이 최대폭·flex 컬럼 제약 없이 렌더링되고 있었음. (12)에서 `policy-card`에 `width:100%`를 줘도, 기준이 되는 부모(`survey-wrap`) 자체의 폭이 콘텐츠에 따라 흔들리면 자식도 함께 흔들리므로 근본 해결이 안 됐던 것.
+
+### 수행
+`frontend/src/pages/RiskAssessment/index.tsx`의 결과 화면(`step === 'result'`) `<style>` 블록 맨 앞에 `.survey-wrap { max-width:640px; width:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:stretch; gap:1.5rem; margin:0 auto; }` 명시 추가 — 메인 설문 화면의 값과 동일하게 맞추되, `width:100%`와 `box-sizing:border-box`, `align-items:stretch`를 명시적으로 더해 콘텐츠 유무와 무관하게 항상 동일한 폭을 갖도록 함.
+
+### 남은 이슈 (범위 밖, 참고용 기록)
+(11)에서 남긴 것과 동일한 근본 원인 — 스텝별 `<style>` 블록 중복 분리 구조 자체가 이런 종류의 불일치를 계속 만들어낼 소지가 있음. 공유 레이아웃 규칙(`survey-wrap`, `survey-options`, `survey-opt` 등)을 `frontend/src/styles/index.css`로 이관하는 리팩터를 후속 과제로 재기록.
+
+### 검증
+`npx tsc --noEmit` (frontend): 통과, 0 에러.
+
+---
+
+## 2026-07-02 (12) — 추천 지원 제도 기본 펼침 + policy-card 가로 폭 흔들림 수정
+
+### 배경
+사용자가 결과 화면 하단을 재확인해 두 가지 결함 보고: (1) "추천 지원 제도" 섹션이 자체 내부 토글(`showPrograms`) 뒤에 숨어 있어 클릭해야만 목록이 보임(상위 게이트는 (10) Fix 4에서 이미 제거했으나 내부 토글 기본값은 그대로 `false`였음), (2) "연구근거 보기/접기" 버튼을 누를 때마다 `policy-card` 박스 자체의 가로 폭이 커졌다 줄었다 함(레이아웃 흔들림).
+
+### 원인
+(2)는 `.policy-card`가 `.survey-wrap`(`display:flex; flex-direction:column`)의 자식이면서 자기 자신도 `width`를 명시하지 않은 채 `display:flex; overflow:hidden`만 갖고 있어, 콘텐츠 양에 따라 가로 폭이 재계산되는 상태였음(표준 flex stretch가 기대대로 항상 적용되지 않는 케이스).
+
+### 수행
+`frontend/src/pages/RiskAssessment/index.tsx`
+- `showPrograms` 초기값 `useState(false)` → `useState(true)`로 변경. 접기 옵션 자체는 유지(사용자가 다시 접을 수 있음).
+- `.policy-card`에 `width: 100%; box-sizing: border-box; align-self: stretch;` 명시 추가 — 콘텐츠(연구근거 상세 노출 여부)와 무관하게 항상 부모(`.survey-wrap`) 폭에 고정되도록 함.
+
+### 검증
+`npx tsc --noEmit` (frontend): 통과, 0 에러.
+
+---
+
+## 2026-07-02 (11) — (10) Fix 1 정밀 판별 화면 선택지 간격 미적용 결함 수정
+
+### 배경
+(10) Fix 1에서 `.precision-q-card .survey-options { gap: 12px; }`를 추가했으나, 사용자가 실행 화면에서 재확인한 결과 여전히 선택지가 한 줄에 붙어 렌더링됨(`○오늘○2~3일 전○1주일 전●2주~1달 전○1달 이상 전`).
+
+### 원인
+`RiskAssessment/index.tsx`는 `step` 값에 따라 조기 반환(early return)하는 구조라, `step === 'precision'`일 때는 정밀 판별 화면 자체의 `<style>` 블록만 DOM에 존재하고, 메인 12문항 화면의 `<style>` 블록(`.survey-options { display:flex; flex-direction:column; gap:.5rem; }` 및 `.survey-opt` 외관 규칙 전체)은 애초에 렌더되지 않음. 즉 정밀 판별 화면에는 `.survey-options`를 세로 flex로 만드는 기본 규칙 자체가 없었고, `gap: 12px`만 추가해봤자 flex 컨테이너가 아니므로 적용될 대상이 없었음. 두 화면이 클래스명(`survey-options`/`survey-opt`)은 공유하면서 스타일 정의는 독립된 `<style>` 블록에 분리되어 있는 기존 구조의 허점.
+
+### 수행
+`frontend/src/pages/RiskAssessment/index.tsx`의 정밀 판별 화면 `<style>` 블록에 메인 설문 화면과 동일한 `.survey-options`(`display:flex; flex-direction:column; gap:.5rem;`) 및 `.survey-opt`/`.survey-opt:hover`/`.survey-opt.selected`/`.survey-opt-radio` 전체 규칙을 그대로 복제 추가. 기존 `.precision-q-card .survey-options { gap: 12px; }`는 유지(더 구체적인 선택자로 세로 간격을 12px로 재정의하는 용도로 정상 작동).
+
+### 남은 이슈 (범위 밖, 참고용 기록)
+같은 클래스명 스타일이 두 개의 독립된 `<style>` 블록에 중복 정의되는 구조라 향후 한쪽만 수정하면 다시 같은 종류의 불일치가 재발할 수 있음. 근본 해결은 공유 스타일을 `frontend/src/styles/index.css`(항상 로드됨)로 이관하는 것이나, 이번 요청 범위(간격 조정)를 벗어나 별도 리팩터로 미룸.
+
+### 검증
+`npx tsc --noEmit` (frontend): 통과, 0 에러.
 
 ---
 
