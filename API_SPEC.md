@@ -1,8 +1,8 @@
 # API_SPEC.md
 
 > **파일명**: API_SPEC.md  
-> **최종 수정일**: 2026-05-25  
-> **문서 해시**: SHA256:TBD
+> **최종 수정일**: 2026-07-02 (F-32 POST /chat 엔드포인트 계약 추가)  
+> **문서 해시**: SHA256:db762eb3d7d4d6591796302b64762c5eb91077635741dcaafd8b019928fcb86f
 > **문서 역할**: API 계약, request/response, 오류 형식 정의 문서  
 > **문서 우선순위**: 6  
 > **연관 문서**: FEATURE_SPEC.md, DATA_SCHEMA.md, SYSTEM_ARCHITECTURE.md, PRD.md  
@@ -169,6 +169,7 @@ application/json
 | F-18 | GET | `/seoul/reservations` | **활성** | 서울시 공공서비스 예약 |
 | F-19 | GET | `/actions/today` | **활성** | 오늘의 한 가지 행동 추천 |
 | F-17 | GET | `/support/bundle` | **활성** | 취업지원 자원 번들 조회 |
+| F-32 | POST | `/chat` | **활성 (범위 한정)** | 자격증·진로 Q&A 챗봇 (RAG 근거 + 자체 검증) |
 
 ---
 
@@ -833,6 +834,62 @@ WorkNet 실시간 채용정보 목록 조회.
 - `MISSING_REQUIRED_FIELD` — `risk_stage_id` 없을 때
 - `INVALID_INPUT` — 허용 범위 밖 `risk_stage_id`
 - 개별 자원 조회 실패는 오류로 처리하지 않고 해당 번들 `items: []` + `error` 필드로 반환
+
+---
+
+## 8.11 POST /chat
+
+### 목적
+자격증·직무·로드맵·정부 지원 정책에 대한 사용자 질문에 RAG evidence(cert/위험군 검색 결과)와 canonical 데이터를 근거로 답변한다. 범위는 자격증/진로/정부 지원 정책 Q&A로 한정되며, 세션 저장·치료적 개입은 포함하지 않는다 (`FEATURE_SPEC.md` F-32 범위 경계 참고).
+
+### Request Body
+```json
+{
+  "messages": [
+    { "role": "user", "content": "정보처리기사 취득 후 채용 전망은 어떤가요?" }
+  ],
+  "context": {
+    "stage_id": "3",
+    "cert_id": "1320",
+    "cert_name": "정보처리기사",
+    "domain_name": "데이터/AI",
+    "job_name": "데이터 분석"
+  }
+}
+```
+
+### Request 필드
+| 필드명 | 필수 | 타입 | 설명 |
+|---|---:|---|---|
+| `messages` | Y | array | `{role: 'user'\|'assistant', content: string}[]`. 서버는 최근 10개만 사용 |
+| `context.stage_id` | N | string | 위험군 단계 — evidence 검색에 사용 |
+| `context.cert_id` / `cert_name` | N | string | 현재 자격증 — evidence 검색에 사용 |
+| `context.domain_name` / `job_name` | N | string | 관심 도메인/직무 — 시스템 프롬프트 컨텍스트로만 사용 |
+
+### 처리 규칙
+- evidence 검색(cert/stage) 결과를 시스템 프롬프트에 주입하고, 응답 생성 후 휴리스틱 자체 검증(`_self_evaluate_reply`)을 1회 수행한다.
+- 검증에서 미연동 날짜, 근거 없는 %(수치), 비허용 도메인 링크가 감지되면 문제 목록을 모델에 전달해 1회 재생성한다. 재생성도 실패하면 원본 응답을 그대로 반환한다.
+
+### Response Body 예시
+```json
+{
+  "success": true,
+  "data": {
+    "reply": "정보처리기사는 데이터 분석·백엔드 직무 전환 시 기본 요건으로 자주 요구됩니다...",
+    "role": "assistant",
+    "used_evidence": true,
+    "eval": { "issues": [], "refined": false }
+  },
+  "meta": { "request_id": "req_chat_001", "version": "v1" },
+  "error": null
+}
+```
+
+### 주요 오류
+- `NOT_CONFIGURED` — `OPENAI_API_KEY` 미설정
+- `MISSING_REQUIRED_FIELD` — `messages`에 유효한 메시지가 없음
+- `UPSTREAM_ERROR` — OpenAI 호출 실패 (프론트는 대화를 끊지 않고 "일시적인 오류" 메시지로 대체)
+- evidence 검색 실패는 오류로 처리하지 않고 evidence 없이 진행
 
 ---
 

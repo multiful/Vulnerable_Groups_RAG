@@ -1,8 +1,8 @@
 # FEATURE_SPEC.md
 
 > **파일명**: FEATURE_SPEC.md  
-> **최종 수정일**: 2026-06-30 (F-18 다차원 군집 분류 로직·유효성 검증 계획 추가)  
-> **문서 해시**: SHA256:TBD
+> **최종 수정일**: 2026-07-02 (F-32 자격증·진로 Q&A 챗봇 문서화 추가)  
+> **문서 해시**: SHA256:55e477efda5ea3ce127584729dfda2f6304a8fd08a877111ed195cc336a332b9
 > **문서 역할**: 기능별 입력, 출력, 처리 규칙, 예외, 상태 정의 문서  
 > **문서 우선순위**: 4  
 > **연관 문서**: PRD.md, SYSTEM_ARCHITECTURE.md, API_SPEC.md, DATA_SCHEMA.md, RAG_PIPELINE.md  
@@ -96,6 +96,7 @@
 | F-29 | 일학습병행 훈련과정 조회 (Work24 313L01) | 활성 | 사용자 |
 | F-30 | 국가인적자원개발 컨소시엄 훈련과정 조회 (Work24 312L01) | 활성 | 사용자 |
 | F-31 | 구직자취업역량 강화프로그램 조회 (키 발급 완료, 엔드포인트 승인 대기) | 대기 | 사용자 |
+| F-32 | 자격증·진로 Q&A 챗봇 (RAG 근거 기반, 자체 검증) | 활성 (범위 한정 — §5 F-32 범위 경계 참고) | 사용자 |
 
 ---
 
@@ -1280,3 +1281,53 @@ Work24 callOpenApiSvcInfo312L01 API를 통해 국가인적자원개발 컨소시
 
 #### 현재 상태
 대기 (키 발급 완료, 엔드포인트 승인 대기)
+
+---
+
+### F-32. 자격증·진로 Q&A 챗봇 (RAG 근거 기반, 자체 검증)
+
+#### 목적
+자격증·직무·로드맵·정부 지원 정책에 대한 사용자 질문에, cert/위험군 evidence 검색 결과와 canonical 데이터를 근거로 답변한다. 모든 페이지에 플로팅 위젯(`ChatWidget`)으로 노출되며, 현재 선택된 위험군 단계·도메인·직무·자격증 컨텍스트를 함께 전달해 질문에 맞춘 evidence를 조회한다.
+
+#### 범위 경계
+- 이 기능은 자격증/진로/정부 지원 정책 질의에 한정된 **단일 세션 Q&A**다. 대화 기록은 브라우저 세션에만 존재하고 서버에 저장되지 않는다.
+- 치료적 개입, 다회차 상담 이력 관리, 위기 개입 프로토콜은 포함하지 않는다 (위기 신호는 F-01 Safety Override 배너가 별도로 처리).
+- `README.md`/`SYSTEM_ARCHITECTURE.md`/`PRD.md`가 reserved(§10 비범위)로 명시한 "완전한 상담형 대화 에이전트"(장기 세션·치료적 개입 포함)와는 범위가 다르다. 그 항목은 여전히 미구현이며, F-32 활성화로 자동 승격되지 않는다 — reserved 목록 정리 여부는 별도 결정이 필요한 열린 이슈다.
+
+#### 핵심 설계 원칙 (자체 검증 가드레일)
+- `_retrieve_evidence` / `_retrieve_stage_evidence`로 cert_id·stage_id 기반 evidence snippet을 조회해 시스템 프롬프트에 주입한다. evidence가 없으면 프롬프트에 근거 섹션을 포함하지 않는다.
+- 답변 생성 후 `_self_evaluate_reply`가 휴리스틱으로 재검증한다: (1) 구체적 날짜(연/월/일) 언급, (2) evidence 없이 등장한 %(합격률·수치), (3) 허용 도메인 목록 밖의 링크.
+- 문제가 감지되면 문제 목록을 모델에 전달해 **1회 재생성**한다(`llm_roadmap_service._self_evaluate`와 동일한 self-refine 패턴). 재생성 실패 시 원본 답변을 그대로 반환한다.
+- 응답에 `eval.issues`, `eval.refined`를 포함해 재검증 이력을 노출한다.
+
+#### 엔드포인트
+`POST /api/v1/chat`
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|:---:|---|
+| messages | array | ✅ | `{role: 'user'\|'assistant', content: string}[]`, 최근 10개만 사용 |
+| context.stage_id | str | ❌ | 위험군 단계 (evidence 검색용) |
+| context.cert_id / cert_name | str | ❌ | 현재 보고 있는 자격증 (evidence 검색용) |
+| context.domain_name / job_name | str | ❌ | 관심 도메인/직무 (시스템 프롬프트 컨텍스트) |
+
+#### 출력
+```json
+{
+  "success": true,
+  "data": {
+    "reply": "...",
+    "role": "assistant",
+    "used_evidence": true,
+    "eval": {"issues": [], "refined": false}
+  }
+}
+```
+
+#### 예외 처리
+- `openai_api_key` 미설정 → `NOT_CONFIGURED`
+- `messages`에 유효한 메시지 없음 → `MISSING_REQUIRED_FIELD`
+- OpenAI 호출 실패 → `UPSTREAM_ERROR` (프론트는 "일시적인 오류" 메시지로 표시, 대화 흐름 유지)
+- evidence 검색 실패는 조용히 무시하고 evidence 없이 진행 (§7 공통 예외처리 원칙 2항)
+
+#### 현재 상태
+활성 (범위 한정 — 위 "범위 경계" 참고)

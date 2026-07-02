@@ -1,10 +1,11 @@
 # File: chat_service.py
-# Last Updated: 2026-06-23
-# Content Hash: SHA256:TBD
-# Role: 청년 진로 상담 에이전트 — RAG 기반 Q&A (GPT-4o-mini + evidence retrieval)
+# Last Updated: 2026-07-02
+# Content Hash: SHA256:125fbcbb2847a551d9d4d7eeae0549e37f34302f0061696872b7f78a9ec15ab0
+# Role: 청년 진로 상담 에이전트 — RAG 기반 Q&A (GPT-4o-mini + evidence retrieval + 자체 검증 재생성)
 from __future__ import annotations
 
 import logging
+import re
 import time
 from typing import Any
 
@@ -14,6 +15,34 @@ from backend.app.schemas.envelope import err_envelope, ok_envelope
 logger = logging.getLogger(__name__)
 
 _MAX_HISTORY = 10
+
+# ── 답변 자체 검증 (환각 가드레일) ──────────────────────────────────
+# llm_roadmap_service._self_evaluate와 동일한 휴리스틱 재검증 패턴.
+_DATE_RE = re.compile(r"\d{4}\s*년\s*\d{1,2}\s*월(\s*\d{1,2}\s*일)?|\d{1,2}\s*월\s*\d{1,2}\s*일")
+# 합격률·통과율 문맥의 %만 감지 (훈련비 지원 비율 등 시스템 프롬프트에 이미 존재하는
+# 정책 수치까지 오탐하지 않도록 "합격/통과" 문맥에 인접한 경우로 한정)
+_PASS_RATE_RE = re.compile(
+    r"(합격률|합격\s*률|통과율)[^.?!\n]{0,20}?\d+\.?\d*\s*%|\d+\.?\d*\s*%[^.?!\n]{0,10}?(합격|통과)"
+)
+_LINK_RE = re.compile(r"https?://[^\s)\]]+")
+_ALLOWED_LINK_DOMAINS = (
+    "work24.go.kr", "hrd.go.kr", "bokjiro.go.kr", "q-net.or.kr",
+    "moel.go.kr", "mentalhealth.go.kr", "suicide.or.kr", "mogef.go.kr",
+    "youthcenter.go.kr", "career.go.kr", "youth.go.kr",
+)
+
+
+def _self_evaluate_reply(reply: str, has_evidence: bool) -> dict[str, Any]:
+    """생성된 답변에서 미연동 일정·미근거 수치·미확인 링크를 휴리스틱으로 감지한다."""
+    issues: list[str] = []
+    if _DATE_RE.search(reply):
+        issues.append("구체적 날짜(연/월/일) 언급 감지 — 시험·접수 일정 미연동 상태이므로 날짜를 지어내면 안 됨")
+    if not has_evidence and _PASS_RATE_RE.search(reply):
+        issues.append("근거 없이 %(합격률·수치) 언급 감지 — evidence가 없으면 수치를 발명하면 안 됨")
+    for url in _LINK_RE.findall(reply):
+        if not any(domain in url for domain in _ALLOWED_LINK_DOMAINS):
+            issues.append(f"공식 도메인 목록 밖의 링크 감지: {url}")
+    return {"issues": issues, "pass": len(issues) == 0}
 
 # 동일 cert + 질문 조합의 evidence 재조회 방지 (embedding 비용 절감)
 _EVIDENCE_TTL = 3600
@@ -235,24 +264,52 @@ def chat(body: dict[str, Any], settings: Settings) -> dict[str, Any]:
 
     system_prompt = _build_system_prompt(context, evidence_snippets)
 
+    has_evidence = len(evidence_snippets) > 0
+
     try:
         from openai import OpenAI
 
         client = OpenAI(api_key=settings.openai_api_key)
+        base_messages = [{"role": "system", "content": system_prompt}, *messages]
         response = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                *messages,
-            ],
+            messages=base_messages,
             max_tokens=600,
             temperature=0.5,
         )
         reply = (response.choices[0].message.content or "").strip()
+
+        # ── 자체 검증 + 1회 재생성 (환각 가드레일) ──
+        eval_result = _self_evaluate_reply(reply, has_evidence)
+        refined = False
+        if eval_result["issues"]:
+            issue_list = "\n".join(f"  - {i}" for i in eval_result["issues"])
+            refine_messages = base_messages + [
+                {"role": "assistant", "content": reply},
+                {"role": "user", "content": (
+                    f"위 답변에서 다음 문제가 감지됐습니다:\n{issue_list}\n\n"
+                    "확인되지 않은 날짜·수치·링크를 모두 제거하고 같은 톤으로 답변을 다시 작성하세요."
+                )},
+            ]
+            try:
+                response2 = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=refine_messages,
+                    max_tokens=600,
+                    temperature=0.5,
+                )
+                refined_reply = (response2.choices[0].message.content or "").strip()
+                if refined_reply:
+                    reply = refined_reply
+                    refined = True
+            except Exception as e:
+                logger.debug("chat self-refine retry failed: %s", e)
+
         return ok_envelope({
             "reply": reply,
             "role": "assistant",
-            "used_evidence": len(evidence_snippets) > 0,
+            "used_evidence": has_evidence,
+            "eval": {"issues": eval_result["issues"], "refined": refined},
         })
     except Exception as exc:
         return err_envelope(
