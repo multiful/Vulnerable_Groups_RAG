@@ -1,7 +1,7 @@
 // Content Hash: SHA256:TBD
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, AlertTriangle, Phone } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Phone } from 'lucide-react';
 import { clearPipeline, savePipeline } from '../../utils/pipelineState';
 import { fetchHydeEvidence } from '../../api/client';
 import type { StageEvidenceItem } from '../../api/client';
@@ -1129,21 +1129,21 @@ const RiskAssessment: React.FC = () => {
 
           .policy-crisis-note {
             padding: .75rem 1.125rem;
-            background: var(--danger-light);
-            border-top: 1px solid rgba(244,63,94,.15);
+            background: var(--primary-light);
+            border-top: 1px solid rgba(37,99,235,.2);
             display: flex; flex-direction: column; gap: .5rem;
           }
           .policy-crisis-text {
-            font-size: .8rem; color: var(--danger-dark); line-height: 1.55; margin: 0;
+            font-size: .8rem; color: var(--text-muted); line-height: 1.55; margin: 0;
           }
           .policy-crisis-links {
             display: flex; gap: .625rem; flex-wrap: wrap;
           }
           .policy-crisis-link {
-            font-size: .78rem; font-weight: 600; color: var(--danger-text);
+            font-size: .78rem; font-weight: 600; color: var(--primary);
             text-decoration: none;
             padding: .25rem .7rem;
-            border: 1px solid rgba(244,63,94,.3);
+            border: 1px solid rgba(37,99,235,.25);
             border-radius: var(--radius-sm);
             background: rgba(255,255,255,.6);
             transition: background .15s;
@@ -1311,7 +1311,6 @@ const RiskAssessment: React.FC = () => {
         <div className="card survey-card" key={current}>
           {q.safetyKey && (
             <div className="safety-notice">
-              <AlertTriangle size={14} />
               <span>이 질문은 정서적 위기와 관련된 항목입니다. 편하게 솔직하게 답해주세요.</span>
             </div>
           )}

@@ -983,8 +983,6 @@ const Recommendation: React.FC = () => {
           className={`featured-cert card${evidence.certId === featuredCert.cert_id && showEvidence ? ' featured-cert-active' : ''}`}
           style={{ cursor: 'pointer' }}
           onClick={() => { fetchEvidence(featuredCert.cert_id); fetchDag(featuredCert.cert_id); }}
-          role="button" tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter') { fetchEvidence(featuredCert.cert_id); fetchDag(featuredCert.cert_id); } }}
         >
           <div className="featured-tag-row"><span className="featured-tag">로드맵에서 선택</span></div>
           <div className="featured-body">
