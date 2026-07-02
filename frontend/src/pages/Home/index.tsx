@@ -123,6 +123,7 @@ const Home: React.FC = () => {
             <Link to="/risk-assessment" className="btn-primary hero-main-btn">시작하기 <ArrowRight size={17}/></Link>
             <Link to="/certs" className="btn-ghost">자격증 둘러보기</Link>
           </div>
+          <p className="hero-resume-note">중간에 나가도 괜찮아요 — 다음에 다시 오면 이어서 진행돼요.</p>
         </div>
         <div className="hero-visual">
           <div className="mascot-figure">
@@ -140,6 +141,41 @@ const Home: React.FC = () => {
                 className={`mascot-img${happy ? ' mascot-happy' : ''}`}
               />
               {happy && <span className="mascot-heart">🩷</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* 추천 결과 티저 — 설문 없이도 결과가 어떤 모양인지 hero 바로 다음에 보여준다 */}
+    <section className="today-section">
+      <div className="today-inner">
+        <div className="today-left">
+          <div className="today-badge">맞춤 자격증 추천</div>
+          <h3 className="today-title">내 상황과 관심 분야에 맞는<br/>자격증 로드맵을 찾아드립니다</h3>
+          <p className="today-desc">
+            12문항으로 지금 내 상황을 파악하고, 관심 분야를 선택하면<br/>
+            지금 도전할 수 있는 자격증과 단계별 로드맵을 추천합니다.
+          </p>
+          <Link to="/risk-assessment" className="btn-primary today-btn">지금 시작하기 <ArrowRight size={16}/></Link>
+        </div>
+        <div className="today-right">
+          <div className="today-example-card">
+            <span className="today-ex-label">추천 결과 예시</span>
+            <div className="today-ex-stage-row">
+              <span className="today-ex-stage">활동 제한형</span>
+              <span className="today-ex-sep">·</span>
+              <span className="today-ex-domain">기계/제조</span>
+            </div>
+            <div className="today-ex-cert-row">
+              <div className="today-ex-cert-info">
+                <p className="today-ex-cert-name">용접기능사</p>
+                <p className="today-ex-cert-sub">연 2회 시험 · 합격률 49%</p>
+              </div>
+            </div>
+            <div className="today-ex-actions-row">
+              <span className="today-ex-action-chip">로드맵 보기</span>
+              <span className="today-ex-action-chip">추천 이유 보기</span>
             </div>
           </div>
         </div>
@@ -280,6 +316,7 @@ const Home: React.FC = () => {
       .hero-sub{font-size:.975rem;color:var(--text-muted);line-height:1.75}
       .hero-reassure{font-size:.85rem;color:var(--primary);background:var(--primary-light);padding:.45rem .75rem;border-radius:var(--radius-sm);width:fit-content;line-height:1.6}
       .hero-actions{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center}
+      .hero-resume-note{font-size:.78rem;color:var(--text-light)}
       .hero-main-btn{padding:.75rem 1.5rem;font-size:.975rem}
       .hero-visual{display:flex;justify-content:center}
       .mascot-figure{display:flex;justify-content:center;align-items:center;width:100%;position:relative}
