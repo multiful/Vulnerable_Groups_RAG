@@ -1,5 +1,5 @@
 {
-  "saved_at": 1782987566.409353,
+  "saved_at": 1782988497.479709,
   "entries": {
     "프로그래밍기능사::소프트웨어개발": {
       "relevance_delta_pct": 30,
@@ -29,6 +29,12 @@
       "relevance_delta_pct": 30,
       "relevance_summary": "정보시스템감리사는 IT 프로젝트의 품질과 안전성을 보장하는 데 중요한 역할을 합니다. 따라서 IT인프라 및 보안 분야에서 시스템의 신뢰성을 높이는 데 큰 도움이 됩니다.",
       "difficulty_score": 70,
+      "job_demand_level": "중"
+    },
+    "차량기술사::자동차/모빌리티정비": {
+      "relevance_delta_pct": 30,
+      "relevance_summary": "차량기술사는 자동차의 구조와 정비에 대한 전문 지식을 갖춘 자격증으로, 자동차 정비 분야에서 기술적 문제를 해결하고 품질 관리를 수행하는 데 큰 도움이 됩니다.",
+      "difficulty_score": 75,
       "job_demand_level": "중"
     }
   }
