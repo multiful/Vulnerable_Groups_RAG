@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, Phone } from 'lucide-react';
 import { clearPipeline, savePipeline } from '../../utils/pipelineState';
+import { recordDiagnosisComplete } from '../../utils/userHistory';
 import { fetchHydeEvidence } from '../../api/client';
 import type { StageEvidenceItem } from '../../api/client';
 
@@ -466,6 +467,7 @@ const RiskAssessment: React.FC = () => {
     if (step !== 'result') return;
     const totalScore = QUESTIONS.reduce((s, q) => s + (answers[q.id] ?? 0), 0);
     const stageId = scoreToStage(totalScore, precisionAnswers);
+    recordDiagnosisComplete(stageId, STAGE_LABELS[stageId]?.sub);
 
     const catAccum = QUESTIONS.reduce<Record<string, { score: number; max: number }>>((acc, q) => {
       const mx = Math.max(...q.options.map(o => o.score));
