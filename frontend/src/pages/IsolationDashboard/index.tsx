@@ -1,10 +1,11 @@
-// Content Hash: SHA256:TBD
+// Content Hash: SHA256:db5608e9bbe44a16b3d283a617df503724a514592851b05189ed2da2fbeb65d0
 // 고립군 청년 진단 결과 → 맞춤 서비스 대시보드
 // 두 API를 병렬 호출: /isolation/dashboard (DIDIM 서비스) + /isolation/policy (복지 정책)
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, ExternalLink, ChevronDown, ChevronUp, Zap, MapPin, Heart, BookOpen, Briefcase, Users, Home, Star } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ExternalLink, ChevronDown, ChevronUp, Zap, MapPin, Heart, BookOpen, Briefcase, Users, Home, Star, Check } from 'lucide-react';
 import { getApiBase } from '../../api/client';
+import { markTodayActionComplete, isTodayActionDone, loadUserHistory } from '../../utils/userHistory';
 
 /* ─── 타입 ─────────────────────────────────────────────── */
 interface ServiceItem {
@@ -198,6 +199,15 @@ const IsolationDashboard: React.FC = () => {
   const [policyLoading, setPolicyLoading] = useState(true);
   const [error, setError]                 = useState<string | null>(null);
   const [showInactive, setShowInactive]   = useState(false);
+  const [actionDone, setActionDone]       = useState(() => isTodayActionDone());
+  const [streak, setStreak]               = useState(() => loadUserHistory()?.actionStreak ?? 0);
+
+  const handleCompleteAction = () => {
+    if (actionDone) return;
+    const updated = markTodayActionComplete();
+    setActionDone(true);
+    setStreak(updated.actionStreak ?? 0);
+  };
 
   const color    = CLUSTER_COLORS[clusterId]   ?? '#6366f1';
   const gradient = CLUSTER_GRADIENT[clusterId] ?? 'linear-gradient(135deg,#f8fafc,#f1f5f9)';
@@ -340,16 +350,31 @@ const IsolationDashboard: React.FC = () => {
             <span className="iso-action-badge" style={{ background: color, color: '#fff' }}>
               {ACTION_TYPE_LABEL[todayAct.action_type] ?? '오늘의 행동'} · {todayAct.effort_minutes}분
             </span>
-            <span className="iso-action-chip">지금 바로 시작</span>
+            {streak > 1 ? (
+              <span className="iso-action-chip iso-streak-chip">🔥 {streak}일째</span>
+            ) : (
+              <span className="iso-action-chip">지금 바로 시작</span>
+            )}
           </div>
           <p className="iso-action-title">{todayAct.title}</p>
           <p className="iso-action-desc">{todayAct.description}</p>
           <div className="iso-action-motivation">{today_action.motivation}</div>
-          {todayAct.cta_path && (
-            <Link to={todayAct.cta_path} className="iso-action-cta" style={{ background: color }}>
-              {todayAct.cta} <ArrowRight size={14} />
-            </Link>
-          )}
+          <div className="iso-action-footer">
+            {todayAct.cta_path && (
+              <Link to={todayAct.cta_path} className="iso-action-cta" style={{ background: color }}>
+                {todayAct.cta} <ArrowRight size={14} />
+              </Link>
+            )}
+            <button
+              type="button"
+              className={`iso-action-done-btn${actionDone ? ' done' : ''}`}
+              style={actionDone ? { background: color, borderColor: color, color: '#fff' } : { borderColor: color, color }}
+              onClick={handleCompleteAction}
+              disabled={actionDone}
+            >
+              <Check size={14} /> {actionDone ? '오늘 완료했어요' : '오늘 했어요'}
+            </button>
+          </div>
         </div>
       )}
 
@@ -639,6 +664,24 @@ const IsolationDashboard: React.FC = () => {
           transition: opacity .15s;
         }
         .iso-action-cta:hover { opacity: .88; }
+        .iso-action-footer {
+          display: flex; align-items: center; gap: .625rem; flex-wrap: wrap;
+        }
+        .iso-action-done-btn {
+          display: inline-flex; align-items: center; gap: .35rem;
+          padding: .6rem 1rem;
+          border-radius: var(--radius-sm);
+          background: transparent; border: 1.5px solid;
+          font-size: .85rem; font-weight: 700;
+          cursor: pointer; transition: background .15s, opacity .15s;
+        }
+        .iso-action-done-btn:not(:disabled):hover { opacity: .8; }
+        .iso-action-done-btn.done { cursor: default; }
+        .iso-streak-chip {
+          background: rgba(0,0,0,.06);
+          color: var(--text);
+          font-weight: 700;
+        }
 
         /* ── 섹션 공통 ── */
         .iso-section {
