@@ -1,7 +1,7 @@
 // Content Hash: SHA256:TBD
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowRight, ArrowLeft, AlertTriangle, Phone } from 'lucide-react';
 import { clearPipeline, savePipeline } from '../../utils/pipelineState';
 import { fetchHydeEvidence } from '../../api/client';
 import type { StageEvidenceItem } from '../../api/client';
@@ -178,6 +178,15 @@ const QUESTIONS: Question[] = [
 ];
 
 const TOTAL_MAX = QUESTIONS.reduce((s, q) => s + Math.max(...q.options.map(o => o.score)), 0);
+
+// 안전 항목(safetyKey)을 건너뛴 경우, 해당 문항은 "무응답"으로 취급하고
+// 0점(가장 안전한 응답)으로 채점하지 않는다. TOTAL_MAX에서도 제외한다.
+function getEffectiveMax(ans: Record<string, number>): number {
+  return QUESTIONS.reduce((s, q) => {
+    if (q.safetyKey && ans[q.id] === undefined) return s;
+    return s + Math.max(...q.options.map(o => o.score));
+  }, 0);
+}
 
 /* ─────────────────────────────────────────────────────────────────────
    2차 정밀 판별 3문항 (SCRIPT.md §4 — 3단계↔4단계 구분)
@@ -498,21 +507,17 @@ const RiskAssessment: React.FC = () => {
   }
 
   function select(score: number) {
-    const newAnswers  = { ...answers, [q.id]: score };
-    const newSafety   = safetyFlag || (!!q.safetyKey && score >= 2);
-    const nextCurrent = current < QUESTIONS.length - 1 ? current + 1 : current;
+    const newAnswers = { ...answers, [q.id]: score };
+    const newSafety  = safetyFlag || (!!q.safetyKey && score >= 2);
     setAnswers(newAnswers);
     if (!safetyFlag && newSafety) setSafetyFlag(true);
-    _saveProgress(nextCurrent, newAnswers, newSafety);
-    if (current < QUESTIONS.length - 1) {
-      setTimeout(() => setCurrent((c: number) => c + 1), 260);
-    }
+    _saveProgress(current, newAnswers, newSafety);
   }
 
   function finish() {
     _clearSurvey();
     const totalScore = QUESTIONS.reduce((s, q) => s + (answers[q.id] ?? 0), 0);
-    const pct = totalScore / TOTAL_MAX;
+    const pct = totalScore / getEffectiveMax(answers);
     if (pct >= 0.5) {
       setStep('precision');
     } else {
@@ -591,7 +596,7 @@ const RiskAssessment: React.FC = () => {
   if (step === 'result') {
     const totalScore = QUESTIONS.reduce((s, q) => s + (answers[q.id] ?? 0), 0);
     const stage = scoreToStage(totalScore, precisionAnswers);
-    const pct = Math.round((totalScore / TOTAL_MAX) * 100);
+    const pct = Math.round((totalScore / getEffectiveMax(answers)) * 100);
     const info = STAGE_LABELS[stage];
 
     const categoryScores = Object.entries(
@@ -614,17 +619,6 @@ const RiskAssessment: React.FC = () => {
           <h1 className="page-title">{STAGE_INTRO[stage]?.headline ?? '자격증 추천을 준비했어요'}</h1>
           <p className="page-desc">{STAGE_INTRO[stage]?.sub ?? '지금 상황에서 도전할 수 있는 자격증들을 찾았습니다.'}</p>
         </div>
-
-        {safetyFlag && (
-          <div className="safety-banner">
-            <div className="safety-banner-icon"><AlertTriangle size={17} /></div>
-            <div className="safety-banner-body">
-              <p className="safety-title">정서적으로 힘드신 것 같아요</p>
-              <p className="safety-sub">지금 많이 힘드시다면 전문 상담을 받아보시는 게 도움이 될 수 있습니다.</p>
-              <a href="tel:1393" className="safety-cta">1393 자살예방상담전화에 전화하기</a>
-            </div>
-          </div>
-        )}
 
         <div className="card result-card">
           <div className="result-stage-row">
@@ -763,6 +757,17 @@ const RiskAssessment: React.FC = () => {
             내 상황에 맞는 자격증 보기 <ArrowRight size={15} />
           </button>
         </div>
+
+        {safetyFlag && (
+          <div className="safety-banner">
+            <div className="safety-banner-icon"><Phone size={17} /></div>
+            <div className="safety-banner-body">
+              <p className="safety-title">지금 많이 힘드신 분을 위해</p>
+              <p className="safety-sub">마음이 많이 힘드실 때는 전문 상담을 통해 도움받을 수 있습니다.</p>
+              <a href="tel:1393" className="safety-cta">1393 자살예방상담전화</a>
+            </div>
+          </div>
+        )}
 
         {/* ── 내 상황 분석 카드 (접힘) ── */}
         <div style={{ display:'flex', justifyContent:'center', marginTop:'.5rem' }}>
@@ -1271,11 +1276,15 @@ const RiskAssessment: React.FC = () => {
               괜찮아요, 계속할게요
             </button>
             <button className="btn-ghost" onClick={() => {
-              // B12_9 건너뜀 — 점수 0 처리 후 다음 문항으로
-              const newAnswers = { ...answers, B12_9: 0 };
+              // B12_9 건너뜀 — 무응답으로 두고(0점 처리 금지) 안전 플래그를 올린다.
+              // select()의 safetyFlag 처리와 동일한 패턴: 건너뛴 안전 항목은
+              // "위기 없음"이 아니라 "확인 필요"로 취급한다.
+              const newAnswers = { ...answers };
+              delete newAnswers.B12_9;
               setAnswers(newAnswers);
+              if (!safetyFlag) setSafetyFlag(true);
               setSafetyGatePassed(true);
-              _saveProgress(11, newAnswers, safetyFlag);
+              _saveProgress(11, newAnswers, true);
               setCurrent(11);
             }}>
               이 문항은 건너뛸게요
@@ -1429,24 +1438,24 @@ const RiskAssessment: React.FC = () => {
         }
         .safety-banner {
           display:flex; gap:.75rem; align-items:flex-start;
-          padding:1rem 1.25rem; background:var(--danger-light);
-          border:1px solid rgba(244,63,94,.25);
+          padding:1rem 1.25rem; background:var(--primary-light);
+          border:1px solid rgba(37,99,235,.2);
           border-radius:var(--radius-sm);
         }
-        .safety-banner-icon { flex-shrink:0; color:var(--danger); padding-top:.1rem; }
+        .safety-banner-icon { flex-shrink:0; color:var(--primary); padding-top:.1rem; }
         .safety-banner-body { display:flex; flex-direction:column; gap:.3rem; flex:1; }
-        .safety-title { font-weight:700; font-size:.9rem; color:var(--danger-text); }
-        .safety-sub { font-size:.82rem; color:var(--danger-dark); line-height:1.55; }
+        .safety-title { font-weight:700; font-size:.9rem; color:var(--text); }
+        .safety-sub { font-size:.82rem; color:var(--text-muted); line-height:1.55; }
         .safety-cta {
           display:inline-block; width:fit-content;
           margin-top:.35rem; padding:.45rem .875rem;
-          background:var(--danger); color:#fff;
+          background:var(--primary); color:#fff;
           border-radius:var(--radius-sm); font-size:.82rem; font-weight:700;
           text-decoration:none;
         }
         .safety-gate-card {
           display:flex; flex-direction:column; align-items:center; gap:1rem;
-          background:#f0fdf4; border:1px solid #86efac;
+          background:var(--warning-light); border:1px solid rgba(245,158,11,.3);
           border-radius:var(--radius); padding:2rem 1.5rem;
           text-align:center;
         }
