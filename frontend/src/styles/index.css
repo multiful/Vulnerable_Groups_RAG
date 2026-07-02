@@ -118,6 +118,16 @@ img { max-width: 100%; }
   color: var(--text-muted);
   line-height: 1.6;
 }
+.page-reassure {
+  margin-top: 0.625rem;
+  padding: 0.5rem 0.875rem;
+  background: var(--primary-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--primary);
+  line-height: 1.6;
+  width: fit-content;
+}
 .section-title {
   font-size: 1rem;
   font-weight: 700;

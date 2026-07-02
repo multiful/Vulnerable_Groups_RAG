@@ -1,7 +1,8 @@
-// Content Hash: SHA256:TBD
+// Content Hash: SHA256:9be5b3e75094f8013b2f46cb2d60fc9d8f8b526eb105cb88ae1d1cfa38c6cd8d
 import React, { useState, useCallback, useEffect } from 'react';
 import { ArrowRight, Calendar, Briefcase, BookOpen, Map } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { loadUserHistory, clearUserHistory } from '../../utils/userHistory';
 
 
 const SERVICES = [
@@ -67,6 +68,7 @@ const FLOW = [
 const Home: React.FC = () => {
   const [happy, setHappy] = useState(false);
   const [showSticky, setShowSticky] = useState(false);
+  const [history, setHistory] = useState(() => loadUserHistory());
 
   const handleMascotClick = useCallback(() => {
     if (happy) return;
@@ -83,12 +85,40 @@ const Home: React.FC = () => {
   return (
   <div className="home-wrap">
 
+    {history?.lastStage && (
+      <section className="welcome-back-card">
+        <span className="wb-emoji" aria-hidden="true">👋</span>
+        <div className="wb-body">
+          <p className="wb-title">다시 오셨네요</p>
+          <p className="wb-desc">
+            {history.actionStreak && history.actionStreak > 1
+              ? `${history.actionStreak}일째 함께하고 있어요.`
+              : '저번에 확인한 상황을 기억하고 있어요.'}
+            {history.lastStageLabel ? ` (${history.lastStageLabel})` : ''}
+          </p>
+        </div>
+        <div className="wb-actions">
+          <Link to={`/isolation/dashboard?cluster_id=${history.lastStage}`} className="btn-primary wb-btn">
+            이어서 보기 <ArrowRight size={15} />
+          </Link>
+          <button
+            type="button"
+            className="btn-ghost wb-reset-btn"
+            onClick={() => { clearUserHistory(); setHistory(null); }}
+          >
+            새로 진단하기
+          </button>
+        </div>
+      </section>
+    )}
+
     <section className="hero">
       <div className="hero-inner">
         <div className="hero-text">
           <div className="hero-badge">나에게 맞는 자격증 찾기</div>
           <h1 className="hero-title">내 상황에 맞는<br/><span style={{color:'var(--primary)'}}>자격증과 성장 경로</span></h1>
           <p className="hero-sub">12문항으로 내 상황을 파악하고 관심 분야를 선택하면, 지금 도전 가능한 자격증과 로드맵을 추천합니다.</p>
+          <p className="hero-reassure">취업 준비가 안 되어 있어도 괜찮아요. 정답은 없고, 지금 상황부터 편하게 확인해보세요.</p>
           <div className="hero-actions">
             <Link to="/risk-assessment" className="btn-primary hero-main-btn">시작하기 <ArrowRight size={17}/></Link>
             <Link to="/certs" className="btn-ghost">자격증 둘러보기</Link>
@@ -228,6 +258,19 @@ const Home: React.FC = () => {
 
     <style>{`
       .home-wrap{display:flex;flex-direction:column;gap:3.5rem;padding-bottom:1rem}
+      .welcome-back-card{
+        display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+        padding:1rem 1.25rem;
+        background:var(--primary-light);border:1px solid rgba(37,99,235,.18);
+        border-radius:var(--radius-lg);
+      }
+      .wb-emoji{font-size:1.6rem;flex-shrink:0}
+      .wb-body{display:flex;flex-direction:column;gap:.15rem;flex:1;min-width:160px}
+      .wb-title{font-size:.95rem;font-weight:800;color:var(--text);margin:0}
+      .wb-desc{font-size:.8rem;color:var(--text-muted);margin:0}
+      .wb-actions{display:flex;align-items:center;gap:.625rem;flex-wrap:wrap}
+      .wb-btn{padding:.55rem 1.1rem;font-size:.85rem}
+      .wb-reset-btn{font-size:.78rem;padding:.5rem .75rem}
       .hero{padding:2rem 0 .5rem}
       .hero-inner{display:grid;grid-template-columns:1.1fr 0.9fr;gap:2rem;align-items:center}
       @media(max-width:860px){.hero-inner{grid-template-columns:1fr;gap:1.5rem}}
@@ -235,6 +278,7 @@ const Home: React.FC = () => {
       .hero-badge{display:inline-flex;align-items:center;gap:.375rem;padding:.28rem .875rem;background:var(--primary-light);color:var(--primary);border-radius:var(--radius-full);font-size:.78rem;font-weight:700;border:1px solid rgba(37,99,235,.2);width:fit-content}
       .hero-title{font-size:clamp(1.85rem,4.5vw,2.75rem);font-weight:800;letter-spacing:-.035em;line-height:1.18;color:var(--text)}
       .hero-sub{font-size:.975rem;color:var(--text-muted);line-height:1.75}
+      .hero-reassure{font-size:.85rem;color:var(--primary);background:var(--primary-light);padding:.45rem .75rem;border-radius:var(--radius-sm);width:fit-content;line-height:1.6}
       .hero-actions{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center}
       .hero-main-btn{padding:.75rem 1.5rem;font-size:.975rem}
       .hero-visual{display:flex;justify-content:center}

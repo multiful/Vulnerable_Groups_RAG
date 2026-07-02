@@ -1,6 +1,6 @@
 # File: career_net.py
-# Last Updated: 2026-05-14
-# Content Hash: SHA256:TBD
+# Last Updated: 2026-07-02
+# Content Hash: SHA256:c1e7bf2dde352923a01cc72cfa398786ec2e404b83a36ffeaf0f67d01f6f0279
 # Role: 커리어넷 직업정보 + 학과정보 API 라우트
 #
 # GET /api/v1/career-net/jobs         → 직업 목록 (검색 가능)
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/career-net")
 
 
 @router.get("/jobs")
-async def list_jobs(
+def list_jobs(
     settings: SettingsDep,
     q: str | None = Query(default=None, description="직업명 검색어"),
     page: int = Query(default=1, ge=1),
@@ -28,13 +28,13 @@ async def list_jobs(
 
 
 @router.get("/jobs/{job_seq}")
-async def get_job(job_seq: str, settings: SettingsDep):
+def get_job(job_seq: str, settings: SettingsDep):
     """커리어넷 직업 상세 정보."""
     return career_net_service.get_job_detail(job_seq=job_seq, settings=settings)
 
 
 @router.get("/majors")
-async def list_majors(
+def list_majors(
     settings: SettingsDep,
     q: str | None = Query(default=None, description="학과명 검색어"),
     page: int = Query(default=1, ge=1),

@@ -2,8 +2,8 @@
 
 > **파일명**: FOLDER.md  
 > **폴더 경로**: `frontend/src/utils`  
-> **최종 수정일**: 2026-05-12  
-> **문서 해시**: SHA256:TBD  
+> **최종 수정일**: 2026-07-02  
+> **문서 해시**: SHA256:3de8ebe2b63151e9e3528d058b2ae6b2a24ce3e6bd36ce2bdd80c0eb9c96b176  
 > **문서 역할**: 디렉터리 스캐폴드 명시서 — 담는 내용·금지·다음 단계 연계  
 > **문서 우선순위**: reference (충돌 시 루트 기준 문서 우선)  
 > **연관 문서**: DIRECTORY_SPEC.md, SYSTEM_ARCHITECTURE.md, RAG_PIPELINE.md, DATA_SCHEMA.md, PRD.md, PROJECT_SUMMARY.md, README.md, CHANGE_CONTROL.md  
@@ -20,7 +20,8 @@
 
 | 파일 | 역할 |
 |------|------|
-| `pipelineState.ts` | 위험군 진단→관심 선택→로드맵→자격증 확인 파이프라인 상태를 sessionStorage에 저장·복원 |
+| `pipelineState.ts` | 위험군 진단→관심 선택→로드맵→자격증 확인 파이프라인 상태를 sessionStorage에 저장·복원 (탭 닫으면 소멸) |
+| `userHistory.ts` | 완료된 진단 결과 + 오늘의 행동 완료/스트릭 이력을 localStorage에 저장·복원 (60일 TTL, 재방문 "이어서 하기" 근거) |
 
 ## 3. 담지 않는 것
 
