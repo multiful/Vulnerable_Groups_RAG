@@ -430,7 +430,7 @@ const InterestSelection: React.FC = () => {
           const hasSelected = group.items.some(i => i.id === selectedDomain?.id);
           return (
             <div key={group.top} className={`group-card card ${hasSelected ? 'group-card-active' : ''}`}>
-              <button className="group-header" onClick={() => toggleGroup(group.top)} type="button">
+              <button className="group-header" onClick={() => toggleGroup(group.top)} type="button" aria-expanded={isOpen}>
                 <span className="group-emoji">{group.emoji}</span>
                 <span className="group-top">{group.top}</span>
                 {hasSelected && <span className="group-sel-badge">선택됨</span>}
@@ -469,6 +469,7 @@ const InterestSelection: React.FC = () => {
           className="job-toggle-btn"
           onClick={() => setJobSectionOpen(p => !p)}
           type="button"
+          aria-expanded={jobSectionOpen}
         >
           <Briefcase size={13} />
           {jobSectionOpen ? '접기' : (selectedJob ? selectedJob.name : '직무 선택하기')}
@@ -483,7 +484,7 @@ const InterestSelection: React.FC = () => {
             const hasSelected = group.items.some(i => i.id === selectedJob?.id);
             return (
               <div key={group.top} className={`group-card card ${hasSelected ? 'group-card-job-active' : ''}`}>
-                <button className="group-header" onClick={() => toggleJobGroup(group.top)} type="button">
+                <button className="group-header" onClick={() => toggleJobGroup(group.top)} type="button" aria-expanded={isOpen}>
                   <span className="group-top">{group.top}</span>
                   {hasSelected && <span className="group-sel-badge job-sel-badge">선택됨</span>}
                   <span className="group-chevron">

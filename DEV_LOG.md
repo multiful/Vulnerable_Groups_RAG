@@ -2,7 +2,7 @@
 
 > **파일명**: DEV_LOG.md  
 > **최종 수정일**: 2026-07-02  
-> **문서 해시**: SHA256:11aa5bbf7478a7122560c23798b4e4f7538a4df5ba12a196ddb07de2a733972f
+> **문서 해시**: SHA256:aab6ab26762ad77158fb08f696f119730fc172705683c4e064801278c5ea92e5
 > **문서 역할**: 날짜별 진행 로그, 변경 요약, 해결 이력  
 > **문서 우선순위**: 14  
 > **연관 문서**: CHANGE_CONTROL.md, PRD.md, DIRECTORY_SPEC.md, ERROR_ANALYSIS.md  
@@ -13,6 +13,34 @@
 ## 1. 문서 목적
 
 구현과 문서 정렬 작업의 **타임라인**을 남겨, 이후 기여자가 맥락을 잃지 않게 한다.
+
+---
+
+## 2026-07-02 (7) — critique 기반 P0 안전/데이터 무결성 수정 2건 (임상 라벨 노출, B12_9 스킵 채점 오류)
+
+### 배경
+`/impeccable critique`가 frontend에 P0 2건을 보고함 (`frontend/.impeccable/critique/2026-07-02T06-48-34Z__frontend.md`, `2026-07-02T07-03-49Z__frontend.md`). 둘 다 비주얼/코스메틱이 아니라 안전·데이터 무결성 문제:
+
+1. Recommendation 결과 화면이 `RISK_LABEL`로 "4단계 (은둔 청년)" 같은 임상 문헌 용어를 `<strong>` 굵게 노출 — 사용자 여정의 peak-end 순간(최종 결과 화면)에서 가장 낙인 위험이 큰 문구가 그대로 보임.
+2. RiskAssessment의 B12_9(PHQ-9 자살사고 문항)를 "건너뛸게요"로 스킵하면 `B12_9: 0`(가장 안전한 응답)으로 채점되고 `safetyFlag`도 세팅되지 않음 — 정서적으로 힘들어서 문항을 건너뛴 사용자가 "위기 없음"으로 오분류되는, 가능한 가장 위험한 오분류.
+
+### 수행
+
+**🔴 [Fix 1] Recommendation 임상 라벨 제거 (`frontend/src/pages/Recommendation/index.tsx`)**
+- `RISK_LABEL` (`'4': '4단계 (은둔 청년)'` 등 임상 문자열 매핑) 삭제.
+- InterestSelection에 이미 있던 비낙인 plain-language 문구(`RISK_STAGE_LABELS`: "지금 집에서 혼자 있는 시간이 많은 상황" 등)를 그대로 재사용. 새 카피를 만들지 않음.
+- 단일 출처화를 위해 `frontend/src/constants/stageLabels.ts` 신설 (`STAGE_LABELS` export). 기존 `frontend/src/constants/` 스캐폴드(`FOLDER.md` "UI 라벨·경로 상수" 용도)에 부합하는 위치.
+- Recommendation은 새 상수를 import하도록 변경. **InterestSelection의 자체 `RISK_STAGE_LABELS`는 이번 변경 범위 밖이라 그대로 둠** (동일 문구 중복 보유 — 후속 정리 대상으로 `constants/FOLDER.md`에 기록).
+- Roadmap의 별도 `RISK_LABELS`(동일한 임상 문자열)는 이번 critique·작업 지시 범위 밖이라 의도적으로 손대지 않음.
+
+**🔴 [Fix 2] B12_9 스킵 채점 버그 수정 (`frontend/src/pages/RiskAssessment/index.tsx`)**
+- 스킵 버튼 핸들러: `B12_9: 0`을 answers에 넣던 것을 제거하고, 대신 해당 키를 `answers`에서 아예 비워둠(무응답 처리, 0점 미부여).
+- `select()`에서 안전 항목 고위험 응답 시 `safetyFlag`를 세우는 것과 동일한 패턴을 그대로 적용해, 스킵 시에도 `safetyFlag = true`로 세팅 — 기존 safety banner(1393 안내)가 그대로 재사용되어 노출됨. 새 UI는 만들지 않음.
+- `getEffectiveMax()` 헬퍼 추가: 스킵된 safetyKey 문항의 만점을 `TOTAL_MAX`에서 제외한 실효 분모를 계산. `finish()`의 진행 분기 판단과 결과 화면의 `pct` 계산 두 곳 모두 이 실효 분모를 사용하도록 교체 (기존 `totalScore` 분자 계산 로직·`scoreToStage` 자체는 변경하지 않음).
+
+### 범위 확인
+- auto-advance 타이밍, CertCard 접근성, safety banner 색상/배치, taxonomy 파일은 이번 작업에서 손대지 않음 (별도 트랙에서 처리 중).
+- 변경 파일: `frontend/src/pages/Recommendation/index.tsx`, `frontend/src/pages/RiskAssessment/index.tsx`, 신규 `frontend/src/constants/stageLabels.ts`, `frontend/src/constants/FOLDER.md` 갱신.
 
 ---
 

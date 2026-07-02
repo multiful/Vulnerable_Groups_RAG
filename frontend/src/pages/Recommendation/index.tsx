@@ -12,6 +12,7 @@ import {
   Video, Play, Sparkles,
 } from 'lucide-react';
 import type { CertCandidate } from '../../types/cert';
+import { STAGE_LABELS } from '../../constants/stageLabels';
 
 const DOMAIN_NAMES: Record<string, string> = {
   domain_0001:'데이터/AI', domain_0002:'소프트웨어개발', domain_0003:'IT인프라/보안',
@@ -108,12 +109,6 @@ function buildCertSummary(cert: CertCandidate): string {
   return parts.join(' · ');
 }
 
-const RISK_LABEL: Record<string, string> = {
-  '1': '1단계 (고립위험청년)',
-  '2': '2단계 (활동형 고립청년)',
-  '3': '3단계 (활동 제한형 고립청년)',
-  '4': '4단계 (은둔 청년)',
-};
 const RISK_IDS: Record<string, string> = {
   '1': 'risk_0001', '2': 'risk_0002', '3': 'risk_0003', '4': 'risk_0004',
 };
@@ -343,9 +338,6 @@ const CertCard = memo(({
     <div
       className={`card cert-card${isSelected ? ' cert-card-selected' : ''}`}
       onClick={() => { onEvidence(cert.cert_id); onDag(cert.cert_id); }}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { onEvidence(cert.cert_id); onDag(cert.cert_id); } }}
     >
       <div className="cert-top">
         <div className="cert-top-row">
@@ -380,7 +372,7 @@ const CertCard = memo(({
       )}
 
       <div className="cert-actions">
-        <span className="cert-click-hint"><FileText size={11} /> 클릭하여 상세 보기</span>
+        <button type="button" className="cert-click-hint" onClick={(e) => { e.stopPropagation(); onEvidence(cert.cert_id); onDag(cert.cert_id); }}><FileText size={11} /> 상세 보기</button>
         <button
           className="text-btn roadmap-btn"
           onClick={(e) => { e.stopPropagation(); onRoadmap(cert.cert_id); }}
@@ -505,7 +497,7 @@ const Recommendation: React.FC = () => {
   }, [showEvidence]);
 
   const riskId    = RISK_IDS[stageParam] ?? '';
-  const riskLabel = RISK_LABEL[stageParam] ?? '';
+  const riskLabel = STAGE_LABELS[stageParam] ?? '';
 
   const filtered = useMemo(() => {
     const base = allCerts.filter(cert => {
@@ -2565,7 +2557,7 @@ const Recommendation: React.FC = () => {
         .no-results-title{font-size:.95rem;font-weight:700;color:var(--text)}
         .no-results-sub{font-size:.85rem;color:var(--text-muted);line-height:1.65}
         .cert-card-selected{border-color:var(--primary)!important;box-shadow:0 0 0 2px rgba(99,102,241,.18),var(--shadow-md)!important;background:#f5f3ff}
-        .cert-click-hint{display:inline-flex;align-items:center;gap:.25rem;font-size:.72rem;color:var(--text-light)}
+        .cert-click-hint{display:inline-flex;align-items:center;gap:.25rem;font-size:.72rem;color:var(--text-light);background:none;border:none;padding:0;cursor:pointer;}
         /* 합격률 게이지 */
         .cert-rate-wrap{display:flex;flex-direction:column;gap:.35rem;padding:.5rem .625rem;background:var(--surface-2);border-radius:var(--radius-xs);border:1px solid var(--border)}
         .cert-rate-header{display:flex;align-items:center;gap:.4rem}
