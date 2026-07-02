@@ -29,7 +29,8 @@ function _clearSurvey() {
 /* ─────────────────────────────────────────────
    기획서 F-01 기반 12문항
    관계망 4 · 활동 2 · 노동경제 2 · 정신건강 3 · 자기관리 1
-   Safety Override: Q11(B12_9) "거의 매일" → 위기 안내
+   Safety Override: Q12(B12_9, 마지막 문항) "일주일 이상" 이상 → 위기 안내
+   민감 문항 부담 완화를 위해 안전 문항을 설문 맨 마지막에 배치한다.
 ───────────────────────────────────────────── */
 
 interface Question {
@@ -132,7 +133,7 @@ const QUESTIONS: Question[] = [
       { label: '매우 부족하고 생계가 어렵다',  score: 4 },
     ],
   },
-  /* ── 정신건강 3문항 ── */
+  /* ── 정신건강 2문항 (안전 문항은 맨 마지막으로 이동 — 아래 참고) ── */
   {
     id: 'B12_1', category: '정신건강',
     text: '지난 2주 동안 기분이 가라앉거나, 우울하거나, 희망이 없다고 느낀 날이 있었나요?',
@@ -153,17 +154,6 @@ const QUESTIONS: Question[] = [
       { label: '거의 매일',      score: 3 },
     ],
   },
-  {
-    id: 'B12_9', category: '정신건강',
-    safetyKey: true,
-    text: '지난 2주 동안 차라리 죽는 게 낫겠다거나 자해하고 싶다는 생각이 든 날이 있었나요?',
-    options: [
-      { label: '전혀 없었다',    score: 0 },
-      { label: '며칠 있었다',    score: 1 },
-      { label: '일주일 이상',    score: 2 },
-      { label: '거의 매일',      score: 3 },
-    ],
-  },
   /* ── 자기관리 1문항 ── */
   {
     id: 'B9_4', category: '자기관리',
@@ -176,7 +166,26 @@ const QUESTIONS: Question[] = [
       { label: '거의 하지 않고 있다',     score: 4 },
     ],
   },
+  /* ── 정신건강 안전 문항 (마지막 배치) ──
+     민감 문항 부담을 줄이기 위해 설문 맨 마지막으로 옮긴다.
+     안전 게이트(인터스티셜)는 이 문항 진입 직전 1회 노출된다. */
+  {
+    id: 'B12_9', category: '정신건강',
+    safetyKey: true,
+    text: '지난 2주 동안 차라리 죽는 게 낫겠다거나 자해하고 싶다는 생각이 든 날이 있었나요?',
+    options: [
+      { label: '전혀 없었다',    score: 0 },
+      { label: '며칠 있었다',    score: 1 },
+      { label: '일주일 이상',    score: 2 },
+      { label: '거의 매일',      score: 3 },
+    ],
+  },
 ];
+
+// 안전 문항 위치를 배열 순서에서 직접 찾는다 — 이후 문항 순서가 다시 바뀌어도
+// 인터스티셜/게이트 로직이 하드코딩된 인덱스에 의존하지 않도록 한다.
+const SAFETY_Q_INDEX = QUESTIONS.findIndex(qq => qq.safetyKey);
+const SAFETY_Q_ID = QUESTIONS[SAFETY_Q_INDEX].id;
 
 const TOTAL_MAX = QUESTIONS.reduce((s, q) => s + Math.max(...q.options.map(o => o.score)), 0);
 
@@ -447,7 +456,13 @@ const RiskAssessment: React.FC = () => {
   const [current, setCurrent] = useState(() => (_loadSurvey()?.current ?? 0));
   const [answers, setAnswers] = useState<Record<string, number>>(() => (_loadSurvey()?.answers ?? {}));
   const [safetyFlag, setSafetyFlag] = useState<boolean>(() => (_loadSurvey()?.safetyFlag ?? false));
-  const [safetyGatePassed, setSafetyGatePassed] = useState(() => ((_loadSurvey()?.current ?? 0) > 10));
+  const [skipped, setSkipped] = useState<Record<string, boolean>>(() => (_loadSurvey()?.skipped ?? {}));
+  const [safetyGatePassed, setSafetyGatePassed] = useState(() => {
+    const s = _loadSurvey();
+    // 이전에 게이트를 통과했다는 사실이 명시적으로 저장돼 있으면 그 값을 우선한다.
+    // (구버전 저장분 등 값이 없을 때만 current 위치로 추정한다 — 새로고침 시 게이트 재노출 방지)
+    return s?.safetyGateSeen ?? ((s?.current ?? 0) > SAFETY_Q_INDEX);
+  });
   const [wasRestored, setWasRestored] = useState(() => {
     const s = _loadSurvey();
     return (s?.current ?? 0) > 0;
@@ -498,12 +513,20 @@ const RiskAssessment: React.FC = () => {
 
   const q = QUESTIONS[current];
   const progress = ((current + 1) / QUESTIONS.length) * 100;
-  const answered = answers[q.id] !== undefined;
+  // 안전 문항을 건너뛴 경우도 "답변 완료"로 간주해 다음/결과 버튼이 막히지 않게 한다.
+  const answered = answers[q.id] !== undefined || !!skipped[q.id];
 
-  function _saveProgress(cur: number, ans: Record<string, number>, sf: boolean) {
+  function _saveProgress(
+    cur: number,
+    ans: Record<string, number>,
+    sf: boolean,
+    gateSeen: boolean = safetyGatePassed,
+    skip: Record<string, boolean> = skipped,
+  ) {
     try {
       localStorage.setItem(SURVEY_KEY, JSON.stringify({
-        current: cur, answers: ans, safetyFlag: sf, savedAt: Date.now(),
+        current: cur, answers: ans, safetyFlag: sf,
+        safetyGateSeen: gateSeen, skipped: skip, savedAt: Date.now(),
       }));
     } catch {}
   }
@@ -513,7 +536,14 @@ const RiskAssessment: React.FC = () => {
     const newSafety  = safetyFlag || (!!q.safetyKey && score >= 2);
     setAnswers(newAnswers);
     if (!safetyFlag && newSafety) setSafetyFlag(true);
-    _saveProgress(current, newAnswers, newSafety);
+    // 이전에 건너뛴 문항에 실제로 답했다면 건너뜀 상태를 해제한다.
+    let newSkipped = skipped;
+    if (skipped[q.id]) {
+      newSkipped = { ...skipped };
+      delete newSkipped[q.id];
+      setSkipped(newSkipped);
+    }
+    _saveProgress(current, newAnswers, newSafety, safetyGatePassed, newSkipped);
   }
 
   function finish() {
@@ -529,6 +559,24 @@ const RiskAssessment: React.FC = () => {
 
   function finishPrecision() {
     setStep('result');
+  }
+
+  // 안전 문항 건너뛰기 — 무응답으로 두고(0점 처리 금지) 안전 플래그를 올린다.
+  // 건너뛴 안전 항목은 "위기 없음"이 아니라 "확인 필요"로 취급한다.
+  // 안전 문항은 설문의 마지막 문항이므로, 건너뛰면 곧바로 결과 산출로 이어진다.
+  // 인터스티셜 버튼과 문항 카드 하단의 건너뛰기 링크가 이 함수를 공용으로 사용한다.
+  function skipSafetyQuestion() {
+    const newAnswers = { ...answers };
+    delete newAnswers[SAFETY_Q_ID];
+    const newSkipped = { ...skipped, [SAFETY_Q_ID]: true };
+    setAnswers(newAnswers);
+    setSkipped(newSkipped);
+    setSafetyFlag(true);
+    setSafetyGatePassed(true);
+    _clearSurvey();
+    const totalScore = QUESTIONS.reduce((s, qq) => s + (newAnswers[qq.id] ?? 0), 0);
+    const pct = totalScore / getEffectiveMax(newAnswers);
+    setStep(pct >= 0.5 ? 'precision' : 'result');
   }
 
   function goNext() {
@@ -745,6 +793,7 @@ const RiskAssessment: React.FC = () => {
           <button className="btn-ghost" onClick={() => {
               _clearSurvey();
               setStep('survey'); setCurrent(0); setAnswers({}); setSafetyFlag(false); setPrecisionAnswers({});
+              setSkipped({}); setSafetyGatePassed(false); setWasRestored(false);
             }}>
             <ArrowLeft size={15} /> 다시 진단
           </button>
@@ -1260,35 +1309,28 @@ const RiskAssessment: React.FC = () => {
           <button type="button" className="survey-restore-reset-btn" onClick={() => {
             _clearSurvey();
             setCurrent(0); setAnswers({}); setSafetyFlag(false); setWasRestored(false);
+            setSkipped({}); setSafetyGatePassed(false);
           }}>처음부터</button>
         </div>
       )}
 
-      {/* 안전 인터스티셜 — B12_9(index 10) 직전 1회 */}
-      {current === 10 && !safetyGatePassed && (
+      {/* 안전 인터스티셜 — 안전 문항(마지막 문항) 진입 직전 1회 노출 */}
+      {current === SAFETY_Q_INDEX && !safetyGatePassed && (
         <div className="safety-gate-card">
           <div className="safety-gate-icon">🤝</div>
-          <p className="safety-gate-title">마지막 두 문항 전에 잠깐요</p>
+          <p className="safety-gate-title">이제 마지막 질문이에요</p>
           <p className="safety-gate-desc">
-            다음 문항에서 심리적으로 힘들었던 경험을 여쭤볼 수 있어요.
+            마지막으로 최근 심리적으로 힘들었던 경험을 여쭤볼게요.
             편하지 않으시면 <strong>건너뛰어도</strong> 자격증 추천에 전혀 지장이 없습니다.
           </p>
           <div className="safety-gate-actions">
-            <button className="btn-primary" onClick={() => setSafetyGatePassed(true)}>
-              괜찮아요, 계속할게요
-            </button>
-            <button className="btn-ghost" onClick={() => {
-              // B12_9 건너뜀 — 무응답으로 두고(0점 처리 금지) 안전 플래그를 올린다.
-              // select()의 safetyFlag 처리와 동일한 패턴: 건너뛴 안전 항목은
-              // "위기 없음"이 아니라 "확인 필요"로 취급한다.
-              const newAnswers = { ...answers };
-              delete newAnswers.B12_9;
-              setAnswers(newAnswers);
-              if (!safetyFlag) setSafetyFlag(true);
+            <button className="btn-primary" onClick={() => {
               setSafetyGatePassed(true);
-              _saveProgress(11, newAnswers, true);
-              setCurrent(11);
+              _saveProgress(current, answers, safetyFlag, true, skipped);
             }}>
+              괜찮아요, 답할게요
+            </button>
+            <button className="btn-ghost" onClick={skipSafetyQuestion}>
               이 문항은 건너뛸게요
             </button>
           </div>
@@ -1296,7 +1338,7 @@ const RiskAssessment: React.FC = () => {
       )}
 
       {/* Progress */}
-      <div className="survey-progress-wrap" style={current === 10 && !safetyGatePassed ? { display: 'none' } : {}}>
+      <div className="survey-progress-wrap" style={current === SAFETY_Q_INDEX && !safetyGatePassed ? { display: 'none' } : {}}>
         <div className="survey-progress-info">
           <span className="survey-q-num">{current + 1} / {QUESTIONS.length}</span>
           <span className="survey-cat-badge" style={{ background: (CATEGORY_COLORS[q.category] ?? '#6366f1') + '18', color: CATEGORY_COLORS[q.category] ?? '#6366f1' }}>
@@ -1309,7 +1351,7 @@ const RiskAssessment: React.FC = () => {
       </div>
 
       {/* Question card — 인터스티셜 중엔 숨김 */}
-      {(current !== 10 || safetyGatePassed) && (
+      {(current !== SAFETY_Q_INDEX || safetyGatePassed) && (
         <div className="card survey-card" key={current}>
           {q.safetyKey && (
             <div className="safety-notice">
@@ -1365,11 +1407,17 @@ const RiskAssessment: React.FC = () => {
               );
             })}
           </div>
+
+          {q.safetyKey && (
+            <button type="button" className="survey-skip-link" onClick={skipSafetyQuestion}>
+              {skipped[q.id] ? '건너뛴 질문이에요 · 다시 건너뛸게요' : '답변하지 않고 넘어갈게요'}
+            </button>
+          )}
         </div>
       )}
 
       {/* Navigation — 인터스티셜 중엔 숨김 */}
-      {(current !== 10 || safetyGatePassed) && (
+      {(current !== SAFETY_Q_INDEX || safetyGatePassed) && (
         <div className="survey-nav">
           <button className="btn-ghost" onClick={goPrev} disabled={current === 0}>
             <ArrowLeft size={15} /> 이전
@@ -1435,6 +1483,12 @@ const RiskAssessment: React.FC = () => {
           box-shadow:0 2px 12px var(--primary-glow);
         }
         .survey-opt-radio { font-size:.9rem; flex-shrink:0; }
+        .survey-skip-link {
+          align-self:center; background:none; border:none;
+          font-size:.8rem; font-weight:600; color:var(--text-muted);
+          text-decoration:underline; cursor:pointer; padding:.35rem; min-height:44px;
+        }
+        .survey-skip-link:hover { color:var(--text); }
         .survey-nav {
           display:flex; gap:.75rem; align-items:center; justify-content:space-between;
         }
