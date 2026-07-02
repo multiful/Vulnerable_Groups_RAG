@@ -248,41 +248,6 @@ const Home: React.FC = () => {
       </div>
     </section>
 
-    {/* 추천 결과 티저 */}
-    <section className="today-section">
-      <div className="today-inner">
-        <div className="today-left">
-          <div className="today-badge">맞춤 자격증 추천</div>
-          <h3 className="today-title">내 상황과 관심 분야에 맞는<br/>자격증 로드맵을 찾아드립니다</h3>
-          <p className="today-desc">
-            12문항으로 지금 내 상황을 파악하고, 관심 분야를 선택하면<br/>
-            지금 도전할 수 있는 자격증과 단계별 로드맵을 추천합니다.
-          </p>
-          <Link to="/risk-assessment" className="btn-primary today-btn">지금 시작하기 <ArrowRight size={16}/></Link>
-        </div>
-        <div className="today-right">
-          <div className="today-example-card">
-            <span className="today-ex-label">추천 결과 예시</span>
-            <div className="today-ex-stage-row">
-              <span className="today-ex-stage">활동 제한형</span>
-              <span className="today-ex-sep">·</span>
-              <span className="today-ex-domain">기계/제조</span>
-            </div>
-            <div className="today-ex-cert-row">
-              <div className="today-ex-cert-info">
-                <p className="today-ex-cert-name">용접기능사</p>
-                <p className="today-ex-cert-sub">연 2회 시험 · 합격률 49%</p>
-              </div>
-            </div>
-            <div className="today-ex-actions-row">
-              <span className="today-ex-action-chip">로드맵 보기</span>
-              <span className="today-ex-action-chip">추천 이유 보기</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
 
     {showSticky && (
       <div className="sticky-cta-wrap">
