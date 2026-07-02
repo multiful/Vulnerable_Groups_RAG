@@ -299,7 +299,9 @@ const InterestSelection: React.FC = () => {
   const [majorInput, setMajorInput] = useState(pSession.major ?? '');
   const [searchQuery, setSearchQuery] = useState('');
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
-    const preopen = stage ? (STAGE_PREOPEN[stage] ?? ['IT/디지털']) : ['IT/디지털'];
+    // stage(위험군 단계)가 있으면 해당 단계에 맞춰 사전 검증된 관련 분야를 펼쳐서 보여준다(STAGE_PREOPEN, 의도된 로직).
+    // stage가 없는 첫 방문자는 사전 선택 근거가 없으므로 전부 접힌 상태로 시작한다.
+    const preopen = stage ? (STAGE_PREOPEN[stage] ?? []) : [];
     return Object.fromEntries(preopen.map(g => [g, true]));
   });
   const [openJobGroups, setOpenJobGroups] = useState<Record<string, boolean>>({});

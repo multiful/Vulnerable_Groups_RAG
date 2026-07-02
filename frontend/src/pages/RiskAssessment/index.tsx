@@ -474,9 +474,9 @@ const RiskAssessment: React.FC = () => {
   const [evidenceSynthesis, setEvidenceSynthesis] = useState<string | null>(null);
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [showEvidenceSources, setShowEvidenceSources] = useState(false);
-  const [showDetail, setShowDetail] = useState(false);
+  const [showDetail, setShowDetail] = useState(true);
   const [showPrograms, setShowPrograms] = useState(false);
-  const [showPolicyCard, setShowPolicyCard] = useState(false);
+  const [showEvidenceDetail, setShowEvidenceDetail] = useState(false);
 
   useEffect(() => {
     if (step !== 'result') return;
@@ -667,7 +667,7 @@ const RiskAssessment: React.FC = () => {
         </p>
         <div className="page-header">
           <h1 className="page-title">{STAGE_INTRO[stage]?.headline ?? '자격증 추천을 준비했어요'}</h1>
-          <p className="page-desc">{STAGE_INTRO[stage]?.sub ?? '지금 상황에서 도전할 수 있는 자격증들을 찾았습니다.'}</p>
+          <p className="page-desc" style={{ marginBottom: '1.5rem' }}>{STAGE_INTRO[stage]?.sub ?? '지금 상황에서 도전할 수 있는 자격증들을 찾았습니다.'}</p>
         </div>
 
         <div className="card result-card">
@@ -789,7 +789,7 @@ const RiskAssessment: React.FC = () => {
         </div>
 
         {/* ── Primary CTA ── */}
-        <div className="result-actions">
+        <div className="result-actions" style={{ marginTop: '1.5rem' }}>
           <button className="btn-ghost" onClick={() => {
               _clearSurvey();
               setStep('survey'); setCurrent(0); setAnswers({}); setSafetyFlag(false); setPrecisionAnswers({});
@@ -810,7 +810,7 @@ const RiskAssessment: React.FC = () => {
         </div>
 
         {safetyFlag && (
-          <div className="safety-banner">
+          <div className="safety-banner" style={{ marginTop: '1.5rem' }}>
             <div className="safety-banner-icon"><Phone size={17} /></div>
             <div className="safety-banner-body">
               <p className="safety-title">지금 많이 힘드신 분을 위해</p>
@@ -820,24 +820,85 @@ const RiskAssessment: React.FC = () => {
           </div>
         )}
 
-        {/* ── 내 상황 분석 카드 (접힘) ── */}
-        <div style={{ display:'flex', justifyContent:'center', marginTop:'.5rem' }}>
-          <button
-            className="policy-card-toggle"
-            type="button"
-            onClick={() => setShowPolicyCard(v => !v)}
-            aria-expanded={showPolicyCard}
-          >
-            <span aria-hidden="true">{showPolicyCard ? '▲' : '▼'}</span>{' '}
-            {showPolicyCard ? '내 상황 분석 접기' : '내 상황 분석 · 지원 제도 보기'}
-          </button>
-        </div>
-
-        {showPolicyCard && (() => {
+        {/* ── 추천 지원 제도 (항상 노출) + 연구근거 (토글) ── */}
+        {(() => {
           const policy = STAGE_POLICY[stage];
           if (!policy) return null;
           return (
-            <div className="policy-card">
+            <div className="policy-card" style={{ marginTop: '1.5rem' }}>
+              {/* 추천 지원 프로그램 — 항상 노출, 내부 목록은 자체 접힘 유지 */}
+              <button
+                className="policy-programs-toggle"
+                type="button"
+                onClick={() => setShowPrograms(v => !v)}
+                aria-expanded={showPrograms}
+              >
+                <span>추천 지원 제도</span>
+                <span className="policy-programs-toggle-arrow" aria-hidden="true">{showPrograms ? '▲' : '▼'}</span>
+              </button>
+
+              {showPrograms && (
+              <div className="policy-programs">
+                {policy.programs.map((prog, pi) => (
+                  <div key={pi} className="policy-prog-group">
+                    <div className="policy-prog-category">
+                      <span className="policy-prog-cat-name">{prog.category}</span>
+                      <span className="policy-prog-cat-desc">{prog.categoryDesc}</span>
+                    </div>
+                    <ul className="policy-prog-items">
+                      {prog.items.map((item, ii) => (
+                        <li key={ii} className="policy-prog-item">
+                          {item.url ? (
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="policy-prog-link"
+                            >
+                              {item.text}
+                              <span className="policy-prog-link-arrow">→</span>
+                            </a>
+                          ) : (
+                            item.text
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              )}
+
+              {/* 위기 단계 추가 안내 */}
+              {(stage === '3' || stage === '4') && (
+                <div className="policy-crisis-note">
+                  <p className="policy-crisis-text">
+                    지금 혼자 감당하기 어려우신 상황이라면, 아래 연락처로 연결하실 수 있습니다.
+                  </p>
+                  <div className="policy-crisis-links">
+                    <a href="https://www.suicide.or.kr/m/index.php" target="_blank" rel="noopener noreferrer" className="policy-crisis-link">
+                      1393 자살예방상담전화
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              <div className="policy-divider" />
+
+              {/* 연구근거 토글 — 출처 헤더 + 지금 내 상황 + 지원 전략 */}
+              <div style={{ display:'flex', justifyContent:'center', padding:'.75rem 0' }}>
+                <button
+                  className="policy-card-toggle"
+                  type="button"
+                  onClick={() => setShowEvidenceDetail(v => !v)}
+                  aria-expanded={showEvidenceDetail}
+                >
+                  <span aria-hidden="true">{showEvidenceDetail ? '▲' : '▼'}</span>{' '}
+                  {showEvidenceDetail ? '연구근거 접기' : '연구근거 보기'}
+                </button>
+              </div>
+
+              {showEvidenceDetail && (<>
               {/* 출처 헤더 */}
               <div className="policy-source">
                 <span className="policy-source-badge">연구 근거</span>
@@ -903,65 +964,7 @@ const RiskAssessment: React.FC = () => {
                   )}
                 </div>
               )}
-
-              <div className="policy-divider" />
-
-              {/* 추천 지원 프로그램 — 접힘 */}
-              <button
-                className="policy-programs-toggle"
-                type="button"
-                onClick={() => setShowPrograms(v => !v)}
-                aria-expanded={showPrograms}
-              >
-                <span>추천 지원 제도</span>
-                <span className="policy-programs-toggle-arrow" aria-hidden="true">{showPrograms ? '▲' : '▼'}</span>
-              </button>
-
-              {showPrograms && (
-              <div className="policy-programs">
-                {policy.programs.map((prog, pi) => (
-                  <div key={pi} className="policy-prog-group">
-                    <div className="policy-prog-category">
-                      <span className="policy-prog-cat-name">{prog.category}</span>
-                      <span className="policy-prog-cat-desc">{prog.categoryDesc}</span>
-                    </div>
-                    <ul className="policy-prog-items">
-                      {prog.items.map((item, ii) => (
-                        <li key={ii} className="policy-prog-item">
-                          {item.url ? (
-                            <a
-                              href={item.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="policy-prog-link"
-                            >
-                              {item.text}
-                              <span className="policy-prog-link-arrow">→</span>
-                            </a>
-                          ) : (
-                            item.text
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-              )}
-
-              {/* 위기 단계 추가 안내 */}
-              {(stage === '3' || stage === '4') && (
-                <div className="policy-crisis-note">
-                  <p className="policy-crisis-text">
-                    지금 혼자 감당하기 어려우신 상황이라면, 아래 연락처로 연결하실 수 있습니다.
-                  </p>
-                  <div className="policy-crisis-links">
-                    <a href="https://www.suicide.or.kr/m/index.php" target="_blank" rel="noopener noreferrer" className="policy-crisis-link">
-                      1393 자살예방상담전화
-                    </a>
-                  </div>
-                </div>
-              )}
+              </>)}
             </div>
           );
         })()}
@@ -1224,10 +1227,10 @@ const RiskAssessment: React.FC = () => {
       <div className="survey-wrap">
         <div className="page-header">
           <h1 className="page-title">거의 다 됐어요!</h1>
-          <p className="page-desc">비슷한 상황이 여럿 있어서, 딱 맞는 추천을 드리려면 3가지만 더 확인할게요. 1분도 안 걸립니다.</p>
+          <p className="page-desc" style={{ marginBottom: '1.5rem' }}>비슷한 상황이 여럿 있어서, 딱 맞는 추천을 드리려면 3가지만 더 확인할게요.</p>
         </div>
 
-        <div className="precision-note">
+        <div className="precision-note" style={{ marginBottom: '1.5rem' }}>
           <span className="precision-note-badge">연구 근거</span>
           <span className="precision-note-text">서울시 고립은둔청년 실태조사(2023, N=5,513) 실측값 기반</span>
         </div>
@@ -1287,8 +1290,11 @@ const RiskAssessment: React.FC = () => {
             background: var(--primary-light); padding: .15rem .5rem;
             border-radius: var(--radius-full);
           }
-          .precision-q-card { padding: 1.25rem; display: flex; flex-direction: column; gap: .875rem; }
+          .precision-q-card { padding: 1.25rem; display: flex; flex-direction: column; gap: .875rem; margin-bottom: 1.5rem; }
+          .precision-q-card:last-of-type { margin-bottom: 0; }
           .precision-q-num { font-size: .75rem; font-weight: 700; color: var(--text-muted); margin: 0; }
+          .precision-q-card .survey-options { gap: 12px; }
+          .survey-nav { gap: .75rem; }
         `}</style>
       </div>
     );
