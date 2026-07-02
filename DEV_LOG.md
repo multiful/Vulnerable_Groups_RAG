@@ -2,7 +2,7 @@
 
 > **파일명**: DEV_LOG.md  
 > **최종 수정일**: 2026-07-02  
-> **문서 해시**: SHA256:3b257bcaf91ca285a622ecf6ed476a6f0f58d2497c45acdb67d6bb9bc6c2cb4c
+> **문서 해시**: SHA256:fe2f1d81835ac809d5274f913e33e92e6a105694889596fba5dcc68f6bdc9666
 > **문서 역할**: 날짜별 진행 로그, 변경 요약, 해결 이력  
 > **문서 우선순위**: 14  
 > **연관 문서**: CHANGE_CONTROL.md, PRD.md, DIRECTORY_SPEC.md, ERROR_ANALYSIS.md  
@@ -13,6 +13,74 @@
 ## 1. 문서 목적
 
 구현과 문서 정렬 작업의 **타임라인**을 남겨, 이후 기여자가 맥락을 잃지 않게 한다.
+
+---
+
+## 2026-07-02 (10) — RiskAssessment 2라운드 코스메틱 UI 수정 + 결과 화면 구조 변경
+
+### 배경
+사용자가 실행 화면을 재검토해 추가 결함을 보고: (1) 2차 정밀 판별 화면의 문구·박스·문항 카드·버튼 간 간격 부족, (2) 결과 화면 상단 부제와 흰 박스 사이 간격 부족, (3) 방사형 차트 상세 분석이 기본 접힘 상태, (4) 결과 화면 하단에서 "추천 지원 제도"가 "내 상황 분석" 토글 뒤에 숨겨져 있어 실제 지원 제도 정보 접근성이 낮음. 전부 정책·채점·카피 변경이 아닌 순수 스타일·상태초기화·렌더 순서 조정이라 루트 문서(PRD.md 등)는 갱신 대상이 아님.
+
+### 수행
+
+**[Fix 1] 2차 정밀 판별 화면 간격 보강 (`frontend/src/pages/RiskAssessment/index.tsx`)**
+- 부제(`page-desc`)에 `marginBottom: '1.5rem'` 인라인 스타일 추가 — 아래 `연구 근거` 박스와의 간격 확보.
+- `.precision-note`(연구 근거 박스)에 동일하게 `marginBottom: '1.5rem'` 추가 — 첫 `추가 1/3` 카드와의 간격 확보. 기존 `1.5rem` 갭 스케일 재사용, 새 값 없음.
+- `.precision-q-card .survey-options`에 `gap: 12px` 추가 — 메인 12문항 화면의 `.survey-options`(`gap:.5rem`, 세로 스택)와 달리 정밀 판별 화면은 자체 `<style>` 블록에 해당 규칙이 없어 옵션 버튼이 완전히 붙어 있던 결함. 메인 화면 값(`.5rem` ≈ 8px)과 사용자 지정값(12px)이 달라 지시대로 12px 사용.
+- `.survey-nav`(이전 문항으로 / 결과 보기 버튼 그룹)에 `gap: .75rem` 명시 추가 — 메인 설문 화면 스타일 블록의 동일 규칙과 같은 값 재사용.
+
+**[Fix 2] 결과 화면 상단 간격 (`frontend/src/pages/RiskAssessment/index.tsx`)**
+- 결과 화면 부제(`page-desc`)에 `marginBottom: '1.5rem'` 인라인 스타일 추가 — 아래 흰색 `result-card` 박스와의 간격 확보. `.page-desc`의 기존 전역 규칙은 `margin-top`만 정의해 충돌 없음.
+
+**[Fix 3] 상세 분석 기본 펼침 (`frontend/src/pages/RiskAssessment/index.tsx`)**
+- `showDetail` 상태 조사 결과 방사형 차트+차원 막대 토글 단일 용도로만 쓰임(다른 부수 효과 없음) 확인.
+- `useState(false)` → `useState(true)`로 변경 — 페이지 진입 시 상세 분석이 기본 노출되고, 접기 옵션은 그대로 유지.
+
+**[Fix 4] 결과 화면 하단 섹션 재구성 (`frontend/src/pages/RiskAssessment/index.tsx`)**
+- 기존 구조: `내 상황 분석 · 지원 제도 보기` 단일 외부 토글(`showPolicyCard`)이 `연구 근거` 출처 + `지금 내 상황`/`지원 전략` + `추천 지원 제도`(자체 내부 토글 `showPrograms` 보유) 전체를 함께 접고 있었음 — 실제 지원 제도 목록이 두 겹 토글 뒤에 숨어 있었음.
+- `추천 지원 제도` 섹션을 외부 게이트에서 빼내 항상 렌더링되도록 변경. 내부 목록 렌더링 로직(`showPrograms` 토글, `policy.programs.map` 등)은 그대로 유지.
+- `연구 근거` 출처 헤더 + `지금 내 상황` 설명 + `지원 전략` 배지를 `추천 지원 제도` 아래로 이동하고, 새 토글로 감쌈. 라벨은 접힘 시 "연구근거 보기", 펼침 시 "연구근거 접기".
+- 위기 단계(3·4단계) 안내(1393 링크 포함)는 `추천 지원 제도` 바로 아래, 새 토글 바깥에 위치시켜 항상 노출 유지 — 안전 관련 콘텐츠 노출 범위는 축소하지 않음.
+- **상태 변수 처리**: 기존 `showPolicyCard`/`setShowPolicyCard`를 새 용도에 맞게 `showEvidenceDetail`/`setShowEvidenceDetail`로 이름만 변경해 재사용(가장 작은 diff). 이 상태는 원래도 이 외부 게이트 하나에만 쓰였고 다른 부수 효과가 없어, 새 상태 변수를 추가하는 대신 그대로 좁은 용도로 전환. 토글 버튼의 CSS 클래스(`policy-card-toggle`)는 기존 것을 그대로 재사용 — 새 클래스 없음.
+- 카피·색상·1393 핫라인 문구(`1393 자살예방상담전화`)는 변경하지 않음 (범위 외).
+
+### 검증
+- `npx tsc --noEmit` (frontend/) 통과, 출력 없음(에러 없음).
+
+### 범위 확인
+- 채점 로직, taxonomy, API 계약, 안전 배너/핫라인 문구는 변경하지 않음.
+- 변경 파일: `frontend/src/pages/RiskAssessment/index.tsx` 단일 파일.
+- 파일 추가/삭제 없어 `FOLDER.md` 갱신 대상 아님 (`frontend/src/pages/RiskAssessment/FOLDER.md` 확인, 용도·파일 목록 변경 없음).
+
+---
+
+## 2026-07-02 (9) — RiskAssessment/InterestSelection 코스메틱 UI 수정 3건
+
+### 배경
+사용자가 실행 화면 스크린샷을 근거로 코스메틱 결함 3건을 보고: (1) 2차 정밀 판별 화면 문구·카드 간격, (2) 결과 화면 카드 간 간격 과밀, (3) 관심 분야 아코디언 기본 펼침 상태 불일치. 셋 다 정책·구조 변경이 아닌 순수 프론트엔드 카피/CSS/상태초기화 수준이라 루트 문서(PRD.md 등)는 갱신 대상이 아님.
+
+### 수행
+
+**[Fix 1] 2차 정밀 판별 화면 (`frontend/src/pages/RiskAssessment/index.tsx`)**
+- 부제 문구에서 "1분도 안 걸립니다." 트레일링 문장 제거 (`page-desc`).
+- `.precision-q-card`에 `margin-bottom: 1.5rem`(및 마지막 카드 예외 처리)을 명시 추가 — `.survey-wrap`이 이미 쓰는 `1.5rem` 갭 스케일을 그대로 재사용, 새 값 발명 없음.
+
+**[Fix 2] 결과 화면 카드 간 간격 (`frontend/src/pages/RiskAssessment/index.tsx`)**
+- `.result-actions`(버튼 그룹), `.safety-banner`(1393 안내), 정책 토글 래퍼 div에 각각 `marginTop: '1.5rem'` 인라인 스타일 추가 — 동일하게 `.survey-wrap`/`.result-card` 갭 스케일(`1.5rem`)을 재사용. 정책 토글 래퍼의 기존 `marginTop: '.5rem'`은 `1.5rem`으로 통일.
+- 카피·색상·1393 핫라인 문구는 손대지 않음 (범위 외).
+
+**[Fix 3] InterestSelection 아코디언 기본 펼침 상태 (`frontend/src/pages/InterestSelection/index.tsx`)**
+- 조사 결과: `STAGE_PREOPEN`은 위험군 단계(stage)에 따라 관련 도메인 그룹을 미리 펼쳐 보여주는 의도된 로직으로, 그대로 유지.
+- 문제는 `stage`가 없는 경우(첫 방문·이전 선택 없음)의 폴백이 `['IT/디지털']`로 하드코딩되어 있던 것 — 사전 선택 근거 없이 임의로 한 그룹만 열려 있어 "일부는 열리고 일부는 닫힌" 비일관 인상을 준 원인. 폴백을 `[]`(전부 닫힘)로 변경.
+- 토글 클릭 동작(`toggleGroup`)은 변경하지 않음.
+
+### 검증
+- `npx tsc --noEmit` (frontend/) 통과, 출력 없음(에러 없음).
+
+### 범위 확인
+- 채점 로직, taxonomy, API 계약, 문구/색상/핫라인 콘텐츠는 변경하지 않음.
+- 변경 파일: `frontend/src/pages/RiskAssessment/index.tsx`, `frontend/src/pages/InterestSelection/index.tsx` 2개.
+- 파일 추가/삭제 없어 `FOLDER.md` 갱신 대상 아님 (`frontend/src/pages/RiskAssessment/FOLDER.md` 확인, `InterestSelection`에는 `FOLDER.md` 없음).
 
 ---
 
