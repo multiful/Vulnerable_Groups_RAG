@@ -2,7 +2,7 @@
 
 > **파일명**: FEATURE_SPEC.md  
 > **최종 수정일**: 2026-07-02 (F-32 자격증·진로 Q&A 챗봇 문서화 추가)  
-> **문서 해시**: SHA256:55e477efda5ea3ce127584729dfda2f6304a8fd08a877111ed195cc336a332b9
+> **문서 해시**: SHA256:c42f3f335745fdfee1d0be2b13f65ba22b780ef90f713813ae881816ae364dfa
 > **문서 역할**: 기능별 입력, 출력, 처리 규칙, 예외, 상태 정의 문서  
 > **문서 우선순위**: 4  
 > **연관 문서**: PRD.md, SYSTEM_ARCHITECTURE.md, API_SPEC.md, DATA_SCHEMA.md, RAG_PIPELINE.md  

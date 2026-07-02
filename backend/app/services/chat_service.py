@@ -1,6 +1,6 @@
 # File: chat_service.py
 # Last Updated: 2026-07-02
-# Content Hash: SHA256:125fbcbb2847a551d9d4d7eeae0549e37f34302f0061696872b7f78a9ec15ab0
+# Content Hash: SHA256:6128d01114cfeb8aeaa7d43f9c6deaa9c3bfdd2102efc3cd9dbb8e1244c59153
 # Role: 청년 진로 상담 에이전트 — RAG 기반 Q&A (GPT-4o-mini + evidence retrieval + 자체 검증 재생성)
 from __future__ import annotations
 
