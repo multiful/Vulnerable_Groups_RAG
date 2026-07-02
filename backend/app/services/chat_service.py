@@ -1,6 +1,6 @@
 # File: chat_service.py
 # Last Updated: 2026-07-02
-# Content Hash: SHA256:6128d01114cfeb8aeaa7d43f9c6deaa9c3bfdd2102efc3cd9dbb8e1244c59153
+# Content Hash: SHA256:ce355d98527fa9720d8f459be8d5869d2ca30f8cf39cab6093a57b86c99e7ccd
 # Role: 청년 진로 상담 에이전트 — RAG 기반 Q&A (GPT-4o-mini + evidence retrieval + 자체 검증 재생성)
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import logging
 import re
 import time
 from typing import Any
+from urllib.parse import urlparse
 
 from backend.app.core.config import Settings
 from backend.app.schemas.envelope import err_envelope, ok_envelope
@@ -32,6 +33,13 @@ _ALLOWED_LINK_DOMAINS = (
 )
 
 
+def _is_allowed_link_domain(url: str) -> bool:
+    """호스트명 기준 정확 매칭(또는 서브도메인)만 허용 — 부분 문자열 매칭 시
+    'work24.go.kr.evil.com' 같은 위장 도메인을 허용 링크로 오판하는 것을 방지."""
+    host = (urlparse(url).hostname or "").lower()
+    return any(host == d or host.endswith(f".{d}") for d in _ALLOWED_LINK_DOMAINS)
+
+
 def _self_evaluate_reply(reply: str, has_evidence: bool) -> dict[str, Any]:
     """생성된 답변에서 미연동 일정·미근거 수치·미확인 링크를 휴리스틱으로 감지한다."""
     issues: list[str] = []
@@ -40,7 +48,7 @@ def _self_evaluate_reply(reply: str, has_evidence: bool) -> dict[str, Any]:
     if not has_evidence and _PASS_RATE_RE.search(reply):
         issues.append("근거 없이 %(합격률·수치) 언급 감지 — evidence가 없으면 수치를 발명하면 안 됨")
     for url in _LINK_RE.findall(reply):
-        if not any(domain in url for domain in _ALLOWED_LINK_DOMAINS):
+        if not _is_allowed_link_domain(url):
             issues.append(f"공식 도메인 목록 밖의 링크 감지: {url}")
     return {"issues": issues, "pass": len(issues) == 0}
 

@@ -2,7 +2,7 @@
 
 > **파일명**: DEV_LOG.md  
 > **최종 수정일**: 2026-07-02  
-> **문서 해시**: SHA256:39bc09d5838a609b1ed0f4e80a1f2d5eb691ca869bcf121b3a4b4f77b674884d
+> **문서 해시**: SHA256:4d15548b1d243120747f219262ed70f10c07117c604d030718bd3b5a225dd09c
 > **문서 역할**: 날짜별 진행 로그, 변경 요약, 해결 이력  
 > **문서 우선순위**: 14  
 > **연관 문서**: CHANGE_CONTROL.md, PRD.md, DIRECTORY_SPEC.md, ERROR_ANALYSIS.md  
@@ -13,6 +13,31 @@
 ## 1. 문서 목적
 
 구현과 문서 정렬 작업의 **타임라인**을 남겨, 이후 기여자가 맥락을 잃지 않게 한다.
+
+---
+
+## 2026-07-02 (4) — 이탈 방지 UX 점검(변경 없음) + 자체 피드백 점검(링크 화이트리스트 보강)
+
+### 수행
+
+**🟢 이탈 방지 UX 점검 — Roadmap / Recommendation / InterestSelection**
+"최고 성능으로 고도화" 3번째 트랙(이탈 방지 UX 확장)을 진행하며 세 페이지의 모든 fetch 경로(Roadmap 7곳, Recommendation 12곳)를 점검. 가설(다른 페이지들엔 IsolationDashboard 수준의 폴백이 부족할 것)과 달리, **이미 전 구간에 일관된 패턴이 적용되어 있음을 확인**:
+- Roadmap 메인 로드: DB 우선(5초 timeout) → 실패 시 `buildLocalRoadmap` 로컬 폴백 → 그것도 실패해야만 에러 표시
+- Recommendation 메인 리스트: 정적 JSON(`/data/cert_candidates.json`, 백엔드 무의존) 로드 + 실패 시 재시도 버튼
+- 두 페이지의 보조 fetch(evidence·DAG·videos·exam·training 등 약 15개 함수) 전부 성공/실패/abort 각 분기에서 loading 상태를 명시적으로 해제 — 스피너가 멈추지 않는 경우 없음
+- InterestSelection은 네트워크 호출이 전혀 없는 순수 클라이언트 상태 페이지라 애초에 이탈 위험 없음
+- **결론: 코드 변경 없음.** 불필요한 변경을 만들지 않고 점검 결과만 기록.
+
+**🟡 자체 피드백 점검 (chat_service.py)**
+지시에 따라 이번 세션 변경분을 스스로 재검토. `_self_evaluate_reply`의 링크 화이트리스트 검사가 `domain in url` 부분 문자열 매칭이라 `work24.go.kr.evil.com` 같은 스푸핑 도메인을 허용 링크로 오판할 수 있는 결함 발견.
+- `_is_allowed_link_domain()`으로 교체: `urllib.parse.urlparse`로 실제 hostname을 추출해 정확 일치 또는 서브도메인(`endswith(".domain")`)만 허용
+- 6개 케이스(정상 서브도메인/apex, 스푸핑 도메인 2종, 정상 사례, 비허용 도메인)로 검증 완료, 이전 로직이 통과시켰을 스푸핑 케이스가 정확히 차단됨을 확인
+
+### 부가 검증 (교차 확인)
+`llm_cert_relevance_service._pass_rate_to_difficulty_score()`(합격률 → 0~100 난이도, `100-rate` 선형)를 `llm_roadmap_service._passrate_to_difficulty()`(합격률 → 1~5 난이도 계단함수)와 경계값 기준으로 비교 — 두 함수가 서로 다른 스케일임에도 경계값(70%→30/30, 50%→50/50, 30%→70/70)이 거의 일치해 그라운딩 공식이 기존 코드베이스 관행과 합리적으로 정합함을 재확인.
+
+### 남은 트랙
+- 응답 속도/비용 최적화, 프로덕션 배포 완성은 아직 미착수.
 
 ---
 
