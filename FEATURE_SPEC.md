@@ -1296,7 +1296,7 @@ Work24 callOpenApiSvcInfo312L01 API를 통해 국가인적자원개발 컨소시
 
 #### 핵심 설계 원칙 (자체 검증 가드레일)
 - `_retrieve_evidence` / `_retrieve_stage_evidence`로 cert_id·stage_id 기반 evidence snippet을 조회해 시스템 프롬프트에 주입한다. evidence가 없으면 프롬프트에 근거 섹션을 포함하지 않는다.
-- 답변 생성 후 `_self_evaluate_reply`가 휴리스틱으로 재검증한다: (1) 구체적 날짜(연/월/일) 언급, (2) evidence 없이 등장한 %(합격률·수치), (3) 허용 도메인 목록 밖의 링크.
+- 답변 생성 후 `_self_evaluate_reply`가 휴리스틱으로 재검증한다: (1) 구체적 날짜(연/월/일) 언급, (2) evidence 없이 "합격률/통과율" 문맥으로 등장한 % 수치, (3) 허용 도메인 목록 밖의 링크. (2)는 "합격/통과" 문맥에 인접한 %만 감지해 시스템 프롬프트에 이미 있는 정책 수치(훈련비 지원 45~85% 등)를 오탐하지 않는다.
 - 문제가 감지되면 문제 목록을 모델에 전달해 **1회 재생성**한다(`llm_roadmap_service._self_evaluate`와 동일한 self-refine 패턴). 재생성 실패 시 원본 답변을 그대로 반환한다.
 - 응답에 `eval.issues`, `eval.refined`를 포함해 재검증 이력을 노출한다.
 
