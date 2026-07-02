@@ -274,10 +274,17 @@ function isMismatch(domainId: string | null, jobId: string | null): boolean {
 }
 
 const RISK_STAGE_LABELS: Record<string, string> = {
-  '1': '1단계 (고립위험청년)',
-  '2': '2단계 (활동형 고립청년)',
-  '3': '3단계 (활동 제한형 고립청년)',
-  '4': '4단계 (은둔 청년)',
+  '1': '관계나 활동에서 살짝 어려움이 있는 상황',
+  '2': '사회 안착을 반복 시도 중인 상황',
+  '3': '사회활동이 다소 제한된 상황',
+  '4': '지금 집에서 혼자 있는 시간이 많은 상황',
+};
+
+const STAGE_PREOPEN: Record<string, string[]> = {
+  '1': ['IT/디지털', '경영/비즈니스'],
+  '2': ['IT/디지털', '크리에이티브/미디어', '경영/비즈니스'],
+  '3': ['크리에이티브/미디어', '교육/생활서비스', 'IT/디지털'],
+  '4': ['크리에이티브/미디어', '교육/생활서비스', '1차산업/자원'],
 };
 
 const InterestSelection: React.FC = () => {
@@ -290,7 +297,11 @@ const InterestSelection: React.FC = () => {
   const [selectedDomain, setSelectedDomain] = useState<DomainItem | null>(null);
   const [selectedJob, setSelectedJob] = useState<JobItem | null>(null);
   const [majorInput, setMajorInput] = useState(pSession.major ?? '');
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ 'IT/디지털': true });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    const preopen = stage ? (STAGE_PREOPEN[stage] ?? ['IT/디지털']) : ['IT/디지털'];
+    return Object.fromEntries(preopen.map(g => [g, true]));
+  });
   const [openJobGroups, setOpenJobGroups] = useState<Record<string, boolean>>({});
   const [jobSectionOpen, setJobSectionOpen] = useState(false);
 
@@ -351,7 +362,7 @@ const InterestSelection: React.FC = () => {
         <h1 className="page-title">관심 분야 선택</h1>
         <p className="page-desc">
           {stageLabel
-            ? <><strong style={{ color: 'var(--primary)' }}>{stageLabel}</strong> 기준으로 어떤 분야에 관심이 있나요?</>
+            ? <><strong style={{ color: 'var(--primary)' }}>{stageLabel}</strong>에서 관심 있는 분야가 있나요?</>
             : '어떤 분야에 관심이 있나요?'}
         </p>
       </div>
@@ -383,19 +394,39 @@ const InterestSelection: React.FC = () => {
         <span className="section-required">필수</span>
       </div>
 
+      {/* 분야 검색 */}
+      <div className="domain-search-wrap">
+        <input
+          type="search"
+          className="domain-search-input"
+          placeholder="분야 이름으로 검색 (예: 디자인, 간호, 회계…)"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          aria-label="관심 분야 검색"
+        />
+      </div>
+
       {/* "잘 모르겠어요" 탈출구 */}
-      {!selectedDomain && (
+      {!selectedDomain && !searchQuery && (
         <div className="skip-domain-card">
           <span className="skip-domain-text">어떤 분야가 맞는지 잘 모르겠어요</span>
-          <button className="skip-domain-btn" type="button" onClick={handleSkipDomain}>
-            일단 전체 추천 보기 →
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '.2rem' }}>
+            <button className="skip-domain-btn" type="button" onClick={handleSkipDomain}>
+              일단 전체 추천 보기 →
+            </button>
+            <span style={{ fontSize: '.72rem', color: 'var(--text-light)' }}>분야를 선택하면 더 정확한 추천이 가능합니다</span>
+          </div>
         </div>
       )}
 
       <div className="groups-list">
-        {DOMAIN_GROUPS.map(group => {
-          const isOpen = !!openGroups[group.top];
+        {(searchQuery.trim()
+          ? DOMAIN_GROUPS
+              .map(g => ({ ...g, items: g.items.filter(i => i.name.includes(searchQuery.trim())) }))
+              .filter(g => g.items.length > 0)
+          : DOMAIN_GROUPS
+        ).map(group => {
+          const isOpen = searchQuery.trim() ? true : !!openGroups[group.top];
           const hasSelected = group.items.some(i => i.id === selectedDomain?.id);
           return (
             <div key={group.top} className={`group-card card ${hasSelected ? 'group-card-active' : ''}`}>
@@ -535,6 +566,20 @@ const InterestSelection: React.FC = () => {
         .interest-wrap {
           max-width: 680px; margin: 0 auto;
           display: flex; flex-direction: column; gap: 1.25rem;
+        }
+        .domain-search-wrap { position: relative; }
+        .domain-search-input {
+          width: 100%; padding: .625rem .875rem;
+          border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+          background: var(--surface); color: var(--text);
+          font-size: .9rem; font-family: inherit;
+          transition: border-color .15s, box-shadow .15s;
+          box-sizing: border-box;
+        }
+        .domain-search-input::placeholder { color: var(--text-light); }
+        .domain-search-input:focus {
+          outline: none; border-color: var(--primary);
+          box-shadow: 0 0 0 3px var(--primary-glow);
         }
         .back-btn {
           display: inline-flex; align-items: center; gap: .35rem;

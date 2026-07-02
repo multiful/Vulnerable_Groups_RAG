@@ -253,6 +253,25 @@ const STAGE_LABELS: Record<string, { label: string; sub: string; color: string }
   '4': { label: '4단계', sub: '은둔 청년',             color: '#4f46e5' },
 };
 
+const STAGE_INTRO: Record<string, { headline: string; sub: string }> = {
+  '1': {
+    headline: '첫걸음을 내딛기 좋은 자격증들이 있어요',
+    sub: '지금 상황에서 도전하기 좋은 자격증들을 추천해드릴게요.',
+  },
+  '2': {
+    headline: '지금 상황에서 시작할 수 있는 자격증들을 찾았어요',
+    sub: '관심 있는 분야부터 천천히 살펴볼 수 있어요.',
+  },
+  '3': {
+    headline: '지금 상황에서도 도전할 수 있어요',
+    sub: '작은 시작이 큰 변화의 첫 걸음이 됩니다.',
+  },
+  '4': {
+    headline: '지금 내 상황에서도 시작할 수 있는 자격증들이 있어요',
+    sub: '혼자 해내기 어렵지 않은 것부터 천천히 살펴볼 수 있어요.',
+  },
+};
+
 /* ─────────────────────────────────────────────────────────────────────
    표12 근거 데이터: 보건복지부 고립은둔 청년 지원사업 모형 개발 연구
    김성아 (2022). 정책보고서 2022-35. 요약 표 12.
@@ -430,6 +449,8 @@ const RiskAssessment: React.FC = () => {
   const [evidenceSynthesis, setEvidenceSynthesis] = useState<string | null>(null);
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [showEvidenceSources, setShowEvidenceSources] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
+  const [showPrograms, setShowPrograms] = useState(false);
 
   useEffect(() => {
     if (step !== 'result') return;
@@ -589,8 +610,8 @@ const RiskAssessment: React.FC = () => {
           {evidenceLoading ? '연구 근거를 검색하고 있습니다.' : '진단 결과가 준비되었습니다.'}
         </p>
         <div className="page-header">
-          <h1 className="page-title">추천 준비 완료</h1>
-          <p className="page-desc">12문항 응답을 바탕으로 지금 내 상황에 맞는 유형을 확인했습니다.</p>
+          <h1 className="page-title">{STAGE_INTRO[stage]?.headline ?? '자격증 추천을 준비했어요'}</h1>
+          <p className="page-desc">{STAGE_INTRO[stage]?.sub ?? '지금 상황에서 도전할 수 있는 자격증들을 찾았습니다.'}</p>
         </div>
 
         {safetyFlag && (
@@ -606,11 +627,8 @@ const RiskAssessment: React.FC = () => {
 
         <div className="card result-card">
           <div className="result-stage-row">
-            <div className="result-badge" style={{ background: info.color + '18', color: info.color, borderColor: info.color + '40' }}>
-              유형 {info.label}
-            </div>
             <div>
-              <p className="result-stage-name">지금 내 상황에 가장 가까운 유형을 찾았어요</p>
+              <p className="result-stage-name">{dimensionReason}</p>
               <p className="result-score-sub">12문항 응답 기준 · 참고용 결과입니다</p>
             </div>
           </div>
@@ -619,6 +637,17 @@ const RiskAssessment: React.FC = () => {
             <div className="result-bar-fill" style={{ transform: `scaleX(${pct / 100})`, background: info.color }} />
           </div>
 
+          {/* ── 상세 보기 토글 ── */}
+          <button
+            className="result-detail-toggle"
+            type="button"
+            onClick={() => setShowDetail(v => !v)}
+            aria-expanded={showDetail}
+          >
+            {showDetail ? '▲ 상세 분석 접기' : '▼ 상세 분석 보기'}
+          </button>
+
+          {showDetail && (<>
           {/* ── 방사형 차트 ── */}
           <div className="result-radar-wrap">
             <svg viewBox="0 0 260 260" className="result-radar-svg" aria-hidden="true">
@@ -711,6 +740,39 @@ const RiskAssessment: React.FC = () => {
               );
             })}
           </div>
+          </>)}
+        </div>
+
+        {/* ── Primary CTA ── */}
+        <div className="result-actions">
+          <button className="btn-ghost" onClick={() => {
+              _clearSurvey();
+              setStep('survey'); setCurrent(0); setAnswers({}); setSafetyFlag(false); setPrecisionAnswers({});
+            }}>
+            <ArrowLeft size={15} /> 다시 진단
+          </button>
+          <button
+            className="btn-primary"
+            onClick={() => {
+              clearPipeline();
+              savePipeline({ stage });
+              _clearSurvey();
+              navigate(`/interests?stage=${stage}`);
+            }}>
+            내 상황에 맞는 자격증 보기 <ArrowRight size={15} />
+          </button>
+        </div>
+
+        <div style={{ display:'flex', justifyContent:'center' }}>
+          <button
+            className="btn-ghost"
+            style={{ fontSize: '.82rem', color: 'var(--text-light)' }}
+            onClick={() => {
+              _clearSurvey();
+              navigate(`/isolation/dashboard?cluster_id=${stage}`);
+            }}>
+            관련 지원 프로그램 보기
+          </button>
         </div>
 
         {/* ── 표12 근거 지원 프로그램 섹션 (전 단계) ── */}
@@ -790,9 +852,19 @@ const RiskAssessment: React.FC = () => {
 
               <div className="policy-divider" />
 
-              {/* 추천 지원 프로그램 */}
+              {/* 추천 지원 프로그램 — 접힘 */}
+              <button
+                className="policy-programs-toggle"
+                type="button"
+                onClick={() => setShowPrograms(v => !v)}
+                aria-expanded={showPrograms}
+              >
+                <span>추천 지원 제도</span>
+                <span className="policy-programs-toggle-arrow">{showPrograms ? '▲' : '▼'}</span>
+              </button>
+
+              {showPrograms && (
               <div className="policy-programs">
-                <p className="policy-programs-title">추천 지원 제도</p>
                 {policy.programs.map((prog, pi) => (
                   <div key={pi} className="policy-prog-group">
                     <div className="policy-prog-category">
@@ -821,6 +893,7 @@ const RiskAssessment: React.FC = () => {
                   </div>
                 ))}
               </div>
+              )}
 
               {/* 위기 단계 추가 안내 */}
               {(stage === '3' || stage === '4') && (
@@ -839,46 +912,27 @@ const RiskAssessment: React.FC = () => {
           );
         })()}
 
-        <div className="result-actions">
-          <button className="btn-ghost" onClick={() => {
-              _clearSurvey();
-              setStep('survey'); setCurrent(0); setAnswers({}); setSafetyFlag(false); setPrecisionAnswers({});
-            }}>
-            <ArrowLeft size={15} /> 다시 진단
-          </button>
-          <button
-            className="btn-primary"
-            style={{ background: info.color, border: 'none' }}
-            onClick={() => {
-              _clearSurvey();
-              navigate(`/isolation/dashboard?cluster_id=${stage}`);
-            }}>
-            나에게 맞는 지원 보기 <ArrowRight size={15} />
-          </button>
-        </div>
-
-        <div style={{ display:'flex', justifyContent:'center', marginTop:'.5rem' }}>
-          <button
-            className="btn-ghost"
-            onClick={() => {
-              clearPipeline();
-              savePipeline({ stage });
-              _clearSurvey();
-              navigate(`/interests?stage=${stage}`);
-            }}>
-            자격증 추천 받기 →
-          </button>
-        </div>
 
         <style>{`
           .result-card { padding:1.75rem; display:flex; flex-direction:column; gap:1.25rem; }
           .result-stage-row { display:flex; align-items:center; gap:1rem; }
-          .result-badge {
-            padding:.4rem 1rem; border-radius:var(--radius-sm);
-            font-size:.9rem; font-weight:800; border:1.5px solid;
-            white-space:nowrap;
+          .result-stage-name { font-size:1.1rem; font-weight:700; color:var(--text); line-height:1.55; }
+          .result-detail-toggle {
+            background: none; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            cursor: pointer; font-size: .78rem; font-weight: 600; color: var(--text-light);
+            padding: .4rem .875rem; width: 100%; text-align: left;
+            transition: color .15s, border-color .15s;
           }
-          .result-stage-name { font-size:1.3rem; font-weight:800; color:var(--text); }
+          .result-detail-toggle:hover { color: var(--primary); border-color: var(--primary); }
+          .policy-programs-toggle {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; background: none; border: none; cursor: pointer;
+            padding: .875rem 1.125rem;
+            font-size: .82rem; font-weight: 700; color: var(--text-muted);
+            transition: color .15s; text-align: left;
+          }
+          .policy-programs-toggle:hover { color: var(--primary); }
+          .policy-programs-toggle-arrow { font-size: .65rem; color: var(--text-light); }
           .result-score-sub { font-size:.85rem; color:var(--text-muted); margin-top:.2rem; }
           .result-bar-bg { height:10px; background:var(--border); border-radius:99px; overflow:hidden; }
           .result-bar-fill { height:100%; width:100%; border-radius:99px; transform-origin:left; transition:transform 0.8s ease; }
@@ -1109,7 +1163,7 @@ const RiskAssessment: React.FC = () => {
 
         <div className="precision-note">
           <span className="precision-note-badge">연구 근거</span>
-          <span className="precision-note-text">서울시 고립은둔청년 실태조사(2023, N=5,513) 실측값 기반 · SCRIPT.md §4</span>
+          <span className="precision-note-text">서울시 고립은둔청년 실태조사(2023, N=5,513) 실측값 기반</span>
         </div>
 
         {PRECISION_QUESTIONS.map((pq, idx) => (
