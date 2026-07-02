@@ -1,6 +1,6 @@
 # File: llm_cert_relevance_service.py
-# Last Updated: 2026-06-28
-# Content Hash: SHA256:TBD
+# Last Updated: 2026-07-02
+# Content Hash: SHA256:402c0a5fc328bb97cc1b57b3ec4759438fc9b55a924f04199edcef060426897e
 # Role: 자격증 × 희망 직무 도메인 연관성 LLM 분석 + 7일 캐시
 #
 # 설계 원칙:
@@ -8,17 +8,64 @@
 #   - 환각 방지: JSON mode + temperature 0.2
 #   - 캐시 TTL 7일: 연관성 데이터는 자주 바뀌지 않음
 #   - LLM 실패 시 fallback: 고정 설명 반환 (빈 추천 결과 방지)
+#   - difficulty_score는 cert_master.csv의 실측 avg_pass_rate_3yr가 있으면
+#     그 값으로 덮어써 근거 없는 LLM 추정치가 추천 threshold(job_postings.py
+#     meets_threshold) 판단에 그대로 쓰이지 않도록 한다. 실측이 없을 때만
+#     LLM 추정치를 유지하고 difficulty_grounded=False로 표시한다.
 from __future__ import annotations
 
+import csv
 import json
 import logging
 import time
+from functools import lru_cache
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 CACHE_PATH = Path("data/cache/cert_relevance_cache.json")
 CACHE_TTL = 604800  # 7일
+
+_CERT_MASTER_PATH = Path(__file__).parents[3] / "data/processed/master/cert_master.csv"
+
+
+@lru_cache(maxsize=1)
+def _load_pass_rate_by_name() -> dict[str, float]:
+    """cert_master.csv에서 cert_name → avg_pass_rate_3yr(실측 %) 맵을 로드한다."""
+    out: dict[str, float] = {}
+    if not _CERT_MASTER_PATH.exists():
+        return out
+    try:
+        with _CERT_MASTER_PATH.open(encoding="utf-8-sig") as f:
+            for row in csv.DictReader(f):
+                name = (row.get("cert_name") or "").strip()
+                raw = (row.get("avg_pass_rate_3yr") or "").strip()
+                if not name or not raw:
+                    continue
+                try:
+                    out[name] = float(raw)
+                except ValueError:
+                    continue
+    except Exception as e:
+        logger.warning("cert_master.csv 로드 실패 (difficulty grounding 불가): %s", e)
+    return out
+
+
+def _pass_rate_to_difficulty_score(rate: float) -> int:
+    """실측 합격률(%)을 0~100 난이도 점수로 역환산한다. 합격률이 낮을수록 어려움."""
+    return max(0, min(100, round(100 - rate)))
+
+
+def _ground_difficulty(cert_name: str, entry: dict) -> dict:
+    """실측 avg_pass_rate_3yr가 있으면 difficulty_score를 그 값으로 덮어쓴다."""
+    rate = _load_pass_rate_by_name().get(cert_name)
+    if rate is None:
+        return {**entry, "difficulty_grounded": False}
+    return {
+        **entry,
+        "difficulty_score": _pass_rate_to_difficulty_score(rate),
+        "difficulty_grounded": True,
+    }
 
 _SYSTEM_PROMPT = """\
 당신은 국내 자격증 취득 및 취업 시장 전문가입니다.
@@ -117,18 +164,19 @@ def get_cert_relevance(
           "job_demand_level": "상"|"중"|"하",
           "from_cache": bool,
           "from_llm": bool,
+          "difficulty_grounded": bool,  # True면 실측 avg_pass_rate_3yr 기반, False면 LLM/고정 추정치
         }
     """
     key = _cache_key(cert_name, job_domain)
     cache = _load_cache()
 
     if key in cache:
-        return {**cache[key], "from_cache": True, "from_llm": False}
+        return _ground_difficulty(cert_name, {**cache[key], "from_cache": True, "from_llm": False})
 
     openai_key = getattr(settings, "openai_api_key", None) if settings else None
     if not openai_key:
         fallback = _FALLBACK_MAP.get(cert_name, _DEFAULT_FALLBACK)
-        return {**fallback, "from_cache": False, "from_llm": False}
+        return _ground_difficulty(cert_name, {**fallback, "from_cache": False, "from_llm": False})
 
     try:
         from openai import OpenAI
@@ -159,9 +207,9 @@ def get_cert_relevance(
         }
         cache[key] = entry
         _save_cache(cache)
-        return {**entry, "from_cache": False, "from_llm": True}
+        return _ground_difficulty(cert_name, {**entry, "from_cache": False, "from_llm": True})
 
     except Exception as e:
         logger.warning("LLM 연관성 분석 실패 (%s × %s): %s", cert_name, job_domain, e)
         fallback = _FALLBACK_MAP.get(cert_name, _DEFAULT_FALLBACK)
-        return {**fallback, "from_cache": False, "from_llm": False}
+        return _ground_difficulty(cert_name, {**fallback, "from_cache": False, "from_llm": False})

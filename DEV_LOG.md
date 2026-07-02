@@ -2,7 +2,7 @@
 
 > **파일명**: DEV_LOG.md  
 > **최종 수정일**: 2026-07-02  
-> **문서 해시**: SHA256:121c2df83049f32ede4167f21b2b42fc29759fba7a56f5691da68ffde7a241a4
+> **문서 해시**: SHA256:39bc09d5838a609b1ed0f4e80a1f2d5eb691ca869bcf121b3a4b4f77b674884d
 > **문서 역할**: 날짜별 진행 로그, 변경 요약, 해결 이력  
 > **문서 우선순위**: 14  
 > **연관 문서**: CHANGE_CONTROL.md, PRD.md, DIRECTORY_SPEC.md, ERROR_ANALYSIS.md  
@@ -13,6 +13,27 @@
 ## 1. 문서 목적
 
 구현과 문서 정렬 작업의 **타임라인**을 남겨, 이후 기여자가 맥락을 잃지 않게 한다.
+
+---
+
+## 2026-07-02 (3) — 자격증 연관성 분석 difficulty_score 실측 데이터 근거화 (환각 제거)
+
+### 배경
+"최고 성능으로 고도화" 요청에 따라 신뢰성 가드레일 확장 트랙을 진행하며 전체 LLM 호출 경로(`chat_service`, `llm_roadmap_service`, `hyde_evidence_service`, `llm_isolation_service`, `llm_cert_relevance_service`)를 점검. `llm_cert_relevance_service.py`가 검증 장치 없이 `difficulty_score`(0~100 난이도)를 LLM에게 그대로 추정시키고 있었고, 이 값이 `job_postings.py`의 `meets_threshold` 판단(위험군 단계별 자격증 추천 게이팅)에 직접 사용되고 있어 **근거 없는 LLM 추정치가 구조적 추천 결정에 관여하는** 가장 심각한 사례로 확인됨. 프론트 `CertJobCard.tsx`에도 "난이도 {N}%"로 그대로 노출됨.
+
+### 수행
+
+**🔴 difficulty_score 실측 근거화 (llm_cert_relevance_service.py)**
+- `_load_pass_rate_by_name()` 추가: `cert_master.csv`의 실측 `avg_pass_rate_3yr`를 cert_name 기준으로 로드 (1290건)
+- `_pass_rate_to_difficulty_score()` / `_ground_difficulty()` 추가: 실측 합격률이 있으면 `difficulty_score`를 실측 기반 값으로 덮어쓰고 `difficulty_grounded=True` 표시, 없으면 기존 LLM/고정 추정치를 유지하되 `difficulty_grounded=False`로 정직하게 표시
+- 캐시 히트·LLM 성공·LLM 실패·API 키 미설정 4개 반환 경로 모두에 동일 적용
+- 검증: "용접기술사"(실측 27.42%) → difficulty_score 73으로 그라운딩, 존재하지 않는 가짜 자격증명은 grounded=False로 정상 폴백 확인. 기존 `_FALLBACK_MAP` 하드코딩값(예: 빅데이터분석기사 65)이 실측 기반 값(45)과 상당히 달랐던 것도 확인 — 정확도 개선 확인
+- `job_postings.py` 응답에 `difficulty_grounded` 필드 노출 (하위 호환, 추가 필드만)
+
+### 미해결 (열린 이슈)
+- `relevance_delta_pct`(직무 연관성 %)는 근거로 삼을 실측 데이터가 없어 계속 LLM 추정치로 남음 — `from_llm` 플래그로만 구분됨. 실제 채용공고 빈도 통계 소스가 생기면 별도 근거화 필요.
+- `llm_isolation_service.py`(F-25 서비스 설명), `hyde_evidence_service.py`는 이미 "evidence 없으면 임의 사실 생성 금지" 원칙 + JSON 스키마 제약으로 설계되어 있어 이번 라운드에서 추가 조치하지 않음.
+- 이탈 방지 UX 확장(Roadmap·Recommendation·InterestSelection에 RiskAssessment/IsolationDashboard 수준의 폴백·로딩 패턴 적용)은 아직 미착수.
 
 ---
 

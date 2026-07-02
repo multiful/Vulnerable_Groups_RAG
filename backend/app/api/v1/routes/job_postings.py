@@ -1,6 +1,6 @@
 # File: job_postings.py
-# Last Updated: 2026-06-28
-# Content Hash: SHA256:TBD
+# Last Updated: 2026-07-02
+# Content Hash: SHA256:4c7d082bae4455a806d3ed46159c3584c42212cbb73c077b138ddfa5e3701690
 # Role: GET /api/v1/job-postings — 자격증×직무 기반 대기업 채용공고 매칭 + LLM 연관성 분석
 #
 # Saramin API 승인 대기 중 → job_crawling_service (10개 기업 직접 크롤링) 사용
@@ -82,6 +82,7 @@ def get_matching_postings(
         "relevance_summary": relevance["relevance_summary"],
         "job_demand_level": relevance["job_demand_level"],
         "relevance_from_llm": relevance["from_llm"],
+        "difficulty_grounded": relevance.get("difficulty_grounded", False),
         "job_postings": job_postings,
         "posting_count": len(job_postings),
         "data_source": "crawled_cache",
