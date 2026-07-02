@@ -66,6 +66,43 @@ interface PolicyData {
   total_items: number;
 }
 
+/* ─── 단계별 폴백 (API 실패 시 항상 보여줄 정적 콘텐츠) ─── */
+interface FallbackService { icon: string; title: string; desc: string; path: string; }
+const CLUSTER_FALLBACK: Record<string, { heading: string; services: FallbackService[] }> = {
+  '1': {
+    heading: '지금 바로 시작할 수 있는 것들이 있어요',
+    services: [
+      { icon: '🎯', title: '내 상황에 맞는 자격증 찾기', desc: '관심 분야를 고르면 단계별 자격증 로드맵을 바로 볼 수 있어요.', path: '/interests' },
+      { icon: '📋', title: '자격증 로드맵', desc: '자격증 취득부터 취업까지 단계별 경로를 확인해보세요.', path: '/recommendation' },
+      { icon: '💼', title: '취업 정보', desc: '관련 채용공고와 직무 설명을 확인할 수 있어요.', path: '/jobs' },
+    ],
+  },
+  '2': {
+    heading: '지금 내 속도로 할 수 있는 것들이에요',
+    services: [
+      { icon: '🎯', title: '내 상황에 맞는 자격증 찾기', desc: '관심 분야를 고르면 단계별 자격증 로드맵을 바로 볼 수 있어요.', path: '/interests' },
+      { icon: '📋', title: '자격증 로드맵', desc: '자격증 취득부터 취업까지 단계별 경로를 확인해보세요.', path: '/recommendation' },
+      { icon: '🎓', title: '교육·훈련 프로그램', desc: '국비 훈련과 온라인 강의를 찾아볼 수 있어요.', path: '/training' },
+    ],
+  },
+  '3': {
+    heading: '작은 시작이 가장 큰 변화를 만들어요',
+    services: [
+      { icon: '🎯', title: '내 상황에 맞는 자격증 찾기', desc: '관심 분야를 고르면 단계별 자격증 로드맵을 바로 볼 수 있어요.', path: '/interests' },
+      { icon: '📋', title: '자격증 로드맵', desc: '자격증 취득부터 취업까지 단계별 경로를 확인해보세요.', path: '/recommendation' },
+      { icon: '🎓', title: '교육·훈련 프로그램', desc: '국비 훈련과 온라인 강의를 찾아볼 수 있어요.', path: '/training' },
+    ],
+  },
+  '4': {
+    heading: '오늘 한 가지만 해봐요',
+    services: [
+      { icon: '🎯', title: '내 상황에 맞는 자격증 찾기', desc: '관심 분야를 고르면 단계별 자격증 로드맵을 바로 볼 수 있어요.', path: '/interests' },
+      { icon: '📋', title: '자격증 로드맵', desc: '자격증 취득부터 취업까지 단계별 경로를 확인해보세요.', path: '/recommendation' },
+      { icon: '🎓', title: '교육·훈련 프로그램', desc: '국비 훈련과 온라인 강의를 찾아볼 수 있어요.', path: '/training' },
+    ],
+  },
+};
+
 /* ─── 상수 ─────────────────────────────────────────────── */
 const CLUSTER_COLORS: Record<string, string> = {
   '1': '#10b981',
@@ -181,7 +218,7 @@ const IsolationDashboard: React.FC = () => {
         const d = (r as { success: boolean; data: DashboardData });
         if (d.success) setDashboard(d.data);
       })
-      .catch(() => setError('서비스 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'))
+      .catch(() => {/* API 실패 → 폴백 카드로 대체, 에러 화면 없음 */})
       .finally(() => setLoading(false));
 
     const p2 = fetchJson(`/api/v1/isolation/policy?cluster_id=${clusterId}${regionParam}&items_per_category=3`)
@@ -195,19 +232,14 @@ const IsolationDashboard: React.FC = () => {
     Promise.all([p1, p2]);
   }, [clusterId, region]);
 
-  /* ── 에러 ── */
+  /* ── 에러 (유효하지 않은 cluster_id만 에러) ── */
   if (error) return (
     <div className="iso-wrap">
       <div className="iso-error-card">
         <p>{error}</p>
-        <div style={{ display:'flex', gap:'.75rem', flexWrap:'wrap', justifyContent:'center', marginTop:'.25rem' }}>
-          <button className="btn-ghost" onClick={() => navigate('/risk-assessment')}>
-            진단 다시 하기
-          </button>
-          <button className="btn-primary" onClick={() => navigate(`/interests?stage=${clusterId}`)}>
-            자격증 추천 바로 보기
-          </button>
-        </div>
+        <button className="btn-primary" onClick={() => navigate('/risk-assessment')}>
+          진단 다시 하기
+        </button>
       </div>
     </div>
   );
@@ -222,7 +254,51 @@ const IsolationDashboard: React.FC = () => {
     </div>
   );
 
-  if (!dashboard) return null;
+  /* ── API 실패 폴백 — 항상 동작하는 정적 카드 ── */
+  if (!dashboard) {
+    const fb = CLUSTER_FALLBACK[clusterId] ?? CLUSTER_FALLBACK['1'];
+    return (
+      <div className="iso-wrap">
+        <button className="iso-back-btn" onClick={() => navigate(-1)}>
+          <ArrowLeft size={15} /> 이전으로
+        </button>
+        <div className="iso-fallback-header" style={{ background: gradient }}>
+          <p className="iso-fallback-sub">지금 내 상황</p>
+          <h2 className="iso-fallback-heading">{fb.heading}</h2>
+        </div>
+        <div className="iso-fallback-grid">
+          {fb.services.map(s => (
+            <button key={s.path} className="iso-fallback-card" onClick={() => navigate(s.path)}>
+              <span className="iso-fallback-icon">{s.icon}</span>
+              <div>
+                <p className="iso-fallback-title">{s.title}</p>
+                <p className="iso-fallback-desc">{s.desc}</p>
+              </div>
+              <ArrowRight size={16} className="iso-fallback-arrow" />
+            </button>
+          ))}
+        </div>
+        <style>{`
+          .iso-fallback-header { border-radius: var(--radius); padding: 1.5rem 1.25rem; margin-bottom: .25rem; }
+          .iso-fallback-sub { font-size: .78rem; font-weight: 600; color: var(--text-muted); margin-bottom: .35rem; }
+          .iso-fallback-heading { font-size: 1.15rem; font-weight: 800; color: var(--text); line-height: 1.4; }
+          .iso-fallback-grid { display: flex; flex-direction: column; gap: .75rem; }
+          .iso-fallback-card {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 1.125rem 1.25rem;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); cursor: pointer; text-align: left;
+            transition: box-shadow .18s, border-color .18s; width: 100%;
+          }
+          .iso-fallback-card:hover { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+          .iso-fallback-icon { font-size: 1.6rem; flex-shrink: 0; }
+          .iso-fallback-title { font-size: .95rem; font-weight: 700; color: var(--text); }
+          .iso-fallback-desc { font-size: .8rem; color: var(--text-muted); margin-top: .2rem; line-height: 1.5; }
+          .iso-fallback-arrow { color: var(--text-light); flex-shrink: 0; margin-left: auto; }
+        `}</style>
+      </div>
+    );
+  }
 
   const { cluster_meta, active_services, inactive_services, today_action } = dashboard;
   const todayAct = today_action?.action;

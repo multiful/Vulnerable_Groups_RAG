@@ -308,12 +308,14 @@ const InterestSelection: React.FC = () => {
     setSelectedJob(prev => (prev?.id === item.id ? null : item));
   }
 
-  function handleNext() {
-    if (!selectedDomain) return;
+  function handleNext(overrideDomain?: DomainItem) {
+    const domain = overrideDomain ?? selectedDomain;
     const params = new URLSearchParams();
     if (stage) params.set('stage', stage);
-    params.set('domain', selectedDomain.id);
-    params.set('domainName', selectedDomain.name);
+    if (domain) {
+      params.set('domain', domain.id);
+      params.set('domainName', domain.name);
+    }
     if (selectedJob) {
       params.set('job', selectedJob.id);
       params.set('jobName', selectedJob.name);
@@ -322,13 +324,18 @@ const InterestSelection: React.FC = () => {
     if (trimmedMajor) params.set('major', trimmedMajor);
     savePipeline({
       stage: stage || undefined,
-      domain: selectedDomain.id,
-      domainName: selectedDomain.name,
+      domain: domain?.id,
+      domainName: domain?.name,
       job: selectedJob?.id,
       jobName: selectedJob?.name,
       major: trimmedMajor || undefined,
     });
     navigate(`/roadmap?${params.toString()}`);
+  }
+
+  function handleSkipDomain() {
+    // "잘 모르겠어요" — 분야 없이 전체 추천으로 진입
+    handleNext(undefined);
   }
 
   const stageLabel = stage ? RISK_STAGE_LABELS[stage] : '';
@@ -375,6 +382,17 @@ const InterestSelection: React.FC = () => {
         <span className="section-label">관심 분야를 하나 선택하세요</span>
         <span className="section-required">필수</span>
       </div>
+
+      {/* "잘 모르겠어요" 탈출구 */}
+      {!selectedDomain && (
+        <div className="skip-domain-card">
+          <span className="skip-domain-text">어떤 분야가 맞는지 잘 모르겠어요</span>
+          <button className="skip-domain-btn" type="button" onClick={handleSkipDomain}>
+            일단 전체 추천 보기 →
+          </button>
+        </div>
+      )}
+
       <div className="groups-list">
         {DOMAIN_GROUPS.map(group => {
           const isOpen = !!openGroups[group.top];
@@ -503,14 +521,13 @@ const InterestSelection: React.FC = () => {
         </button>
         <button
           className="btn-primary interest-next-btn"
-          disabled={!selectedDomain}
-          onClick={handleNext}
+          onClick={() => handleNext()}
         >
           {selectedDomain
             ? selectedJob
-              ? <><strong>{selectedDomain.name}</strong>  <strong>{selectedJob.name}</strong> 로드맵 보기 <ArrowRight size={15} /></>
+              ? <><strong>{selectedDomain.name}</strong> · <strong>{selectedJob.name}</strong> 로드맵 보기 <ArrowRight size={15} /></>
               : <><strong>{selectedDomain.name}</strong> 로드맵 보기 <ArrowRight size={15} /></>
-            : '분야를 선택해주세요'}
+            : <>전체 자격증 추천 보기 <ArrowRight size={15} /></>}
         </button>
       </div>
 
@@ -657,13 +674,26 @@ const InterestSelection: React.FC = () => {
         .major-text-input:focus { border-color: var(--primary); }
         .major-text-input::placeholder { color: var(--text-light); }
 
+        .skip-domain-card {
+          display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+          padding: .75rem 1.125rem;
+          background: var(--surface-2); border: 1px dashed var(--border);
+          border-radius: var(--radius-sm);
+        }
+        .skip-domain-text { font-size: .85rem; color: var(--text-muted); }
+        .skip-domain-btn {
+          font-size: .82rem; font-weight: 700; color: var(--primary);
+          background: none; border: none; cursor: pointer; padding: 0;
+          white-space: nowrap; transition: opacity .15s;
+        }
+        .skip-domain-btn:hover { opacity: .75; }
+
         .interest-footer {
           display: flex; gap: .75rem; align-items: center; justify-content: space-between;
           padding-top: .5rem; position: sticky; bottom: 0;
           background: var(--bg); padding-bottom: 1rem;
         }
         .interest-next-btn { padding: .75rem 1.5rem; font-size: .95rem; transition: background .2s, opacity .2s, box-shadow .2s; }
-        .interest-next-btn:disabled { opacity: .45; cursor: not-allowed; }
       `}</style>
     </div>
   );

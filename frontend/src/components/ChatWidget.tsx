@@ -38,7 +38,7 @@ function buildSuggestedQuestions(context: Props['context']): string[] {
     qs.push(`${context.domain_name} 분야에서 가장 인정받는 자격증은 무엇인가요?`);
   }
   qs.push('국민내일배움카드로 훈련비 지원 받는 방법을 알려주세요.');
-  qs.push('제 위험군 단계에 맞는 자격증 취득 순서를 알려주세요.');
+  qs.push('내 상황에 맞는 자격증 취득 순서를 알려주세요.');
   qs.push('취업 준비를 어디서부터 시작해야 할까요?');
   return qs.slice(0, 4);
 }
@@ -95,6 +95,8 @@ const ChatWidget: React.FC<Props> = ({ context = {} }) => {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      // success:false 인 경우 (HTTP 200 + err_envelope) 명시적으로 처리
+      if (data?.success === false) throw new Error(data?.error?.message ?? 'API error');
       const reply: string =
         data?.data?.reply ?? data?.reply ?? data?.content ?? data?.message ?? '응답을 받지 못했습니다.';
       const usedEvidence: boolean = data?.data?.used_evidence ?? false;

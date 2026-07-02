@@ -228,6 +228,146 @@ const ACTION_TYPE_EMOJI: Record<string, string> = {
   wellness:     '💚',
 };
 
+/* ── 단계별 오늘의 행동 뱅크 (API 실패 시 로컬 로테이션) ── */
+interface LocalAction {
+  title: string;
+  desc: string;
+  motivation: string;
+  effort: string;
+  type: string;
+  link?: string;
+}
+const STAGE_ACTION_BANK: Record<number, LocalAction[]> = {
+  4: [
+    {
+      title: '📱 청년이음센터 전화번호 저장하기',
+      desc: '전화번호부에 "청년이음센터 1601-0112"를 저장해두세요. 필요할 때 바로 연락할 수 있어요.',
+      motivation: '연락처 하나 저장하는 것, 이게 오늘의 전부여도 됩니다.',
+      effort: '1분', type: 'micro',
+    },
+    {
+      title: '🔍 청년마음건강지원사업 소개 보기',
+      desc: '보건복지부 청년마음건강지원사업은 만 19~34세 청년에게 최대 8회 심리상담을 지원해요. 검색창에 "청년마음건강지원사업"을 입력해보세요.',
+      motivation: '몸 상태를 챙기는 것도 자격증 준비만큼 중요해요.',
+      effort: '2분', type: 'wellness',
+    },
+    {
+      title: '💡 관심 자격증 이름 하나 검색해보기',
+      desc: '지금 로드맵에 나온 자격증 중 이름이 마음에 드는 것 하나를 검색창에 입력해보세요. 어떤 자격증인지 1분만 읽어봐도 됩니다.',
+      motivation: '"알고 있다"는 것만으로도 준비는 시작된 거예요.',
+      effort: '2분', type: 'study',
+    },
+    {
+      title: '📋 국민취업지원제도 대상 여부 확인',
+      desc: 'work24.go.kr에서 국민취업지원제도 신청 자격을 확인해보세요. 해당되면 월 최대 50만원을 받으면서 준비할 수 있어요.',
+      motivation: '경제적 부담을 줄이는 게 먼저예요.',
+      effort: '3분', type: 'apply', link: 'https://work24.go.kr',
+    },
+    {
+      title: '📝 오늘 하루 한 줄 기록하기',
+      desc: '오늘 한 일 중 가장 사소한 것 하나를 메모앱에 써두세요. "오늘 DIDIM 앱 열어봤음"도 됩니다.',
+      motivation: '기록은 작은 변화가 쌓이고 있다는 증거가 돼요.',
+      effort: '1분', type: 'micro',
+    },
+  ],
+  3: [
+    {
+      title: '📋 국민취업지원제도 신청 자격 확인',
+      desc: '고용24(work24.go.kr)에서 국민취업지원제도 신청 자격을 확인해보세요. 조건이 맞으면 월 최대 50만원 수당을 받으면서 취업 준비를 할 수 있어요.',
+      motivation: '경제적 지원이 먼저 해결되면 공부에 집중할 수 있어요.',
+      effort: '5분', type: 'apply', link: 'https://work24.go.kr',
+    },
+    {
+      title: '💚 청년마음건강지원사업 신청 방법 알아보기',
+      desc: '만 19~34세 청년이라면 최대 8회 심리상담을 지원받을 수 있어요. 보건복지부 복지로(bokjiro.go.kr)에서 신청 방법을 확인해보세요.',
+      motivation: '마음 상태가 안정되어야 공부도 시작할 수 있어요.',
+      effort: '5분', type: 'wellness', link: 'https://bokjiro.go.kr',
+    },
+    {
+      title: '🔎 관심 자격증 Q-Net에서 검색하기',
+      desc: 'Q-Net(q-net.or.kr)에서 아래 로드맵에 있는 자격증 이름을 검색하고 시험 개요 페이지를 즐겨찾기에 추가해보세요.',
+      motivation: '즐겨찾기 한 번으로 다음 번 찾는 시간을 줄일 수 있어요.',
+      effort: '5분', type: 'study', link: 'https://q-net.or.kr',
+    },
+    {
+      title: '🎓 국민내일배움카드 발급 자격 확인',
+      desc: '고용24에서 국민내일배움카드 발급 자격을 확인해보세요. 연간 최대 500만원의 훈련비를 지원받을 수 있어요.',
+      motivation: '카드를 만들어두면 자격증 강의를 무료로 들을 수 있어요.',
+      effort: '5분', type: 'training', link: 'https://work24.go.kr',
+    },
+    {
+      title: '📱 청년이음센터에 문자 보내기',
+      desc: '청년이음센터(1601-0112)에 문자로 "안녕하세요, 상담 받고 싶어요"라고 보내보세요. 직접 전화하기 부담스러울 땐 문자도 됩니다.',
+      motivation: '첫 연락이 가장 어려워요. 문자 한 줄로 시작해도 됩니다.',
+      effort: '3분', type: 'micro',
+    },
+  ],
+  2: [
+    {
+      title: '🎓 국민내일배움카드 신청하기',
+      desc: '고용24(work24.go.kr)에서 국민내일배움카드를 신청하세요. 연간 최대 500만원의 훈련비로 자격증 강의를 수강할 수 있어요.',
+      motivation: '카드 발급까지 보통 2~3일. 지금 신청하면 이번 주 안에 받을 수 있어요.',
+      effort: '10분', type: 'apply', link: 'https://work24.go.kr',
+    },
+    {
+      title: '📚 HRD-Net에서 훈련과정 검색하기',
+      desc: 'HRD-Net(hrd.go.kr)에서 관심 자격증 이름을 검색하고 국민내일배움카드로 수강 가능한 훈련과정을 찾아보세요.',
+      motivation: '수강료 0원으로 들을 수 있는 강의가 있는지 확인해보세요.',
+      effort: '10분', type: 'training', link: 'https://hrd.go.kr',
+    },
+    {
+      title: '🖊️ Q-Net 회원가입 하기',
+      desc: 'Q-Net(q-net.or.kr)에 회원가입을 해두면 다음 시험 접수 때 바로 신청할 수 있어요. 가입 자체가 준비의 첫 단계입니다.',
+      motivation: '가입만 해도 "나는 준비하고 있다"는 신호를 자신에게 보낼 수 있어요.',
+      effort: '10분', type: 'apply', link: 'https://q-net.or.kr',
+    },
+    {
+      title: '📅 시험 일정 캘린더에 저장하기',
+      desc: 'Q-Net에서 아래 로드맵 1단계 자격증의 다음 시험 접수 날짜를 찾아 스마트폰 캘린더에 알림을 설정해두세요.',
+      motivation: '달력에 적는 순간, 목표가 현실이 됩니다.',
+      effort: '10분', type: 'reservation',
+    },
+    {
+      title: '💼 청년도전지원사업 참여 신청',
+      desc: '3개월 이상 니트(NEET) 상태인 청년이라면 청년도전지원사업에 참여할 수 있어요. 고용24에서 신청 방법을 확인해보세요.',
+      motivation: '프로그램에 참여하면 준비비와 수당도 받을 수 있어요.',
+      effort: '15분', type: 'apply', link: 'https://work24.go.kr',
+    },
+  ],
+  1: [
+    {
+      title: '📋 관심 자격증 시험 접수일 캘린더에 저장',
+      desc: 'Q-Net(q-net.or.kr)에서 로드맵 1단계 자격증의 다음 시험 접수 날짜를 찾아 달력에 표시해두세요.',
+      motivation: '접수 날짜를 알아야 역산해서 준비할 수 있어요.',
+      effort: '10분', type: 'reservation', link: 'https://q-net.or.kr',
+    },
+    {
+      title: '📖 자격증 기출문제 1회차 훑어보기',
+      desc: '시험의 느낌을 알아야 준비 방향을 잡을 수 있어요. 관심 자격증 이름 + "기출문제"로 검색해서 최근 1회차를 5분만 훑어보세요.',
+      motivation: '어렵게 느껴지면 기능사부터, 할 수 있겠다 싶으면 산업기사부터 도전해도 됩니다.',
+      effort: '15분', type: 'study',
+    },
+    {
+      title: '🎓 HRD-Net 훈련과정 신청하기',
+      desc: 'HRD-Net(hrd.go.kr)에서 국민내일배움카드로 신청 가능한 자격증 강의를 찾아 수강 신청까지 완료해보세요.',
+      motivation: '강의 등록이 완료되면 공부를 안 할 이유가 사라져요.',
+      effort: '15분', type: 'training', link: 'https://hrd.go.kr',
+    },
+    {
+      title: '🗓️ 6주 공부 플래너 초안 작성',
+      desc: '노트나 메모앱에 "1주차 - 과목 파악, 2주차 - 1회독..." 식으로 6주 계획을 간단히 적어보세요. 완벽하지 않아도 됩니다.',
+      motivation: '계획을 세우는 것 자체가 합격률을 높인다는 연구가 있어요.',
+      effort: '20분', type: 'study',
+    },
+    {
+      title: '💼 고용24에서 취업 준비 상담 신청',
+      desc: '고용24(work24.go.kr) → 취업지원 → 상담 신청. 1:1 취업 상담을 통해 자격증 취득 후 구체적인 취업 경로를 확인해보세요.',
+      motivation: '자격증 취득 목적이 명확해지면 공부 동기도 강해져요.',
+      effort: '10분', type: 'apply', link: 'https://work24.go.kr',
+    },
+  ],
+};
+
 /* ── Local fallback helpers ── */
 const LOCAL_STAGES: StageInfo[] = [
   { id: 'roadmap_stage_0001', name: '상태 인식',   order: 1, description: '현재 생활 상태와 진로 및 취업 준비 수준을 점검하는 초기 단계입니다.' },
@@ -368,6 +508,7 @@ const Roadmap: React.FC = () => {
 
   const [todayAction, setTodayAction]           = useState<TodayActionData | null>(null);
   const [todayActionLoading, setTodayActionLoading] = useState(false);
+  const [localActionIdx, setLocalActionIdx]     = useState(0);
 
   const [supportBundle, setSupportBundle]           = useState<SupportBundle | null>(null);
   const [supportExpanded, setSupportExpanded]       = useState<Record<string, boolean>>({});
@@ -777,17 +918,41 @@ const Roadmap: React.FC = () => {
               </button>
             </div>
           </div>
-        ) : (
-          <div className="rm-today-card">
-            <div className="rm-today-header">
-              <span className="rm-today-label">오늘의 한 가지 행동</span>
-              <span className="rm-today-effort">5분</span>
-            </div>
-            <p className="rm-today-title">📋 관심 자격증 시험 일정 확인하기</p>
-            <p className="rm-today-desc">아래 로드맵에서 1단계 자격증을 하나 골라 Q-Net에서 다음 시험 접수일을 확인해보세요.</p>
-            <p className="rm-today-motivation">작은 한 발자국이 로드맵의 시작입니다.</p>
-          </div>
-        )}
+        ) : (() => {
+            const bank = STAGE_ACTION_BANK[riskNum] ?? STAGE_ACTION_BANK[1];
+            const la = bank[localActionIdx % bank.length];
+            return (
+              <div className="rm-today-card">
+                <div className="rm-today-header">
+                  <span className="rm-today-label">오늘의 한 가지 행동</span>
+                  <span className="rm-today-effort">{la.effort}</span>
+                </div>
+                <p className="rm-today-title">{la.title}</p>
+                <p className="rm-today-desc">{la.desc}</p>
+                <p className="rm-today-motivation">{la.motivation}</p>
+                <div className="rm-today-footer">
+                  {la.link && (
+                    <a
+                      href={la.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rm-today-cta"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      바로 가기 →
+                    </a>
+                  )}
+                  <button
+                    className="rm-today-cta"
+                    onClick={() => setLocalActionIdx(i => i + 1)}
+                    type="button"
+                  >
+                    다른 행동 보기
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
       </div>
 
       {/* 탭 */}
