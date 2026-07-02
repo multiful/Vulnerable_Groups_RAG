@@ -263,8 +263,8 @@ const STAGE_INTRO: Record<string, { headline: string; sub: string }> = {
     sub: '관심 있는 분야부터 천천히 살펴볼 수 있어요.',
   },
   '3': {
-    headline: '지금 상황에서도 도전할 수 있어요',
-    sub: '작은 시작이 큰 변화의 첫 걸음이 됩니다.',
+    headline: '지금 상황에서도 도전할 수 있는 자격증들이 있어요',
+    sub: '부담되지 않는 것부터 관심 분야를 살펴볼 수 있어요.',
   },
   '4': {
     headline: '지금 내 상황에서도 시작할 수 있는 자격증들이 있어요',
@@ -451,6 +451,7 @@ const RiskAssessment: React.FC = () => {
   const [showEvidenceSources, setShowEvidenceSources] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [showPrograms, setShowPrograms] = useState(false);
+  const [showPolicyCard, setShowPolicyCard] = useState(false);
 
   useEffect(() => {
     if (step !== 'result') return;
@@ -564,24 +565,24 @@ const RiskAssessment: React.FC = () => {
     switch (stage) {
       case '4': {
         const top2 = sorted.slice(0, 2).map(([k]) => toLabel(k));
-        return `${top2.join(', ')} 부분에서 많이 힘드신 것 같아`;
+        return `${top2.join(', ')} 부분에서 많이 힘드신 것 같아요.`;
       }
       case '3': {
         const elevated = sorted.filter(([, v]) => v >= 45).slice(0, 2);
         const display = (elevated.length > 0 ? elevated : sorted.slice(0, 2)).map(([k]) => toLabel(k));
-        return `${display.join(', ')} 부분에서 어려움이 있어`;
+        return `${display.join(', ')} 부분에서 어려움이 있어요.`;
       }
       case '2': {
         const elevated = sorted.filter(([, v]) => v >= 35).slice(0, 2);
         const display = (elevated.length > 0 ? elevated : sorted.slice(0, 2)).map(([k]) => toLabel(k));
-        return `${display.join(', ')} 부분에서 일부 어려움이 있어`;
+        return `${display.join(', ')} 부분에서 일부 어려움이 있어요.`;
       }
       default: {
         const topCat = sorted[0];
         if (topCat && topCat[1] >= 20) {
-          return `${toLabel(topCat[0])} 부분에서 살짝 부담이 있지만 전반적으로 안정적이어서`;
+          return `${toLabel(topCat[0])} 부분에서 살짝 부담이 있지만, 전반적으로 안정적인 상황이에요.`;
         }
-        return `전반적으로 안정적인 상황이어서`;
+        return `전반적으로 안정적인 상황이에요.`;
       }
     }
   }
@@ -629,12 +630,11 @@ const RiskAssessment: React.FC = () => {
           <div className="result-stage-row">
             <div>
               <p className="result-stage-name">{dimensionReason}</p>
-              <p className="result-score-sub">12문항 응답 기준 · 참고용 결과입니다</p>
             </div>
           </div>
 
-          <div className="result-bar-bg">
-            <div className="result-bar-fill" style={{ transform: `scaleX(${pct / 100})`, background: info.color }} />
+          <div className="result-complete-badge">
+            <span aria-hidden="true">✓</span> 12/12 문항 완료 · 참고용 결과입니다
           </div>
 
           {/* ── 상세 보기 토글 ── */}
@@ -644,7 +644,8 @@ const RiskAssessment: React.FC = () => {
             onClick={() => setShowDetail(v => !v)}
             aria-expanded={showDetail}
           >
-            {showDetail ? '▲ 상세 분석 접기' : '▼ 상세 분석 보기'}
+            <span aria-hidden="true">{showDetail ? '▲' : '▼'}</span>{' '}
+            {showDetail ? '상세 분석 접기' : '상세 분석 보기'}
           </button>
 
           {showDetail && (<>
@@ -763,20 +764,20 @@ const RiskAssessment: React.FC = () => {
           </button>
         </div>
 
-        <div style={{ display:'flex', justifyContent:'center' }}>
+        {/* ── 내 상황 분석 카드 (접힘) ── */}
+        <div style={{ display:'flex', justifyContent:'center', marginTop:'.5rem' }}>
           <button
-            className="btn-ghost"
-            style={{ fontSize: '.82rem', color: 'var(--text-light)' }}
-            onClick={() => {
-              _clearSurvey();
-              navigate(`/isolation/dashboard?cluster_id=${stage}`);
-            }}>
-            관련 지원 프로그램 보기
+            className="policy-card-toggle"
+            type="button"
+            onClick={() => setShowPolicyCard(v => !v)}
+            aria-expanded={showPolicyCard}
+          >
+            <span aria-hidden="true">{showPolicyCard ? '▲' : '▼'}</span>{' '}
+            {showPolicyCard ? '내 상황 분석 접기' : '내 상황 분석 · 지원 제도 보기'}
           </button>
         </div>
 
-        {/* ── 표12 근거 지원 프로그램 섹션 (전 단계) ── */}
-        {(() => {
+        {showPolicyCard && (() => {
           const policy = STAGE_POLICY[stage];
           if (!policy) return null;
           return (
@@ -792,10 +793,7 @@ const RiskAssessment: React.FC = () => {
               {/* 분류 결과 */}
               <div className="policy-classify">
                 <p className="policy-classify-label">지금 내 상황</p>
-                <p className="policy-classify-type">
-                  <strong className="policy-dim-reason">{dimensionReason}</strong>{' '}
-                  아래 설명이 지금 상황과 가깝습니다.
-                </p>
+                <p className="policy-classify-type">아래 설명이 지금 상황과 가깝습니다.</p>
                 <p className="policy-classify-char">{policy.characteristic}</p>
                 <div className="policy-strategy-row">
                   <span className="policy-strategy-label">지원 전략</span>
@@ -860,7 +858,7 @@ const RiskAssessment: React.FC = () => {
                 aria-expanded={showPrograms}
               >
                 <span>추천 지원 제도</span>
-                <span className="policy-programs-toggle-arrow">{showPrograms ? '▲' : '▼'}</span>
+                <span className="policy-programs-toggle-arrow" aria-hidden="true">{showPrograms ? '▲' : '▼'}</span>
               </button>
 
               {showPrograms && (
@@ -916,7 +914,15 @@ const RiskAssessment: React.FC = () => {
         <style>{`
           .result-card { padding:1.75rem; display:flex; flex-direction:column; gap:1.25rem; }
           .result-stage-row { display:flex; align-items:center; gap:1rem; }
-          .result-stage-name { font-size:1.1rem; font-weight:700; color:var(--text); line-height:1.55; }
+          .result-stage-name { font-size:1.05rem; font-weight:600; color:var(--text); line-height:1.6; }
+          .result-complete-badge {
+            display: inline-flex; align-items: center; gap: .4rem;
+            font-size: .78rem; font-weight: 600; color: var(--success);
+            background: color-mix(in srgb, var(--success) 10%, transparent);
+            border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
+            border-radius: var(--radius-full);
+            padding: .25rem .75rem; width: fit-content;
+          }
           .result-detail-toggle {
             background: none; border: 1px solid var(--border); border-radius: var(--radius-sm);
             cursor: pointer; font-size: .78rem; font-weight: 600; color: var(--text-light);
@@ -933,9 +939,6 @@ const RiskAssessment: React.FC = () => {
           }
           .policy-programs-toggle:hover { color: var(--primary); }
           .policy-programs-toggle-arrow { font-size: .65rem; color: var(--text-light); }
-          .result-score-sub { font-size:.85rem; color:var(--text-muted); margin-top:.2rem; }
-          .result-bar-bg { height:10px; background:var(--border); border-radius:99px; overflow:hidden; }
-          .result-bar-fill { height:100%; width:100%; border-radius:99px; transform-origin:left; transition:transform 0.8s ease; }
           .result-cats { display:flex; flex-direction:column; gap:.625rem; }
           .result-cat-row { display:flex; align-items:center; gap:.75rem; }
           .result-cat-label { font-size:.78rem; font-weight:600; color:var(--text-muted); width:68px; flex-shrink:0; }
@@ -952,6 +955,13 @@ const RiskAssessment: React.FC = () => {
           .rdn-title { font-size:.8rem; font-weight:700; color:var(--primary); margin-bottom:.4rem; }
           .rdn-body { font-size:.82rem; color:var(--text-muted); line-height:1.7; }
           .result-actions { display:flex; gap:.75rem; flex-wrap:wrap; }
+
+          .policy-card-toggle {
+            background: none; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            cursor: pointer; font-size: .78rem; font-weight: 600; color: var(--text-light);
+            padding: .4rem 1rem; transition: color .15s, border-color .15s;
+          }
+          .policy-card-toggle:hover { color: var(--primary); border-color: var(--primary); }
 
           /* ── 표12 근거 지원 프로그램 카드 ── */
           .policy-card {

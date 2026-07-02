@@ -2861,7 +2861,9 @@ const Recommendation: React.FC = () => {
         .job-outlook-viz{display:flex;flex-direction:column;gap:.35rem}
         .outlook-stack-wrap{display:flex;flex-direction:column;gap:.35rem}
         .outlook-stack-bar{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px}
-        .outlook-stack-seg{flex-shrink:0;border-radius:3px;transition:width .3s}
+        .outlook-stack-seg{flex-shrink:0;border-radius:3px;animation:seg-in .25s ease-out both}
+        @keyframes seg-in{from{opacity:0}to{opacity:1}}
+        @media(prefers-reduced-motion:reduce){.outlook-stack-seg{animation:none}}
         .outlook-legend{display:flex;gap:.6rem;flex-wrap:wrap}
         .outlook-legend-item{display:flex;align-items:center;gap:.25rem;font-size:.7rem;color:var(--text);font-weight:600}
         .outlook-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
