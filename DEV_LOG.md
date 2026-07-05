@@ -2,7 +2,7 @@
 
 > **파일명**: DEV_LOG.md  
 > **최종 수정일**: 2026-07-05  
-> **문서 해시**: SHA256:74c3b13d4ae85bc1f010a3f001cebf15698c343ef18cc6a846ab7db6ac855fac
+> **문서 해시**: SHA256:dc43d88c8c47d11ecf9c1132d0b5a453aada52e577f7dfb3cb1af5c35924af2c
 > **문서 역할**: 날짜별 진행 로그, 변경 요약, 해결 이력  
 > **문서 우선순위**: 14  
 > **연관 문서**: CHANGE_CONTROL.md, PRD.md, DIRECTORY_SPEC.md, ERROR_ANALYSIS.md  
@@ -13,6 +13,31 @@
 ## 1. 문서 목적
 
 구현과 문서 정렬 작업의 **타임라인**을 남겨, 이후 기여자가 맥락을 잃지 않게 한다.
+
+---
+
+## 2026-07-05 (5) — recall=1.000 방법론 결함 발견·수정 — Claude+WebSearch 정답지 + 실배포 사이트 대비 재평가
+
+### 배경
+사용자가 (4)의 recall_all=1.000이 통계적으로 의심스럽다고 정확히 지적("정답 누수 됐거나 같은 답을 내놓은거 같아"). 원인 확인: `llm_judge_golden_set.py`가 (a) gold set을 시스템과 **동일한** 도메인-필터 후보 풀에서만 뽑고, (b) `actual`을 `recommendation_service.recommendations(top_n_per_stage=100)`으로 인위적으로 부풀려 측정했음 — gold가 애초에 actual의 부분집합이 되도록 설계된 순환 평가(정답 누수)였다.
+
+### 수행
+- Gold set을 **Claude가 직접**(gpt-4o-mini 위임 아님) WebSearch로 도메인별 실세계 관련 자격증을 조사(정보처리기사·ADsP/SQLD·전산회계·GTQ·평생교육사·지식재산능력시험 등 검색)하고, `cert_candidates.jsonl`의 실제 도메인별 후보 풀과 대조해 판정. 위험군별 난이도 정책(risk_0001은 도전 허용, risk_0002~0004는 고난도 제외)을 각 자격증의 실제 tier·합격률에 근거해 반영.
+- `actual`을 로컬 개발 서버가 아니라 **실제 배포된 프로덕션 사이트**(`https://vulnerable-groups-rag.onrender.com`, `top_n_per_stage` 미지정 → 기본값 5)에서 직접 조회. `roadmap_by_stage[].recommended_certs`(화면에 실제 노출되는 자격증만, `roadmap_sequence` 전체 아님)를 "실제 사용자가 보는 결과"로 사용.
+- `docs/evaluation/claude_judge_golden_set_2026-07-05.jsonl`에 저장(gold, 배포 사이트 실제 노출 목록, hit/miss, recall, 판정 근거 포함).
+
+### 결과 (recall vs 실제 배포 사이트, 화면 노출 기준)
+- PJ01 소프트웨어개발(risk_0002): 0.50 (미스: 정보처리기사·정보처리기능사·ITQ A급 — 특히 정보처리기사가 top-5 밖으로 밀려남)
+- PJ02 데이터/AI(risk_0001): 0.57 (미스: ADsP·SQLD·DAsP)
+- PJ03 금융/회계(risk_0003): 0.43
+- PJ04 디자인(risk_0002): 0.56 (미스: GTQ 1·2급 — 검색상 가장 대중적인 자격증인데도 미노출)
+- PJ05 교육(risk_0001): 0.36
+- PJ06 법률(risk_0004): 1.00 (후보 풀 자체가 1건뿐이라 우연히 일치)
+- **평균 0.570** — (4)의 1.000은 폐기, 이 값이 신뢰 가능한 기준선.
+
+### 남은 이슈
+- 배포 사이트는 아직 오늘 (1)~(4)의 로컬 수정사항(Fit Score, recommended_risk_stages 4단계 개방)이 반영 안 된 상태 — 배포 후 동일 스크립트로 재측정하면 recall이 달라질 것으로 예상(특히 PJ01 미스였던 정보처리기사 등 eligibility 관련 항목).
+- gold set은 Claude 1회 판정 + 6개 검색 쿼리 기반 — 전문가 검토 전 자동 생성본 표시 유지.
 
 ---
 
