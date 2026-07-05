@@ -1,5 +1,5 @@
 # File: job_fair_service.py
-# Last Updated: 2026-05-26
+# Last Updated: 2026-07-05
 # Content Hash: SHA256:TBD
 # Role: Work24 채용행사 목록 조회 (개인 계정 사용 가능 — 공공기관 주최 행사)
 #
@@ -180,4 +180,35 @@ def get_job_fairs_by_domain(
         "기계/제조": "제조", "환경/에너지": "환경",
     }
     keyword = _DOMAIN_KEYWORDS.get(domain_name, domain_name.split("/")[0])
-    return get_job_fairs(settings, region=region, keyword=keyword, page_size=page_size)
+    resp = get_job_fairs(settings, region=region, keyword=keyword, page_size=page_size)
+    if not resp.get("success"):
+        fallback = _MANUAL_FALLBACK_EVENTS.get(domain_name)
+        if fallback:
+            return ok_envelope({
+                "query": {"region": region, "keyword": keyword},
+                "events": fallback,
+                "total": len(fallback),
+            })
+    return resp
+
+
+# Work24 채용행사 API(callOpenApiSvcInfo100L01.do)가 "고용24" 개편 이후 HTTP 404 응답 —
+# 정식 엔드포인트 확인 전까지 도메인별 확인된 실제 행사를 graceful fallback으로 제공한다.
+_MANUAL_FALLBACK_EVENTS: dict[str, list[dict[str, Any]]] = {
+    "소프트웨어개발": [
+        {
+            "event_id": "48798",
+            "event_name": "취업준비콘서트 일자리톡톡_한국관광공사 서울",
+            "organizer": "한국관광공사",
+            "region": "서울",
+            "venue": "서울고용복지플러스센터 1층 청년on라운지",
+            "start_date": "",
+            "end_date": "",
+            "apply_method": "",
+            "url": "https://m.work24.go.kr/wk/a/f/1100/retrieveEmpEventDtl.do?currentPageNo=1&recordCountPerPage=12&subCurrentPageNo=1&subRecordCountPerPage=12&eventMegaRegionCd=51&newsDataSeqno=48798&writeNo=&startDt=20260705&endDt=20260805&selectAreaList=&searchText=&eventClcd=all%2C01%2C02%2C03%2C04%2C05&searchTermGbn=",
+            "description": "기업이념·조직문화·인재상·채용트렌드·직무설명 Q&A. 취업을 준비하는 청년 누구나 참여 가능.",
+            "participant_count": "",
+            "event_type": "직무설명회",
+        },
+    ],
+}

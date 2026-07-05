@@ -1,5 +1,5 @@
 {
-  "saved_at": 1782988497.479709,
+  "saved_at": 1783216004.605071,
   "entries": {
     "프로그래밍기능사::소프트웨어개발": {
       "relevance_delta_pct": 30,
@@ -36,6 +36,18 @@
       "relevance_summary": "차량기술사는 자동차의 구조와 정비에 대한 전문 지식을 갖춘 자격증으로, 자동차 정비 분야에서 기술적 문제를 해결하고 품질 관리를 수행하는 데 큰 도움이 됩니다.",
       "difficulty_score": 75,
       "job_demand_level": "중"
+    },
+    "정보처리기사::IT·개발": {
+      "relevance_delta_pct": 30,
+      "relevance_summary": "정보처리기사는 IT·개발 분야에서 필수적인 기초 지식을 제공하며, 소프트웨어 개발 및 시스템 설계에 대한 이해도를 높여줍니다. 이 자격증을 보유하면 채용 시 경쟁력을 갖출 수 있습니다.",
+      "difficulty_score": 70,
+      "job_demand_level": "상"
+    },
+    "정보처리기사::": {
+      "relevance_delta_pct": 30,
+      "relevance_summary": "정보처리기사는 IT 분야에서 시스템 개발 및 관리에 필요한 기초 지식과 기술을 갖추었다는 것을 증명합니다. 이 자격증을 보유하면 소프트웨어 개발, 데이터베이스 관리 등 다양한 직무에서 경쟁력을 높일 수 있습니다.",
+      "difficulty_score": 70,
+      "job_demand_level": "상"
     }
   }
 }

@@ -176,11 +176,14 @@ interface SupportItem {
   cost?: string; employment_rate?: string; course_url?: string;
   // process_eval
   label?: string; link_label?: string;
+  // job_fair
+  event_name?: string; organizer?: string; region?: string; venue?: string;
+  start_date?: string; end_date?: string;
   [key: string]: string | undefined;
 }
 
 interface SupportBundleEntry {
-  resource_type: 'hiring' | 'training' | 'process_eval';
+  resource_type: 'hiring' | 'training' | 'process_eval' | 'job_fair';
   label: string;
   color_theme: string;
   count: number;
@@ -205,6 +208,7 @@ const SUPPORT_RESOURCE_ICON: Record<string, string> = {
   hiring:       '💼',
   training:     '🎓',
   process_eval: '✅',
+  job_fair:     '📌',
 };
 
 const RISK_LABELS: Record<string, string> = {
@@ -1547,6 +1551,19 @@ const Roadmap: React.FC = () => {
                               {item.link_label && (
                                 <span className="rm-support-tag rm-support-tag-link">{item.link_label} →</span>
                               )}
+                            </a>
+                          );
+                          if (bundle.resource_type === 'job_fair') return (
+                            <a key={i} className="rm-support-item rm-support-item-link"
+                               href={item.url || '#'} target="_blank" rel="noopener noreferrer">
+                              <div className="rm-support-item-main">
+                                <span className="rm-support-item-title">{item.event_name || '채용행사'}</span>
+                                {item.organizer && <span className="rm-support-item-sub">{item.organizer}</span>}
+                              </div>
+                              <div className="rm-support-item-meta">
+                                {item.venue && <span className="rm-support-tag">{item.venue}</span>}
+                                {item.region && <span className="rm-support-tag">{item.region}</span>}
+                              </div>
                             </a>
                           );
                           return null;

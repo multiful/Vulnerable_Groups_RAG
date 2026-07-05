@@ -60,6 +60,12 @@ const _CERT_JOB_MOCK: Record<string, CertJobMatchResult['job_postings']> = {
       location: '서울',
       is_active: true,
     },
+    {
+      company: '(주)휴먼아이티에스',
+      title: '개발 및 유지관리 신입사원 (정보처리기사 우대)',
+      url: 'https://www.saramin.co.kr/zf_user/jobs/relay/view?view_type=search&rec_idx=54332741&location=ts&searchword=%EC%A0%95%EB%B3%B4%EC%B2%98%EB%A6%AC%EA%B8%B0%EC%82%AC&searchType=recently&paid_fl=n&search_uuid=03f904c8-2558-4007-91e7-2caf9250f7a1&t_ref=search&t_ref_content=generic',
+      is_active: true,
+    },
   ],
 };
 
