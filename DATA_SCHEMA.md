@@ -1,7 +1,7 @@
 # DATA_SCHEMA.md
 
 > **파일명**: DATA_SCHEMA.md  
-> **최종 수정일**: 2026-06-30  
+> **최종 수정일**: 2026-07-05  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 데이터 구조, 엔티티, 관계, 공통 필드, 제약조건 정의 문서  
 > **문서 우선순위**: 5  
@@ -256,8 +256,8 @@
 
 ### 제약
 - `risk_stage_id`는 유일해야 한다.
-- 현재 허용 범위는 1단계 ~ 5단계다.
-- `risk_stage_order`는 1~5의 정수다.
+- 활성(`is_active=True`) 위험군은 1단계 ~ 4단계다. `risk_0005`(5단계, 구 "은둔군")는 `is_active=False`로 보존되며 현재 서비스(프론트엔드)에서는 사용하지 않는다.
+- `risk_stage_order`는 1~5의 정수다(비활성 `risk_0005` 포함).
 
 ---
 
@@ -1028,7 +1028,7 @@ canonicalization 및 candidate 생성 과정의 품질 검증 결과를 저장�
 
 | 스키마 대상 | 이유 |
 |---|---|
-| `RiskStage` 전체, `risk_stage_to_domain`, `risk_stage_to_roadmap_stage` | 제공 CSV에 **위험군(1~5단계)** 정의·가중 관계가 없음. **정책/별도 시드 파일**로 관리 |
+| `RiskStage` 전체, `risk_stage_to_domain`, `risk_stage_to_roadmap_stage` | 제공 CSV에 **위험군(1~4단계, `risk_0005`는 비활성 보존)** 정의·가중 관계가 없음. **정책/별도 시드 파일**로 관리 |
 | `RoadmapStage` 전체, `cert_to_roadmap_stage` | 로드맵 단계 정의가 CSV에 없음. **별도 시드 또는 규칙** |
 | `DomainSubLabel` / `JobSubLabel`의 **taxonomy 준수 ID·상위 라벨** | CSV의 학과명·직업명·NCS 문구는 **자유 텍스트**. `primary_domain`, `related_domains`, `related_jobs`에 넣으려면 **허용 taxonomy 표 → 매핑 테이블**(수동·규칙·검수) 필요 |
 | `recommendation candidate` 의 `primary_domain`, `related_domains` | 위 매핑·집계 없이는 **스키마 제약 위반** 또는 품질 플래그 다량 |

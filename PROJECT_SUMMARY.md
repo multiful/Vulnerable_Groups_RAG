@@ -1,8 +1,8 @@
 # PROJECT_SUMMARY.md
 
 > **파일명**: PROJECT_SUMMARY.md  
-> **최종 수정일**: 2026-05-15  
-> **문서 해시**: SHA256:05b369f39d501b8b97271c19436dadac1491eb1abf3040612688ce50dbcdac86
+> **최종 수정일**: 2026-07-05  
+> **문서 해시**: SHA256:a4e3dab3eb2f812d6c27096cc899c198294f58783870e56d1c22bdc57f619ef1
 > **문서 역할**: 저장소 한눈에 보기 — 목적·구조·문서 지도·청킹 개요  
 > **문서 우선순위**: reference (세부 계약·스키마는 각 전용 문서가 우선)  
 > **연관 문서**: README.md, PRD.md, SYSTEM_ARCHITECTURE.md, RAG_PIPELINE.md, DATA_SCHEMA.md, DIRECTORY_SPEC.md  
@@ -12,7 +12,7 @@
 
 ## 1. 이 프로젝트가 하는 일
 
-청년 **위험군 단계**(1~5단계)와 **관심 직무·도메인(taxonomy)** 을 입력으로, **자격증 후보**와 **로드맵**을 구조적으로 추천하고, **PDF/HTML 근거**로 설명(evidence)을 붙이는 시스템을 만든다.
+청년 **위험군 단계**(1~4단계)와 **관심 직무·도메인(taxonomy)** 을 입력으로, **자격증 후보**와 **로드맵**을 구조적으로 추천하고, **PDF/HTML 근거**로 설명(evidence)을 붙이는 시스템을 만든다.
 
 - **구조적 추천**: canonical 데이터(엔티티·관계·candidate row). CSV는 여기로만 간다.
 - **RAG**: 추천 엔진이 아니라 **설명 근거 검색** 레이어. PDF/HTML만 Parse→Chunk→Embed 경로.

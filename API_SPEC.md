@@ -1,8 +1,8 @@
 # API_SPEC.md
 
 > **파일명**: API_SPEC.md  
-> **최종 수정일**: 2026-07-02 (F-32 POST /chat 엔드포인트 계약 추가)  
-> **문서 해시**: SHA256:db762eb3d7d4d6591796302b64762c5eb91077635741dcaafd8b019928fcb86f
+> **최종 수정일**: 2026-07-05 (위험군 "4~5단계" 잔존 표기를 4단계로 정정)  
+> **문서 해시**: SHA256:811bdef35effe1239ac409372a31db860fecf62c2d4766f58ee8a8e07dc0cfd1
 > **문서 역할**: API 계약, request/response, 오류 형식 정의 문서  
 > **문서 우선순위**: 6  
 > **연관 문서**: FEATURE_SPEC.md, DATA_SCHEMA.md, SYSTEM_ARCHITECTURE.md, PRD.md  
@@ -676,7 +676,7 @@ WorkNet 실시간 채용정보 목록 조회.
 ## 8.5 GET /training/process-eval
 
 ### 목적
-과정평가형 자격 종목 조회. 4~5단계 청년에게 교육 이수형 취득 경로 제시.
+과정평가형 자격 종목 조회. 4단계 청년에게 교육 이수형 취득 경로 제시.
 
 ---
 
@@ -757,7 +757,7 @@ WorkNet 실시간 채용정보 목록 조회.
 |---|---|---|
 | 1단계 | `partial` | `hiring` |
 | 2~3단계 | `standard` | `hiring`, `training` |
-| 4~5단계 | `full` | `hiring`, `training`, `job_cafe`, `process_eval` |
+| 4단계 | `full` | `hiring`, `training`, `job_cafe`, `process_eval` |
 
 ### Response Body 예시
 ```json

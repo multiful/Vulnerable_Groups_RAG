@@ -1,8 +1,8 @@
 # DIRECTORY_SPEC.md
 
 > **파일명**: DIRECTORY_SPEC.md  
-> **최종 수정일**: 2026-04-07  
-> **문서 해시**: SHA256:a8b29e15bf3d20dd06d29ccffaa1b23f4c5e4507da5dadd45b8d2991101b308a
+> **최종 수정일**: 2026-07-05  
+> **문서 해시**: SHA256:0c67d4b88f13473111773be05281fbe3f5eb131093d4c6f817d2b69edfa13358
 > **문서 역할**: 프로젝트 디렉토리 구조와 파일/폴더 책임 정의 문서  
 > **문서 우선순위**: 9  
 > **연관 문서**: README.md, CHANGE_CONTROL.md, SYSTEM_ARCHITECTURE.md, PRD.md  
@@ -483,7 +483,7 @@ frontend / backend 공용 상수, schema, 타입을 저장한다.
 3. CSV는 Parse IR 대상으로 처리하지 않는다.
 4. `related_domains`는 도메인 taxonomy 세부 라벨만 허용한다.
 5. `related_jobs`는 희망 직무 taxonomy 세부 직무만 허용한다.
-6. 위험군은 1단계 ~ 5단계 구조로 관리한다.
+6. 위험군은 1단계 ~ 4단계 구조로 관리한다 (`risk_0005`는 백엔드에 비활성 보존, 프론트엔드 미사용).
 7. API 일정/링크는 후속 스프린트에서 canonical target schema에 병합한다.
 8. 스캐폴드용 **리프 폴더**(`docs/*`, `data/*` 리프, `frontend/src/*` 리프, `scripts/*`, `experiments/*`, `infra/*`, `shared/*`)에는 역할 설명용 **`FOLDER.md`** 를 둔다. 상단 메타데이터·`문서 해시: SHA256:TBD` 형식은 루트 md와 동일 계열을 따르며, 용도 변경 시 본 파일과 본 `DIRECTORY_SPEC.md`를 함께 갱신한다. 일괄 생성·재생성은 `python scripts/maintenance/generate_folder_md.py` (저장소 루트에서 실행).
 

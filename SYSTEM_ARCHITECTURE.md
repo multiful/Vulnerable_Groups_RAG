@@ -1,7 +1,7 @@
 # SYSTEM_ARCHITECTURE.md
 
 > **파일명**: SYSTEM_ARCHITECTURE.md  
-> **최종 수정일**: 2026-06-25  
+> **최종 수정일**: 2026-07-05  
 > **문서 해시**: SHA256:TBD
 > **문서 역할**: 시스템 구성, 계층, 책임, 데이터 흐름 정의 문서  
 > **문서 우선순위**: 3  
@@ -289,7 +289,7 @@ Recommendation Core는 구조적 추천을 담당한다.
 - 자유 텍스트 추천 라벨을 직접 생성하지 않는다.
 - recommendation core는 canonical data를 사실 기반으로 사용한다.
 - 문서형 evidence는 이 계층이 아니라 retrieval 계층에서 가져온다.
-- **위험군 단계가 높을수록(4~5단계) 낮은 등급(기능사·산업기사)을 우선 추천하고, 기사·기술사는 후순위로 조정한다.** 이 계층 조정은 Certificate 엔티티의 `cert_grade_tier` 필드 기반으로 수행한다. (`DATA_SCHEMA.md` §4.7, §5.3 참조)
+- **위험군 단계가 높을수록(4단계) 낮은 등급(기능사·산업기사)을 우선 추천하고, 기사·기술사는 후순위로 조정한다.** 이 계층 조정은 Certificate 엔티티의 `cert_grade_tier` 필드 기반으로 수행한다. (`DATA_SCHEMA.md` §4.7, §5.3 참조)
 - **로드맵은 flat list가 아니라 `cert_prerequisite` 관계(`DATA_SCHEMA.md` §6.8)를 방향 그래프(DAG)로 순회하여 생성한다.** 사용자 현재 위치에서 실제 이동 가능한 경로만 로드맵 단계 후보에 포함한다.
 
 ---
