@@ -1,8 +1,8 @@
 # DEV_LOG.md
 
 > **파일명**: DEV_LOG.md  
-> **최종 수정일**: 2026-07-02  
-> **문서 해시**: SHA256:86dc367a6eae7c6e8d820b1e53f47c5790488aeefd3dabb77b51ec7b2f7bf64b
+> **최종 수정일**: 2026-07-05  
+> **문서 해시**: SHA256:7df0ec1012e904807029b88b7bf12b44dbbaf060c8687e132554fd665e394a29
 > **문서 역할**: 날짜별 진행 로그, 변경 요약, 해결 이력  
 > **문서 우선순위**: 14  
 > **연관 문서**: CHANGE_CONTROL.md, PRD.md, DIRECTORY_SPEC.md, ERROR_ANALYSIS.md  
@@ -13,6 +13,28 @@
 ## 1. 문서 목적
 
 구현과 문서 정렬 작업의 **타임라인**을 남겨, 이후 기여자가 맥락을 잃지 않게 한다.
+
+---
+
+## 2026-07-05 (1) — 적합도 지표(Fit Score) 정의·적용 — roadmap_stage 내부 정렬을 "쉬운 순"에서 "사용자에게 맞는 순"으로 변경
+
+### 배경
+발표 슬라이드에 "적합도 지표 산출을 통해 적합도가 높은 우선순위 추천"이라는 문구가 있었으나, 점검 결과 실제로는 `llm_cert_relevance_service.py`의 `relevance_delta_pct`가 자격증 상세의 "채용공고 매칭" 카드 한 곳에만 쓰이고 있었고, 로드맵의 실제 정렬(`recommendation_service._build_roadmap_sequence`)은 `(stage_order, level_score, 인기+응시빈도, pass_rate)` — 사실상 "쉽고 인기있는 순"이었지 사용자의 관심 도메인/직무·위험군 단계별 감당 가능한 난이도를 반영하지 않았다. 사용자가 "취업도 잘 되고 인기도 있으면서, 위험군 단계별 부담 정도에 맞는 난이도"를 반영한 우선순위 추천을 명시적으로 요청.
+
+### 수행
+- `FEATURE_SPEC.md` F-03에 §3.1 "적합도 지표(Fit Score)" 신설: 관심 일치도(0.45)+취업 실용성(0.35)+난이도 적합도(0.20) 가중합 정의. F-05에 stage 내부 정렬 기준으로 교차 참조 추가.
+- `backend/app/services/recommendation_service.py`: `_interest_match_score`(도메인/직무 겹침 정도) · `_employability_score`(인기도+직무 폭+응시 접근성) · `_difficulty_fit_score`(위험군별 목표 합격률 근접도) · `_fit_score`(가중합) 추가.
+- `_build_roadmap_sequence`에 `domain_ids`/`job_ids` 파라미터 추가, 전체 순서(`sequence`)와 stage별 목록(`by_stage.recommended_certs`) 정렬 키를 `(-fit_score, level_score)` 기준으로 교체(기존 `-(인기+빈도), -pass_rate` 대체). roadmap_stage 배정(난이도 서열) 자체는 변경하지 않음 — stage 내부 우선순위만 변경.
+- 응답에 `fit_score`(0~100) 필드 노출(프론트 미연동, 추후 UI 표시용으로 남겨둠).
+
+### 검증
+- `python3 -m py_compile`(문법) + 로컬 서버 기동(`/api/v1/health` 200) 확인.
+- `POST /api/v1/recommendations` (risk_0002, domain_0002 소프트웨어개발, job_0009 백엔드개발)로 확인: "실행 확대" 단계에서 job_0009와 실제로 매칭되는 정보처리기사(fit=93)·정보처리산업기사(fit=92)가 domain만 맞고 job은 안 맞는 사무자동화산업기사(fit=67)보다 확실히 상위로 이동.
+- risk_0001(목표 합격률 40%) vs risk_0004(목표 합격률 68%) 비교: 동일 domain/job 조건에서 risk_0004는 고난도·저합격률 자격증의 fit_score가 상대적으로 낮아지고 합격률이 높은 자격증이 상대적으로 유리해짐 — "위험군이 심할수록 부담 낮은 난이도 우대" 의도대로 동작 확인.
+
+### 남은 이슈 (범위 밖, 참고용 기록)
+- `/api/v1/recommendations/llm` ("AI 맞춤 추천" 탭)은 `recommendation_service.py`와 별개인 `llm_roadmap_service.py`(`_select_diverse`/`_assign_stages`)를 사용 — 이번 fit_score가 아직 그쪽에는 적용되지 않음. 필요 시 별도 작업으로 확장.
+- 가중치(0.45/0.35/0.20)와 위험군별 목표 합격률은 v1 기본값 — 골든셋 평가 후 조정 필요.
 
 ---
 

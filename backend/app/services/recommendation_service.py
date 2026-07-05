@@ -129,6 +129,86 @@ _NONTECH_DEFAULT = (15, "roadmap_stage_0002")
 # achievability: risk_stage 거리 기준
 _ACHIEVABILITY = {0: "immediate", 1: "near_term", 2: "long_term"}
 
+# ── 적합도 지표 (Fit Score) — FEATURE_SPEC.md F-03 §3.1 ──
+# roadmap_stage 배정(난이도 서열)은 그대로 두고, 같은 stage 안에서 "이 사용자에게 잘 맞는 순"으로
+# 재정렬하기 위한 가중합 점수. v1 기본 가중치 — 골든셋 검증 후 조정 가능.
+_FIT_W_INTEREST   = 0.45  # 관심 도메인/직무 일치도
+_FIT_W_EMPLOY     = 0.35  # 취업 실용성 (인기 + 직무 폭 + 응시 접근성)
+_FIT_W_DIFFICULTY = 0.20  # 위험군 단계별 적정 난이도(부담) 근접도
+
+_POPULARITY_NORM_CAP = 0.14  # _popularity_boost(log1p(누적취득자수)*0.01) 실측 상한 근사
+_FREQ_NORM_CAP       = 0.15  # _exam_freq_score 최대치
+_JOB_BREADTH_CAP     = 8     # related_jobs 개수 정규화 상한
+
+# 위험군 단계별 "부담 없는" 목표 합격률(%). 위험군이 심할수록(4단계) 목표를 높여 쉬운(부담 낮은)
+# 자격증을 우대하고, 위험군이 가벼울수록(1단계) 목표를 낮춰 난이도보다 관심·실용성 비중을 키운다.
+_RISK_TARGET_PASS_RATE: dict[str, float] = {
+    "risk_0001": 40.0,
+    "risk_0002": 48.0,
+    "risk_0003": 58.0,
+    "risk_0004": 68.0,
+    "risk_0005": 68.0,
+}
+_DEFAULT_TARGET_PASS_RATE = 50.0
+_DIFFICULTY_FIT_SPAN = 45.0  # 목표 대비 편차가 이 값 이상이면 difficulty_fit=0
+
+
+def _interest_match_score(cand: dict, domain_ids: list[str], job_ids: list[str]) -> float:
+    """사용자가 고른 도메인/직무와 후보 자격증의 일치 정도 (0.0~1.0)."""
+    domain_hit = bool(domain_ids) and any(d in cand.get("related_domains", []) for d in domain_ids)
+    job_hit    = bool(job_ids) and any(j in cand.get("related_jobs", []) for j in job_ids)
+
+    if domain_ids and job_ids:
+        if domain_hit and job_hit:
+            return 1.0
+        if domain_hit:
+            return 0.7
+        if job_hit:
+            return 0.55
+        return 0.3
+    if domain_ids:
+        return 1.0 if domain_hit else 0.3
+    if job_ids:
+        return 1.0 if job_hit else 0.3
+    return 0.5  # 관심 정보 없음(위험군 단독 조회) — 중립
+
+
+def _employability_score(popularity_boost: float, freq_score: float, related_jobs_count: int) -> float:
+    """실제 취득 인기도 + 관련 직무 폭 + 응시 접근성 기반 취업 실용성 (0.0~1.0)."""
+    pop_norm  = min(popularity_boost / _POPULARITY_NORM_CAP, 1.0)
+    freq_norm = min(freq_score / _FREQ_NORM_CAP, 1.0)
+    job_norm  = min(related_jobs_count, _JOB_BREADTH_CAP) / _JOB_BREADTH_CAP
+    return 0.5 * pop_norm + 0.3 * job_norm + 0.2 * freq_norm
+
+
+def _difficulty_fit_score(pass_rate: float | None, risk_stage_id: str) -> float:
+    """위험군 단계별 적정 부담 수준(목표 합격률) 대비 근접도 (0.0~1.0). 합격률 미상이면 중립(0.5)."""
+    if pass_rate is None:
+        return 0.5
+    target = _RISK_TARGET_PASS_RATE.get(risk_stage_id, _DEFAULT_TARGET_PASS_RATE)
+    diff = abs(pass_rate - target)
+    return max(0.0, 1.0 - diff / _DIFFICULTY_FIT_SPAN)
+
+
+def _fit_score(
+    cand: dict,
+    domain_ids: list[str],
+    job_ids: list[str],
+    risk_stage_id: str,
+    popularity_boost: float,
+    freq_score: float,
+    pass_rate: float | None,
+) -> float:
+    """종합 적합도 (0.0~1.0) — interest_match·employability·difficulty_fit 가중합."""
+    interest   = _interest_match_score(cand, domain_ids, job_ids)
+    employ     = _employability_score(popularity_boost, freq_score, len(cand.get("related_jobs", [])))
+    difficulty = _difficulty_fit_score(pass_rate, risk_stage_id)
+    return (
+        _FIT_W_INTEREST * interest
+        + _FIT_W_EMPLOY * employ
+        + _FIT_W_DIFFICULTY * difficulty
+    )
+
 
 # ---------- 로드 ----------
 @lru_cache(maxsize=1)
@@ -614,12 +694,16 @@ def _build_roadmap_sequence(
     user_risk_id: str,
     top_n: int,
     held_max_tier: dict[str, int] | None = None,
+    domain_ids: list[str] | None = None,
+    job_ids: list[str] | None = None,
 ) -> tuple[list[dict], list[dict]]:
     """
     Returns:
       sequence: 순서형 평탄화 리스트 (step 1, 2, 3, ...)
       by_stage: stage별 그룹 리스트
     """
+    domain_ids = domain_ids or []
+    job_ids = job_ids or []
     starting_order = roadmap_stages.get(starting_roadmap_id, {}).get("order", 1)
 
     # 각 cert에 유효 roadmap_stage 할당
@@ -660,14 +744,19 @@ def _build_roadmap_sequence(
         # exam_frequency 접근성 가중치: 시험 기회가 많을수록 취업 급한 사용자에게 유리
         detail = detail_map.get(x.get("cert_id", ""), {})
         x["_freq_score"] = _exam_freq_score(detail.get("exam_frequency"))
+        # 적합도 지표 (FEATURE_SPEC.md F-03 §3.1) — 관심 일치도 + 취업 실용성 + 난이도 적합도
+        x["_fit_score"] = _fit_score(
+            x, domain_ids, job_ids, user_risk_id,
+            x["_popularity_boost"], x["_freq_score"], x["_pass_rate"],
+        )
 
     # 전체 오름차순 정렬 (sequence용):
-    #   1순위 stage_order → 2순위 level_score → 3순위 인기+빈도 보정 → 4순위 pass_rate 높을수록
+    #   1순위 stage_order(구조적 진행 순서) → 2순위 fit_score 내림차순(같은 stage 안 우선순위)
+    #   → 3순위 level_score(동점 tie-break, 난이도 서열)
     enriched.sort(key=lambda x: (
         x["_eff_stage_info"].get("order", 2),
+        -x["_fit_score"],
         x["_level_score"],
-        -(x["_popularity_boost"] + x["_freq_score"]),
-        -(x["_pass_rate"] or 0.0),
     ))
 
     # ── 순서형 flat 리스트 ──
@@ -700,6 +789,7 @@ def _build_roadmap_sequence(
             "primary_domain": _effective_domain(c),
             "related_jobs": c.get("related_jobs", [])[:5],
             "text_for_dense": c.get("text_for_dense", ""),
+            "fit_score": round(c["_fit_score"] * 100),
         })
 
     # ── stage별 그룹 (top_n 제한) ──
@@ -720,7 +810,7 @@ def _build_roadmap_sequence(
         sid = stage_info["id"]
         certs_here = sorted(
             stage_groups.get(sid, []),
-            key=lambda x: (x["_level_score"], -(x["_pass_rate"] or 0.0)),
+            key=lambda x: (-x["_fit_score"], x["_level_score"]),
         )[:top_n]
         by_stage.append({
             "stage": stage_info,
@@ -740,6 +830,7 @@ def _build_roadmap_sequence(
                     "is_redundant": c["_is_redundant"],
                     "achievability": c["_achievability"],
                     "related_jobs": c.get("related_jobs", [])[:5],
+                    "fit_score": round(c["_fit_score"] * 100),
                 }
                 for c in certs_here
             ],
@@ -867,6 +958,7 @@ def recommendations(body: dict[str, Any]) -> dict:
         filtered, starting_roadmap_id, roadmap_stages,
         pass_rate_map, risk_stage_id or "", top_n,
         held_max_tier=held_max_tier,
+        domain_ids=domain_ids, job_ids=job_ids,
     )
 
     # ── cert_paths: DAG 기반 자격증 경로 ──
