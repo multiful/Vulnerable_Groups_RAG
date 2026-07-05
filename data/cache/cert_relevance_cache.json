@@ -1,5 +1,5 @@
 {
-  "saved_at": 1783216004.605071,
+  "saved_at": 1783260456.084799,
   "entries": {
     "프로그래밍기능사::소프트웨어개발": {
       "relevance_delta_pct": 30,
@@ -47,6 +47,24 @@
       "relevance_delta_pct": 30,
       "relevance_summary": "정보처리기사는 IT 분야에서 시스템 개발 및 관리에 필요한 기초 지식과 기술을 갖추었다는 것을 증명합니다. 이 자격증을 보유하면 소프트웨어 개발, 데이터베이스 관리 등 다양한 직무에서 경쟁력을 높일 수 있습니다.",
       "difficulty_score": 70,
+      "job_demand_level": "상"
+    },
+    "빅데이터분석기사::데이터/AI": {
+      "relevance_delta_pct": 75,
+      "relevance_summary": "빅데이터분석기사는 데이터 분석 및 처리 기술을 갖춘 인재를 양성하기 때문에 데이터/AI 분야에서 매우 유용합니다. 실제로 기업에서는 대량의 데이터를 효과적으로 분석하고 인사이트를 도출할 수 있는 능력을 중요시합니다.",
+      "difficulty_score": 85,
+      "job_demand_level": "상"
+    },
+    "데이터거래사::데이터/AI": {
+      "relevance_delta_pct": 30,
+      "relevance_summary": "데이터거래사는 데이터의 수집, 관리 및 거래에 대한 전문 지식을 갖추고 있어 데이터 분석 및 AI 프로젝트에서 데이터 활용의 효율성을 높이는 데 기여할 수 있습니다. 특히, 데이터의 품질과 보안 문제를 해결하는 데 중요한 역할을 합니다.",
+      "difficulty_score": 65,
+      "job_demand_level": "중"
+    },
+    "SQL개발자(SQLD)::데이터/AI": {
+      "relevance_delta_pct": 70,
+      "relevance_summary": "SQLD 자격증은 데이터베이스 관리와 쿼리 작성 능력을 증명하므로, 데이터 분석 및 AI 모델 개발에 필수적인 데이터 처리 능력을 갖추었다는 것을 보여줍니다. 실제로 데이터 관련 직무에서는 SQL을 활용한 데이터 추출 및 분석이 매우 중요합니다.",
+      "difficulty_score": 60,
       "job_demand_level": "상"
     }
   }

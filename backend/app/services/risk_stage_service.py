@@ -1,11 +1,11 @@
 # File: risk_stage_service.py
-# Last Updated: 2026-04-17
+# Last Updated: 2026-07-05
 # Content Hash: SHA256:TBD
 # Role: 위험군 단계 목록 조회 — risk_stage_master.csv 기반
 #
 # NOTE (CLAUDE.md §6):
-#   - 1단계 = 관심군 (관심군 → 취업 안정권에 가까운 쪽)
-#   - 5단계 = 은둔군 (취업 가장 어려운 위험군)
+#   - 1단계 = 고립위험청년 (가장 경미) ~ 4단계 = 은둔청년 (가장 심각)
+#   - risk_0005(구 은둔군, 구 5단계 체계)는 백엔드에 비활성 보존, 프론트엔드 미사용
 #   - 2~4단계 세부 의미는 CSV의 description 그대로 노출한다.
 #     "확정 전 임의 정의 금지" 원칙에 따라 CSV 값 외 추가 정의를 삽입하지 않는다.
 

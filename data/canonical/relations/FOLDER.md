@@ -2,7 +2,7 @@
 
 > **파일명**: FOLDER.md  
 > **폴더 경로**: `data/canonical/relations`  
-> **최종 수정일**: 2026-07-01 (risk_0005 비활성화: support_program_risk_stage_mapping 14행 + risk_stage_to_roadmap_stage rtr_00005 is_active=False)  
+> **최종 수정일**: 2026-07-05 (P6-1/P6-2 4단계 체계 재정의 — recommended_risk_stages·_RISK_TIER_MIN의 "risk_0001=취업안정권" 옛 가정 제거)  
 > **문서 해시**: SHA256:TBD  
 > **문서 역할**: 디렉터리 스캐폴드 명시서 — 담는 내용·금지·다음 단계 연계  
 > **문서 우선순위**: reference (충돌 시 루트 기준 문서 우선)  
@@ -120,55 +120,58 @@
 
 #### P6-1. `recommended_risk_stages` 생성 정책 (`build_cert_candidates.py` 반영)
 
+> **2026-07-05 개정**: 이 정책은 원래 위험군을 "risk_0001=취업 안정권 ~ risk_0005=최고위험군(은둔)" 축으로 다뤘다. 2026-07-01 4단계 전환(`CLAUDE.md` §6) 이후 위험군의 의미는 "risk_0001=고립위험청년(가장 경미) ~ risk_0004=은둔청년(가장 심각)"으로 바뀌었지만, 이 표는 갱신되지 않아 "안정권이라 쉬운 자격증 불필요"라는 옛 가정이 그대로 남아 있었다. 그 결과 risk_0001·risk_0002 사용자에게 기능사·산업기사 등 접근 가능한 자격증이 후보에서 원천 배제되는 회귀가 있었다(LLM-judge recall 평가로 발견, `DEV_LOG.md` 2026-07-05 (3)). 아래는 새 정책이다.
+>
+> **새 원칙**: 위험군 단계는 이제 "얼마나 감당 가능한 난이도인가"의 소프트한 우선순위(→ `FEATURE_SPEC.md` F-03 §3.1 적합도 지표 `difficulty_fit`)로 다루고, `recommended_risk_stages`는 **아주 어려운 자격증(기술사·기능장, 합격률 <10%)만 활동제한형 이상(risk_0003·risk_0004)에서 제외**하는 최소한의 하드 게이트로 축소한다. 고립위험청년(risk_0001)은 난이도 있는 자격증도 도전 후보로 허용하되, 진입장벽 있는(기능사 등) 자격증도 함께 보여준다 — "안정권이라 쉬운 게 불필요"가 아니라 "이 사용자도 쉬운 것부터 시작할 자격이 있다"는 것.
+
 **기술자격 (cert_grade_tier 존재):**
 
 | cert_grade_tier | recommended_risk_stages |
 |---|---|
-| `1_기능사` | `[risk_0003, risk_0004, risk_0005]` |
-| `2_산업기사` | `[risk_0002, risk_0003, risk_0004, risk_0005]` |
+| `1_기능사` | `[risk_0001, risk_0002, risk_0003, risk_0004]` |
+| `2_산업기사` | `[risk_0001, risk_0002, risk_0003, risk_0004]` |
 | `3_기사` | `[risk_0001, risk_0002, risk_0003, risk_0004]` |
-| `4_기술사` | `[risk_0001, risk_0002]` |
+| `4_기술사` | `[risk_0001, risk_0002]` (고난도 — 활동제한형·은둔청년은 제외) |
 | `5_기능장` | `[risk_0001, risk_0002]` |
 
 **비기술자격 (cert_grade_tier 없음, 합격률 기반):**
 
 | avg_pass_rate_3yr | recommended_risk_stages |
 |---|---|
-| ≥50% | `[risk_0003, risk_0004, risk_0005]` |
-| 30–50% | `[risk_0002, risk_0003, risk_0004]` |
-| 10–30% | `[risk_0001, risk_0002, risk_0003]` |
-| <10% | `[risk_0001, risk_0002]` |
-| 합격률 없음 | keyword fallback 또는 기본값 `[risk_0002, risk_0003, risk_0004]` |
+| ≥50% | `[risk_0001, risk_0002, risk_0003, risk_0004]` |
+| 30–50% | `[risk_0001, risk_0002, risk_0003, risk_0004]` |
+| 10–30% | `[risk_0001, risk_0002, risk_0003, risk_0004]` |
+| <10% | `[risk_0001, risk_0002]` (매우 어려움 — 활동제한형·은둔청년은 제외) |
+| 합격률 없음 | keyword fallback 또는 기본값 `[risk_0001, risk_0002, risk_0003, risk_0004]` |
 
+- `risk_0005`(구 은둔군)는 백엔드 비활성 보존 상태라 신규 생성 시 더 이상 포함하지 않는다.
 - 구현 위치: `scripts/build_cert_candidates.py` Phase 4 candidate row 생성 시
-- 검증: risk_0001 필터 결과 집합 ≠ risk_0005 필터 결과 집합인지 diff 확인
+- 난이도 세부 우선순위(같은 위험군 안에서 어떤 자격증을 먼저 보여줄지)는 이 표가 아니라 `recommendation_service._fit_score`(`FEATURE_SPEC.md` F-03 §3.1)가 담당한다.
 
 ---
 
-#### P6-2. `_filter_candidates` tier_min 보강 (`recommendation_service.py`)
+#### P6-2. `_filter_candidates` tier_min (`recommendation_service.py`) — 2026-07-05 폐지
 
-fallback 케이스(risk 제약 해제)에서도 risk_0001에 기능사가 주요 추천에 포함되지 않도록 tier 하한 필터 추가.
+> 기존에는 risk_0001에 산업기사(tier_score≥20) 이상만, risk_0002엔 기능사 상위 이상만 허용하는 하드 게이트(`_RISK_TIER_MIN`)가 있었다. 이 또한 "risk_0001=취업 안정권" 옛 가정에 기반한 것이었고, P6-1과 같은 이유로 폐지한다. 이제 위험군은 어떤 tier도 배제하지 않으며(P6-1의 기술사/기능장·<10% 예외만 유지), 같은 위험군 안에서의 난이도 우선순위는 `_fit_score`의 `difficulty_fit` 요소가 소프트하게 처리한다.
 
 ```python
-# recommendation_service.py 추가 상수
+# recommendation_service.py — 전면 개방 (하드 게이트 제거)
 _RISK_TIER_MIN: dict[str, int] = {
-    "risk_0001": 20,  # 산업기사(20) 이상만 — 기능사(10) 제외
-    "risk_0002": 15,  # 기능사 상위 이상
-    "risk_0003": 10,  # 기능사 이상 전체
-    "risk_0004": 10,
-    "risk_0005": 10,  # 기능사부터 전체
+    "risk_0001": 0,
+    "risk_0002": 0,
+    "risk_0003": 0,
+    "risk_0004": 0,
 }
 ```
 
-- `_filter_candidates` fallback 분기에 `tier_min` 적용: tier가 있고 score < tier_min인 cert 제외
-- 비기술자격(tier 없음)은 tier_min 적용 대상에서 제외하여 기존 pass_rate 기반 로직 유지
-- 기존 `is_redundant` 로직과 중복 없음 — `is_redundant`는 보유 자격 기반, tier_min은 위험군 기반
+- `_filter_candidates`의 tier_min 적용 코드 자체는 유지하되(향후 재도입 가능하도록), 값을 전부 0으로 두어 사실상 비활성화한다.
+- 기술사/기능장·<10% 합격률 자격증의 risk_0003·risk_0004 제외는 P6-1의 `recommended_risk_stages` 태깅만으로 충분히 처리된다.
 
 ---
 
-#### P6-3. 전자공학 도메인 risk_0005 로드맵 예시
+#### P6-3. 전자공학 도메인 로드맵 예시 (2026-07-05 갱신)
 
-**입력**: `domain = 전기/전자 (domain_0005)`, `risk_stage = risk_0005`
+**입력**: `domain = 전기/전자 (domain_0005)`, `risk_stage = risk_0004`(은둔청년)
 
 | step | roadmap_stage | 자격증 | cert_grade_tier | 합격률 | 비고 |
 |---|---|---|---|---|---|
@@ -178,7 +181,8 @@ _RISK_TIER_MIN: dict[str, int] = {
 | 4 | Stage 3 역량 준비 | 전기산업기사 | 2_산업기사 | ~33% | prerequisite: 전기기능사 |
 | 5 | Stage 4 실행 확대 | 전자기기기사 | 3_기사 | ~25% | 취업 핵심 자격 |
 | 6 | Stage 4 실행 확대 | 전기기사 | 3_기사 | ~18% | ⚠️ bottleneck (합격률 <30%) — 반복 응시 고려 |
-| 7 | Stage 5 유지·정착 | 전자응용기술사 | 4_기술사 | ~10% | prerequisite: 전자기기기사 + 실무 경험 4년 |
+
+전자응용기술사(4_기술사)는 P6-1 정책상 risk_0004에서 제외 — 은둔청년에게 4년 실무경력을 요구하는 최고난도 자격을 첫 로드맵으로 제시하지 않는다.
 
 **DAG 경로 (cert_prerequisite.csv 기반):**
 ```
@@ -186,27 +190,27 @@ _RISK_TIER_MIN: dict[str, int] = {
 전기기능사 → 전기산업기사 → 전기기사
 ```
 
-**risk_0001 동일 도메인 비교 (취업 안정권):**
+**risk_0001(고립위험청년) 동일 도메인 비교:**
 
 | step | roadmap_stage | 자격증 | 비고 |
 |---|---|---|---|
-| 1 | Stage 3 역량 준비 (시작점) | 전자기기산업기사 | 기능사 불필요, tier_min=20으로 기능사 제외 |
-| 2 | Stage 4 실행 확대 | 전자기기기사, 전기기사 | 고급 자격 직행 |
-| 3 | Stage 5 유지·정착 | 전자응용기술사 | 전문화 |
+| 1 | Stage 2 탐색 시작 | 전자기기기능사, 전기기능사 | P6-1 개정 후 risk_0001에도 기능사 노출(진입 접근성) |
+| 2 | Stage 3 역량 준비 | 전자기기산업기사, 전기산업기사 | |
+| 3 | Stage 4 실행 확대 | 전자기기기사, 전기기사 | |
+| 4 | Stage 5 유지·정착 | 전자응용기술사 | risk_0001은 기술사까지 도전 후보 유지(P6-1 정책) |
 
-**차이 요약:**
-- risk_0005: 기능사부터 전 단계 이수, 총 7단계, achievability = near_term/long_term 혼합
-- risk_0001: 산업기사 이상만 추천, 총 3단계, achievability = immediate/near_term
-- 진입점 단계: risk_0005는 roadmap_stage_0001, risk_0001은 roadmap_stage_0003
+**차이 요약 (개정 후):**
+- risk_0001·risk_0004 모두 기능사부터 노출되지만, `_fit_score`의 `difficulty_fit`이 risk_0004는 합격률 높은(쉬운) 자격증을, risk_0001은 목표 합격률이 낮아(도전적인 자격증도 포함) 상대적으로 균형 있게 우선순위를 매긴다.
+- 유일한 하드 차이: risk_0004는 4_기술사/5_기능장 및 <10% 합격률 자격증이 후보에서 아예 제외됨(risk_0001은 포함).
 
 ---
 
 #### P6-4. 구현 순서 — 상태
 
-1. ✅ P6-1: `build_cert_candidates.py` `TIER_TO_RISK_STAGES` + `PASSRATE_TO_RISK_STAGES` 도입. Phase 4 실행 완료 → `cert_candidates.jsonl` 1201행 갱신.
-2. ✅ P6-2: `recommendation_service._RISK_TIER_MIN` 상수 + `_tier_min_allows()`. `_filter_candidates` 의 direct/fallback 양쪽에 적용.
-3. ✅ P6-3 검증 실행: risk_0001+domain_0005 → 기능사 0건, 기사 13 + 기술사 7 + 기능장 2. risk_0005+domain_0005 → 기능사 10 + 산업기사 11. 차등 확인.
-4. ⬜ golden_set.jsonl 확장 — C-3 평가셋 커버리지 강화는 별도 라운드(추천 정책 검증 이후).
+1. ✅ P6-1: `build_cert_candidates.py` `TIER_TO_RISK_STAGES` + `PASSRATE_TO_RISK_STAGES` 도입 (2026-04-19) → 2026-07-05 4단계 체계에 맞춰 재정의(기술사/기능장·<10% 합격률만 제외, 나머지 전 단계 개방).
+2. ✅ P6-2: `recommendation_service._RISK_TIER_MIN` 상수 + `_tier_min_allows()` 도입 (2026-04-19) → 2026-07-05 전부 0으로 전면 개방(난이도 우선순위는 `_fit_score`가 대체).
+3. ⬜ P6-3 재검증: risk_0001+domain_0005, risk_0004+domain_0005 각각 기능사~기술사 분포 재확인 (재생성된 `cert_candidates.jsonl` 기준).
+4. ✅ LLM-as-a-Judge 골든셋(`scripts/llm_judge_golden_set.py`, 2026-07-05) — 6개 페르소나 recall 평가로 본 회귀 최초 발견.
 
 ---
 

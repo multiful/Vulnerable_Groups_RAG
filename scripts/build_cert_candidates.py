@@ -5,20 +5,28 @@
 #       data/canonical/validation/candidates_taxonomy.json (DATA_SCHEMA.md §9.1.1 게이트 결과)
 # 증분 규칙: content_hash 기반 — 변경 row만 재생성 가능 (전체 재생성 시 updated_at 비교)
 #
-# recommended_risk_stages 정책 (relations/FOLDER.md §P6-1):
-#   risk_0001 = 취업 안정권, risk_0005 = 최고 위험군.
+# recommended_risk_stages 정책 (relations/FOLDER.md §P6-1, 2026-07-05 개정):
+#   위험군은 risk_0001(고립위험청년, 가장 경미) ~ risk_0004(은둔청년, 가장 심각) 4단계다.
+#   (구 정책은 "risk_0001=취업 안정권"이라는 5단계 체계 가정으로 설계돼, risk_0001·0002 사용자에게
+#    기능사 등 접근 가능한 자격증을 원천 배제했다 — LLM-judge recall 평가로 발견된 회귀, DEV_LOG 2026-07-05.)
+#   새 원칙: 아주 어려운 자격증(기술사·기능장, 합격률 <10%)만 활동제한형·은둔청년(0003·0004)에서 제외하고,
+#   나머지는 전 단계(0001~0004)에 개방한다. 같은 위험군 안의 난이도 우선순위는 이 필드가 아니라
+#   recommendation_service._fit_score의 difficulty_fit(FEATURE_SPEC.md F-03 §3.1)이 소프트하게 처리한다.
+#   risk_0005(구 은둔군)는 백엔드 비활성 보존 상태라 신규 생성 시 더 이상 포함하지 않는다.
 #   [기술자격 tier 기반]
-#     1_기능사   → [0003, 0004, 0005]          (안정권에는 부적절 — 장기 경로)
-#     2_산업기사 → [0002, 0003, 0004, 0005]   (중간 단계, 기초 다진 후 접근)
-#     3_기사     → [0001, 0002, 0003, 0004]   (취업 핵심, 안정권 목표)
-#     4_기술사   → [0001, 0002]                (고급 전문가, 안정권 한정)
-#     5_기능장   → [0001, 0002]                (최고등급, 안정권 한정)
+#     1_기능사   → [0001, 0002, 0003, 0004]   (전 단계 개방 — 진입 접근성)
+#     2_산업기사 → [0001, 0002, 0003, 0004]
+#     3_기사     → [0001, 0002, 0003, 0004]
+#     4_기술사   → [0001, 0002]                (고난도 — 활동제한형·은둔청년 제외)
+#     5_기능장   → [0001, 0002]
 #   [비기술자격 — 합격률 3yr 평균 기반]
-#     ≥50%      → [0003, 0004, 0005]           (쉬움)
-#     30~50%    → [0002, 0003, 0004]           (중)
-#     10~30%    → [0001, 0002, 0003]           (어려움)
-#     <10%      → [0001, 0002]                 (매우 어려움 — 장기 목표형)
-#     합격률 없음 → [0002, 0003, 0004]         (기본값)
+#     ≥50%      → [0001, 0002, 0003, 0004]
+#     30~50%    → [0001, 0002, 0003, 0004]
+#     10~30%    → [0001, 0002, 0003, 0004]
+#     <10%      → [0001, 0002]                 (매우 어려움 — 활동제한형·은둔청년 제외)
+#     합격률 없음 → [0001, 0002, 0003, 0004]  (기본값)
+
+from __future__ import annotations
 
 import argparse
 import os
@@ -40,26 +48,27 @@ os.makedirs(OUT_DIR, exist_ok=True)
 os.makedirs(VALIDATION_DIR, exist_ok=True)
 
 # ---------- 상수 ----------
-# cert_grade_tier → 추천 대상 위험군 (§P6-1 정책)
-# 기능사는 최고위험군(장기 경로), 기술사·기능장은 안정권(고급 전문가)에 배치한다.
+# cert_grade_tier → 추천 대상 위험군 (§P6-1 정책, 2026-07-05 개정)
+# 아주 어려운 등급(기술사·기능장)만 활동제한형·은둔청년(0003·0004)에서 제외하고 나머지는 전 단계 개방.
+_ALL_ACTIVE_STAGES = ["risk_0001", "risk_0002", "risk_0003", "risk_0004"]
 TIER_TO_RISK_STAGES: dict[str, list[str]] = {
-    "1_기능사":   ["risk_0003", "risk_0004", "risk_0005"],
-    "2_산업기사": ["risk_0002", "risk_0003", "risk_0004", "risk_0005"],
-    "3_기사":     ["risk_0001", "risk_0002", "risk_0003", "risk_0004"],
+    "1_기능사":   list(_ALL_ACTIVE_STAGES),
+    "2_산업기사": list(_ALL_ACTIVE_STAGES),
+    "3_기사":     list(_ALL_ACTIVE_STAGES),
     "4_기술사":   ["risk_0001", "risk_0002"],
     "5_기능장":   ["risk_0001", "risk_0002"],
 }
 
 # 비기술자격(tier 없음) — 합격률 기반. (min_pass_rate_inclusive, risk_stages)
-# 임계값: ≥50, 30~50, 10~30, <10. 비교는 내림차순 match-first.
+# <10%(매우 어려움)만 활동제한형·은둔청년에서 제외, 나머지는 전 단계 개방.
 PASSRATE_TO_RISK_STAGES: list[tuple[float, list[str]]] = [
-    (50.0, ["risk_0003", "risk_0004", "risk_0005"]),
-    (30.0, ["risk_0002", "risk_0003", "risk_0004"]),
-    (10.0, ["risk_0001", "risk_0002", "risk_0003"]),
+    (50.0, list(_ALL_ACTIVE_STAGES)),
+    (30.0, list(_ALL_ACTIVE_STAGES)),
+    (10.0, list(_ALL_ACTIVE_STAGES)),
     (0.0,  ["risk_0001", "risk_0002"]),
 ]
 # 합격률도 tier도 없는 경우 기본값
-DEFAULT_NONTECH_RISK_STAGES: list[str] = ["risk_0002", "risk_0003", "risk_0004"]
+DEFAULT_NONTECH_RISK_STAGES: list[str] = list(_ALL_ACTIVE_STAGES)
 
 LIST_COLS = [
     "aliases", "related_domains", "related_jobs", "related_majors",

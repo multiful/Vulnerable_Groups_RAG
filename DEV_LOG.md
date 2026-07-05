@@ -2,7 +2,7 @@
 
 > **파일명**: DEV_LOG.md  
 > **최종 수정일**: 2026-07-05  
-> **문서 해시**: SHA256:5ed3bd8c9e9cf8b7ee5e267c05708f02d5820791749f530715ccda3b4c26956e
+> **문서 해시**: SHA256:74c3b13d4ae85bc1f010a3f001cebf15698c343ef18cc6a846ab7db6ac855fac
 > **문서 역할**: 날짜별 진행 로그, 변경 요약, 해결 이력  
 > **문서 우선순위**: 14  
 > **연관 문서**: CHANGE_CONTROL.md, PRD.md, DIRECTORY_SPEC.md, ERROR_ANALYSIS.md  
@@ -13,6 +13,71 @@
 ## 1. 문서 목적
 
 구현과 문서 정렬 작업의 **타임라인**을 남겨, 이후 기여자가 맥락을 잃지 않게 한다.
+
+---
+
+## 2026-07-05 (4) — `recommended_risk_stages`/`_RISK_TIER_MIN`의 "5단계 취업안정권" 옛 정책 제거 — recall 0.730 → 1.000
+
+### 배경
+(3)의 LLM-judge recall 평가에서 PJ01(0.36)·PJ02(0.75)·PJ04(0.27)가 낮게 나온 원인을 추적. `scripts/build_cert_candidates.py`의 `recommended_risk_stages` 생성 정책(`relations/FOLDER.md` §P6-1)과 `recommendation_service._RISK_TIER_MIN`(§P6-2)이 둘 다 "risk_0001=취업 안정권, risk_0005=최고위험군"이라는 **옛 5단계 체계** 가정으로 설계돼 있었음(주석에 "취업 안정권" 문구 그대로 남아 있었음) — 2026-07-01 4단계(고립위험청년~은둔청년) 전환 시 갱신되지 않은 채 방치된 회귀. 그 결과 기능사·산업기사 등 접근 가능한 자격증이 risk_0001·risk_0002 쿼리에서 필터 단계에 원천 배제되고 있었다. 사용자가 "관련된거 전부 처리해줘"로 포괄 수정 지시.
+
+### 수행
+- `data/canonical/relations/FOLDER.md` §P6-1/P6-2/P6-3 재작성: "risk_0001=취업안정권" 가정 제거. 새 원칙 — 기술사·기능장(및 합격률 <10%)만 활동제한형·은둔청년(risk_0003·0004)에서 제외, 나머지는 전 단계(risk_0001~0004) 개방. 같은 위험군 안의 세부 난이도 우선순위는 이 하드 게이트가 아니라 F-03 §3.1 `_fit_score`의 `difficulty_fit`이 소프트하게 담당하도록 역할 분리.
+- `scripts/build_cert_candidates.py`: `TIER_TO_RISK_STAGES`(1_기능사~3_기사 전 단계 개방, 4_기술사·5_기능장만 risk_0001·0002 한정) + `PASSRATE_TO_RISK_STAGES`(<10%만 risk_0001·0002 한정) + `DEFAULT_NONTECH_RISK_STAGES` 재정의. risk_0005는 신규 생성 시 더 이상 포함하지 않음. (부수 수정: 이 파일에 `from __future__ import annotations`가 없어 Python 3.9(`/usr/bin/python3`)에서 `pd.DataFrame | None` 타입힌트가 `TypeError`로 즉시 실행 불가였음 — 추가해서 해결.)
+- `backend/app/services/recommendation_service.py`: `_RISK_TIER_MIN` 전부 0으로 전면 개방(하드 게이트 비활성화, 코드는 유지해 향후 재도입 가능하게 둠).
+- `backend/app/services/risk_stage_service.py`: "1단계=관심군(취업안정권에 가까운 쪽)/5단계=은둔군" 주석을 4단계 체계로 정정.
+- `PYTHONPATH=. python3 scripts/build_cert_candidates.py` 재실행 → `cert_candidates.jsonl` 1290행 중 1225행 갱신(`recommended_risk_stages` 필드 변경).
+
+### 검증
+백엔드 재기동 후 `scripts/llm_judge_golden_set.py` 재실행(동일 6개 페르소나, 새 gold set 재판정):
+- recall_all: PJ01 0.36→**1.00**, PJ02 0.75→**1.00**, PJ03 1.00 유지, PJ04 0.27→**1.00**, PJ05 1.00 유지, PJ06 1.00 유지. **평균 0.730 → 1.000**.
+- 회귀 확인: risk_0003(PJ03)·risk_0004(PJ06)의 실제 시스템 출력에 `4_기술사`/`5_기능장` tier 자격증이 섞여 들어오지 않았는지 별도 스크립트로 확인 — 0건, 하드 제외 정상 동작.
+- recall@10은 여전히 낮은 편(0.14~1.00) — 이건 eligibility 문제가 아니라 같은 위험군 내 순위(Fit Score) 튜닝의 문제라 이번 수정 범위 밖으로 남김.
+
+### 부가 검증 — 기존 `scripts/eval_golden_set.py` 회귀 확인
+`docs/evaluation/golden_set.jsonl`(6개, risk_0001~0005 사용)로 재실행 → PASS RATE 91.1%(41/45), P15·P21 2건 FAIL. 둘 다 **예상된 결과**이지 새 버그가 아님:
+- P15: "risk_0003 사용자는 4_기술사/5_기능장만 봐야 한다"는 기대 자체가 오늘 제거한 구 tier-게이트 전제 — 정책이 바뀌었으니 이 기대값이 무효화된 것.
+- P21: risk_0005(구 5단계, 이미 백엔드 비활성) 페르소나. 이번 재생성으로 `recommended_risk_stages`에 risk_0005가 더 이상 태깅되지 않아 `fallback_used=True`로 전환됨 — risk_0005는애초 reserved라 이 결과가 오히려 일관적.
+이 golden_set.jsonl은 모든 항목에 "_note: 전문가 검토 후 수정 필요 — 자동생성 베이스라인" 표시가 이미 있던 파일이라, 이번 정책 변경에 맞춰 기대값을 다시 쓰는 건 별도 검토 라운드로 남김(이번엔 수정하지 않음).
+
+### 남은 이슈
+- `golden_set.jsonl`의 P15·P21 `expected_*` 값을 새 정책에 맞춰 갱신할지 결정 필요(위 부가 검증 참고).
+- recall@10 개선(Fit Score 가중치 재튜닝)은 별도 라운드로 남김.
+
+---
+
+## 2026-07-05 (3) — LLM-as-a-Judge 골든셋 생성 + recall 평가 (6개 신규 페르소나)
+
+### 배경
+`docs/evaluation/FOLDER.md` §5의 기존 Next-Step(감사 기록)에 "LLM-as-a-Judge 도입"이 이미 TODO로 명시돼 있었음. 사용자가 직접 6개 페르소나(위험군×도메인)를 지정하고 "LLM이 직접 정답지를 만들고, recall로 평가하겠다"고 요청:
+1. 활동형고립청년(risk_0002)×소프트웨어개발, 2. 고립위험청년(risk_0001)×데이터/AI, 3. 활동제한형고립청년(risk_0003)×금융/회계, 4. 활동형고립청년(risk_0002)×디자인, 5. 고립위험청년(risk_0001)×교육, 6. 은둔청년(risk_0004)×법률.
+난이도 정책: risk_0001은 난이도 있는 자격증도 허용, risk_0002 이상부터는 너무 어려운 자격증 지양.
+
+### 수행
+`scripts/llm_judge_golden_set.py` 신설:
+- 각 페르소나의 도메인에 `related_domains`로 실제 연결된 `cert_candidates.jsonl` 후보 전체(할루시네이션 방지 — 실존 후보 중에서만 판정)를 GPT-4o-mini에 제시.
+- 위험군 단계별 난이도 정책을 프롬프트에 명시하고, 각 후보의 relevant 여부를 이진 판정 → `expected_relevant_cert_ids` + 근거(`judge_reasoning`).
+- 동일 쿼리로 `recommendation_service.recommendations()`를 호출해 실제 시스템 출력(`roadmap_sequence`)을 얻고, `recall_all`(전체 기준) · `recall_at_10`(top-10 기준) 계산.
+- 결과를 `docs/evaluation/llm_judge_golden_set_2026-07-05.jsonl`에 저장(persona당 1줄: gold set, 실제 출력, recall 2종, judge reasoning).
+
+### 결과 (recall_all / recall@10, gold건수/actual건수)
+- PJ01 소프트웨어개발(risk_0002): 0.36 / 0.36 (14/24)
+- PJ02 데이터AI(risk_0001): 0.75 / 0.75 (4/4)
+- PJ03 금융회계(risk_0003): 1.00 / 0.55 (11/49)
+- PJ04 디자인(risk_0002): 0.27 / 0.27 (11/9)
+- PJ05 교육(risk_0001): 1.00 / 0.24 (17/33)
+- PJ06 법률(risk_0004): 1.00 / 1.00 (1/3)
+- 평균 recall_all = 0.730
+
+### 핵심 발견 (범위 밖, 후속 검토 필요)
+recall이 낮은 PJ01/PJ02/PJ04에서 gold로 판정된 기능사·준전문가급 자격증(예: `cert_0547` 정보기기운용기능사, `cert_1128` 데이터분석준전문가)이 실제 시스템 출력에 아예 없음. 원인 확인: 해당 후보들의 `recommended_risk_stages`가 `["risk_0003","risk_0004","risk_0005"]`로만 태깅돼 있어 `_filter_candidates`의 위험군 매칭에서 risk_0001·risk_0002 쿼리는 원천 배제됨. 즉 "쉬운 자격증은 심한 위험군에게만" 태깅된 기존 데이터 정책이, 이번에 사용자가 명시한 "risk_0002도 접근 가능한 난이도가 필요하다"는 정책과 충돌한다. `cert_candidates.jsonl`의 `recommended_risk_stages` 재태깅 여부는 별도 결정 필요 — 이번 작업에서는 진단만 하고 데이터는 건드리지 않음.
+
+### 검증
+6개 페르소나 모두 정상 실행, JSON 파싱 실패·API 오류 없음. gold set 크기(1~17건)와 judge reasoning을 육안 검토 — 도메인 관련성·난이도 정책 반영 방향은 합리적이나 `_note` 관례에 따라 전문가 검토 전 상태로 표시.
+
+### 남은 이슈
+- 이번 6개 페르소나는 `personas.json`의 기존 15종과 겹치지 않는 신규 세트 — 필요시 `personas.json`에 병합 여부 결정.
+- gold set은 GPT-4o-mini 단일 판정(temperature 0.2, 재현성 확인 안 함) — 프로덕션 기준으로 쓰려면 사람 검토 또는 반복 샘플링으로 안정성 확인 권장.
 
 ---
 
