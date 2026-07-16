@@ -9,6 +9,7 @@
 Q-Net 시험일정·WorkNet 채용정보·Work24 훈련과정·YouTube 강의 등 실시간 API를 통합해 자격증 정보를 제공하며, 로컬 chunks.jsonl 키워드 검색 + HyDE 파이프라인(OpenAI)으로 위험군 분류 근거를 생성하고, cert_master 구조 데이터 + OpenAI GPT-4o-mini 자체 평가 엔진으로 자격증 추천 이유를 생성한다.
 
 발표자료: https://docs.google.com/presentation/d/19qW9nk1Fa70GmLr2oxuR4sxsUtFU0BRQ/edit?usp=sharing&ouid=118234176697757453149&rtpof=true&sd=true
+
 URL : https://www.didim.life/
 
 ---
