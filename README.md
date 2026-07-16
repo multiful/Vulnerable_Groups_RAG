@@ -1,12 +1,5 @@
 # README.md
 
-> **파일명**: README.md  
-> **최종 수정일**: 2026-07-02  
-> **문서 해시**: SHA256:3538616ccb6e2365ca8b0468ea8365f8c5d1af4a140b00b2e18d89ed699b2e01
-> **문서 역할**: 프로젝트 최상위 안내 문서 / 관문 문서  
-> **문서 우선순위**: 0  
-> **연관 문서**: CHANGE_CONTROL.md, PRD.md, SYSTEM_ARCHITECTURE.md, DIRECTORY_SPEC.md, PROJECT_SUMMARY.md, SUMMARY.md, RAG_PIPELINE.md, Indexing_Architecture.txt  
-> **참조 규칙**: 작업 시작 전 본 문서와 `CHANGE_CONTROL.md`를 먼저 읽고, 이후 관련 상세 문서를 확인한다.
 
 ---
 
@@ -14,6 +7,8 @@
 
 청년 위험군 단계와 관심 직무/도메인을 바탕으로 관련 자격증을 추천하고 단계형 로드맵을 제안하는 서비스다.  
 Q-Net 시험일정·WorkNet 채용정보·Work24 훈련과정·YouTube 강의 등 실시간 API를 통합해 자격증 정보를 제공하며, 로컬 chunks.jsonl 키워드 검색 + HyDE 파이프라인(OpenAI)으로 위험군 분류 근거를 생성하고, cert_master 구조 데이터 + OpenAI GPT-4o-mini 자체 평가 엔진으로 자격증 추천 이유를 생성한다.
+
+발표자료: https://docs.google.com/presentation/d/19qW9nk1Fa70GmLr2oxuR4sxsUtFU0BRQ/edit?usp=sharing&ouid=118234176697757453149&rtpof=true&sd=true
 
 ---
 
